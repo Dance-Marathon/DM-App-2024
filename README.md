@@ -1,8 +1,10 @@
 # DM-App-2024
 built with react native
 
-# Install before running
-node.js
+# Before Starting
+Install node.js
+
+In a command line run npm install -g npm
 
 cd DM-APP-2024
 
@@ -19,3 +21,8 @@ To run your project, navigate to the directory and run one of the following npm 
 - npm run android
 - npm run ios # requires an iOS device or macOS for access to an iOS simulator       
 - npm run web
+
+# How Nat got it to run on her phone
+- Download the Expo Go app from the appstore
+- Run npm run web from the DM-APP-2024 directory
+- Scan the QR code on phone and it will take you to expo
