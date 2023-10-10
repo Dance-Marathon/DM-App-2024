@@ -28,3 +28,8 @@ To run your project, navigate to the directory and run one of the following npm 
 - Download the Expo Go app from the appstore
 - Run npm run web from the DM-APP-2024 directory
 - Scan the QR code on phone and it will take you to expo
+
+# If that doesn't work
+- Run "npm install @expo/ngrok@^4.1.0"
+- Run "npx expo start --tunnel" from DM-APP-2024 directory
+- Scan the QR code on phone and it will take you to Expo Go app
