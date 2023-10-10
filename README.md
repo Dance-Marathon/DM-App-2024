@@ -4,6 +4,8 @@ built with react native
 # Install before running
 node.js
 
+cd DM-APP-2024
+
 npm install -g expo-cli
 
 npx expo install react-native-web@~0.19.6 react-dom@18.2.0
