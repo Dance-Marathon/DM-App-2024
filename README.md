@@ -4,6 +4,8 @@ built with react native
 # Before Starting
 Install node.js
 
+Restart your computer to complete the install
+
 In a command line run npm install -g npm
 
 cd DM-APP-2024
