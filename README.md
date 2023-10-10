@@ -11,8 +11,8 @@ In a command line run npm install -g npm
 cd DM-APP-2024
 
 npm install -g expo-cli
-
 npm install
+
 npx expo install react-native-web@~0.19.6 react-dom@18.2.0
 npx expo install @expo/webpack-config@^19.0.0
 
