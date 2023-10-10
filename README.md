@@ -1,6 +1,10 @@
 # DM-App-2024
 built with react native
 
+# Install before running
+npx expo install react-native-web@~0.19.6 react-dom@18.2.0
+npx expo install @expo/webpack-config@^19.0.0
+
 # Run
 To run your project, navigate to the directory and run one of the following npm commands.
 
