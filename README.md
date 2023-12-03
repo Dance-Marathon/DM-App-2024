@@ -31,6 +31,6 @@ To run your project, navigate to the directory and run one of the following npm 
 - Scan the QR code on phone and it will take you to expo
 
 # If that doesn't work
-- Run "npm install @expo/ngrok@^4.1.0"
+- run "expo upgrade"
 - Run "npx expo start --tunnel" from DM-APP-2024 directory
 - Scan the QR code on phone and it will take you to Expo Go app
