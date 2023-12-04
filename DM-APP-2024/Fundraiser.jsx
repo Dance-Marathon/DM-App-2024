@@ -1,7 +1,7 @@
 // Page1.js (similar structure for other pages)
 import React, { useState, useEffect } from 'react';
 import ReactDOM from "react-dom";
-import { View, Text, Image, StyleSheet } from 'react-native';
+import { View, Text, Image, StyleSheet, Button, Linking, Pressable } from 'react-native';
 
 import { getTeamInfo, getUserMilestones, getUserIncentives, getUserBadges, getUserDonations, getTeamDonations, getUserInfo, getTeamRoster } from './api/index';
 
@@ -16,7 +16,6 @@ const Fundraiser = () => {
   useEffect(() => {
     getUserInfo(userID)
       .then((data) => {
-        console.log(data);
         setUserInfo(data);
       })
       .catch((err) => {
@@ -33,7 +32,12 @@ const Fundraiser = () => {
           <Text>Display Name: {userInfo.displayName}</Text>
           <Text>Team: {userInfo.teamName}</Text>         
               <Image source={{ uri: userInfo.avatarImageURL }} style={styles.avatar}/>
-              <Text>Progress: ${userInfo.sumDonations} of ${userInfo.fundraisingGoal}</Text>    
+              <Text>Progress: ${userInfo.sumDonations} of ${userInfo.fundraisingGoal}</Text>
+              <Button
+                onPress={() => Linking.openURL(userInfo.donateURL)}
+                title="DonorDrive Page"
+                color="#841584"
+              />    
         </View>
       ) : (
         <Text>Loading user info...</Text>
