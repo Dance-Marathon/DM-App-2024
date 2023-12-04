@@ -37,3 +37,11 @@ To run your project, navigate to the directory and run one of the following npm 
 - run "expo upgrade"
 - Run "npx expo start --tunnel" from DM-APP-2024 directory
 - Scan the QR code on phone and it will take you to Expo Go app
+
+# DonorDrive API Links
+- Where most of the API came from
+- Based on another CMN initiative so same content from fetches
+https://github.com/ammuench/extra-life-api/tree/master
+
+- More specific to DonorDrive
+https://github.com/DonorDrive/PublicAPI/tree/master
