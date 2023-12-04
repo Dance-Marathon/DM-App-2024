@@ -1,6 +1,7 @@
 // Page1.js (similar structure for other pages)
 import React, { useState, useEffect } from 'react';
-import { View, Text } from 'react-native';
+import ReactDOM from "react-dom";
+import { View, Text, Image, StyleSheet } from 'react-native';
 
 import { getTeamInfo, getUserMilestones, getUserIncentives, getUserBadges, getUserDonations, getTeamDonations, getUserInfo, getTeamRoster } from './api/index';
 
@@ -30,23 +31,9 @@ const Fundraiser = () => {
       {userInfo && userInfo.displayName ? (
         <View>
           <Text>Display Name: {userInfo.displayName}</Text>
-          <Text>Team: {userInfo.teamName}</Text>
-            <div className="card" style={{ width: '200px', float: 'left', margin: '20px' }}>
-              <img src={`${userInfo.avatarImageURL}`} img/>
-              <div className="card-text">
-                <div className="progress">
-                  <div
-                    className="progress-bar"
-                    role="progressbar"
-                    aria-valuenow="0"
-                    aria-valuemin="0"
-                    aria-valuemax="100"
-                    style={{ width: `100%` }}
-                  ></div>
-                </div>
-                <p>Progress: ${userInfo.sumDonations} of ${userInfo.fundraisingGoal}</p>
-              </div>
-            </div>
+          <Text>Team: {userInfo.teamName}</Text>         
+              <Image source={{ uri: userInfo.avatarImageURL }} style={styles.avatar}/>
+              <Text>Progress: ${userInfo.sumDonations} of ${userInfo.fundraisingGoal}</Text>    
         </View>
       ) : (
         <Text>Loading user info...</Text>
@@ -56,5 +43,17 @@ const Fundraiser = () => {
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  avatar: {
+    width: 100,
+    height: 100,
+  },
+});
 
 export default Fundraiser;
