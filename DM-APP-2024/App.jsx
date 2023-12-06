@@ -11,7 +11,7 @@ const Tab = createBottomTabNavigator();
 
 // Import your page components
 import Home from './Home';
-import Calendar from './Calendar';
+import CalendarPage from './CalendarPage';
 import Spirit from './Spirit';
 import Fundraiser from './Fundraiser';
 import About from './About';
@@ -22,7 +22,7 @@ function App() {
     <NavigationContainer>
       <Tab.Navigator>
         <Tab.Screen name="Home" component={Home} />
-        <Tab.Screen name="Calendar" component={Calendar} />
+        <Tab.Screen name="Calendar" component={CalendarPage} />
         <Tab.Screen name="Spirit" component={Spirit} />
         <Tab.Screen name="Fundraiser" component={Fundraiser} />
         <Tab.Screen name="About" component={About} />
