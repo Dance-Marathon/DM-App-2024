@@ -1,20 +1,18 @@
 // Page1.js (similar structure for other pages)
 import React, { useState, useEffect } from 'react';
-import ReactDOM from "react-dom";
-import { View, Text, Image, StyleSheet, Button, Linking, Pressable } from 'react-native';
+import { View, Text, Image, StyleSheet, Button, Linking, TextInput } from 'react-native';
+import { getUserInfo } from './api/index';
 
-import { getTeamInfo, getUserMilestones, getUserIncentives, getUserBadges, getUserDonations, getTeamDonations, getUserInfo, getTeamRoster } from './api/index';
-
-const userID = 1066318;
-const teamID = 65487;
-const eventID = 5803;
+const defaultUserID = 1066318;
 
 const Fundraiser = () => {
+  const [userIDState, setUserIDState] = useState('');
+  const [tempID, setTempID] = useState('');
   const [userInfo, setUserInfo] = useState({});
   const [error, setError] = useState('');
 
   useEffect(() => {
-    getUserInfo(userID)
+    getUserInfo(userIDState)
       .then((data) => {
         setUserInfo(data);
       })
@@ -22,28 +20,38 @@ const Fundraiser = () => {
         console.error(err);
         setError(err);
       });
-  }, [userID]);
+  }, [userIDState]);
+
+  const handleUserIDUpdate = () => {
+    setUserIDState(tempID);
+  };
 
   return (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+    <View style={styles.container}>
       <Text>Fundraiser Page</Text>
       {userInfo && userInfo.displayName ? (
         <View>
           <Text>Display Name: {userInfo.displayName}</Text>
-          <Text>Team: {userInfo.teamName}</Text>         
-              <Image source={{ uri: userInfo.avatarImageURL }} style={styles.avatar}/>
-              <Text>Progress: ${userInfo.sumDonations} of ${userInfo.fundraisingGoal}</Text>
-              <Button
-                onPress={() => Linking.openURL(userInfo.donateURL)}
-                title="DonorDrive Page"
-                color="#841584"
-              />    
+          <Text>Team: {userInfo.teamName}</Text>
+          <View style={styles.imageContainer}>
+            <Image source={{ uri: userInfo.avatarImageURL }} style={styles.avatar} />
+          </View>
+          <Text>Progress: ${userInfo.sumDonations} of ${userInfo.fundraisingGoal}</Text>
+          <Button
+            onPress={() => Linking.openURL(userInfo.donateURL)}
+            title="DonorDrive Page"
+            color="#841584"
+          />
         </View>
       ) : (
-        <Text>Loading user info...</Text>
+        <View>
+          <Text>Enter DonorDrive ID:</Text>
+          <TextInput onChangeText={setTempID} value={tempID} style={styles.textInput}/>
+          <Button title='Enter' onPress={handleUserIDUpdate}>
+          </Button>
+        </View>
       )}
-      {error && <Text>Error: Failed</Text>}
-
+      {error ? <Text message={error.message} /> : null}
     </View>
   );
 }
@@ -58,6 +66,22 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
   },
+  imageContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 10,
+    marginBottom: 10,
+  },
+  textInput: {
+    width: 150,
+    height: 40,
+    borderWidth: 1,
+    borderColor: '#999',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    marginTop: 10,
+  }
 });
 
 export default Fundraiser;
+
