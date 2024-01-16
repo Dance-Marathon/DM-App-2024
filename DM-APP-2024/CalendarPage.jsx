@@ -6,7 +6,7 @@ const INITIAL_DATE = new Date();
 
 const CalendarComponent = () => {
   // used to track events per day
-  const [selected, setSelected] = useState('2024-01-15');
+  const [selected, setSelected] = useState(INITIAL_DATE);
   const [selectedDay, setSelectedDay] = useState('');
   const [eventsForDay, setEventsForDay] = useState('');
 
@@ -36,73 +36,62 @@ const CalendarComponent = () => {
       ['2024-01-16']: {
         periods: [
           { key: 'Faculty Staff Appreciation Week', startingDay: true, endingDay: false, color: 'orange' },
-
         ]
       },
       ['2024-01-17']: {
         periods: [
           { key: 'Faculty Staff Appreciation Week', startingDay: false, endingDay: false, color: 'orange' },
-
         ]
       },
       ['2024-01-18']: {
         periods: [
           { key: 'Faculty Staff Appreciation Week', startingDay: false, endingDay: false, color: 'orange' },
-
         ]
       },
       ['2024-01-19']: {
         periods: [
           { key: 'Faculty Staff Appreciation Week', startingDay: false, endingDay: true, color: 'orange' },
-
         ]
       },
       ['2024-01-22']: {
         periods: [
           { key: 'Dancer Week', startingDay: true, endingDay: false, color: 'green' },
-
         ]
       },
       ['2024-01-23']: {
         periods: [
           { key: 'Dancer Week', startingDay: false, endingDay: false, color: 'green' },
-
         ]
       },
       ['2024-01-24']: {
         periods: [
           { key: 'Dancer Week', startingDay: false, endingDay: false, color: 'green' },
-
         ]
       },
       ['2024-01-25']: {
         periods: [
           { key: 'Dancer Week', startingDay: false, endingDay: false, color: 'green' },
-
         ]
       },
       ['2024-01-26']: {
         periods: [
           { key: 'Dancer Week', startingDay: false, endingDay: true, color: 'green' },
-
         ]
       },
       ['2024-02-15']: {
         periods: [
           { key: 'Stand Up and Holler', startingDay: true, endingDay: true, color: 'pink' },
-
         ]
       },
       ['2024-02-18']: {
         periods: [
           { key: 'Miracles in Color 5k', startingDay: true, endingDay: true, color: 'purple' },
-
         ]
       },
     };
   }, [selected]);
 
-  // returns the list of events for a specific day
+  // returns the list of events for a specific day and the color they are associated with
   const getMarkedKeysForDay = (day) => {
     const markedDay = marked[day];
 
