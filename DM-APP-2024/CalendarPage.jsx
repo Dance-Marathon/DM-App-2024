@@ -5,16 +5,12 @@ import { View, Text, StyleSheet, TextStyle, Button, TextInput } from 'react-nati
 const INITIAL_DATE = new Date();
 
 const CalendarComponent = () => {
+  // used to track events per day
   const [selected, setSelected] = useState('2024-01-15');
   const [selectedDay, setSelectedDay] = useState('');
   const [eventsForDay, setEventsForDay] = useState('');
 
-  const getDate = (count) => {
-    const date = new Date(INITIAL_DATE);
-    const newDate = date.setDate(date.getDate() + count);
-    return CalendarUtils.getCalendarDateString(newDate);
-  };
-
+  // what happens each time a day is pressed
   const onDayPress = useCallback((day) => {
     setSelected(day.dateString);
     const eventsForToday = getMarkedKeysForDay(day.dateString);
@@ -28,83 +24,85 @@ const CalendarComponent = () => {
     setEventsForDay(eventsText);
   }, []);
 
+  // list of all events for each day
   const marked = useMemo(() => {
     return {
       ['2024-01-10']: {
         periods: [
-          {key: 'Chipotle Hospitality Night', startingDay: true, endingDay: true, color: 'blue'},
-          {key: 'Test', startingDay: true, endingDay: true, color: 'black'},
+          { key: 'Chipotle Hospitality Night', startingDay: true, endingDay: true, color: 'blue' },
+          { key: 'Test', startingDay: true, endingDay: true, color: 'black' },
         ]
       },
       ['2024-01-16']: {
         periods: [
-          {key: 'Faculty Staff Appreciation Week', startingDay: true, endingDay: false, color: 'orange'},
-          
+          { key: 'Faculty Staff Appreciation Week', startingDay: true, endingDay: false, color: 'orange' },
+
         ]
       },
       ['2024-01-17']: {
         periods: [
-          {key: 'Faculty Staff Appreciation Week', startingDay: false, endingDay: false, color: 'orange'},
-          
+          { key: 'Faculty Staff Appreciation Week', startingDay: false, endingDay: false, color: 'orange' },
+
         ]
       },
       ['2024-01-18']: {
         periods: [
-          {key: 'Faculty Staff Appreciation Week', startingDay: false, endingDay: false, color: 'orange'},
-          
+          { key: 'Faculty Staff Appreciation Week', startingDay: false, endingDay: false, color: 'orange' },
+
         ]
       },
       ['2024-01-19']: {
         periods: [
-          {key: 'Faculty Staff Appreciation Week', startingDay: false, endingDay: true, color: 'orange'},
-          
+          { key: 'Faculty Staff Appreciation Week', startingDay: false, endingDay: true, color: 'orange' },
+
         ]
       },
       ['2024-01-22']: {
         periods: [
-          {key: 'Dancer Week', startingDay: true, endingDay: false, color: 'green'},
-          
+          { key: 'Dancer Week', startingDay: true, endingDay: false, color: 'green' },
+
         ]
       },
       ['2024-01-23']: {
         periods: [
-          {key: 'Dancer Week', startingDay: false, endingDay: false, color: 'green'},
-          
+          { key: 'Dancer Week', startingDay: false, endingDay: false, color: 'green' },
+
         ]
       },
       ['2024-01-24']: {
         periods: [
-          {key: 'Dancer Week', startingDay: false, endingDay: false, color: 'green'},
-          
+          { key: 'Dancer Week', startingDay: false, endingDay: false, color: 'green' },
+
         ]
       },
       ['2024-01-25']: {
         periods: [
-          {key: 'Dancer Week', startingDay: false, endingDay: false, color: 'green'},
-          
+          { key: 'Dancer Week', startingDay: false, endingDay: false, color: 'green' },
+
         ]
       },
       ['2024-01-26']: {
         periods: [
-          {key: 'Dancer Week', startingDay: false, endingDay: true, color: 'green'},
-          
+          { key: 'Dancer Week', startingDay: false, endingDay: true, color: 'green' },
+
         ]
       },
       ['2024-02-15']: {
         periods: [
-          {key: 'Stand Up and Holler', startingDay: true, endingDay: true, color: 'pink'},
-          
+          { key: 'Stand Up and Holler', startingDay: true, endingDay: true, color: 'pink' },
+
         ]
       },
       ['2024-02-18']: {
         periods: [
-          {key: 'Miracles in Color 5k', startingDay: true, endingDay: true, color: 'purple'},
-          
+          { key: 'Miracles in Color 5k', startingDay: true, endingDay: true, color: 'purple' },
+
         ]
       },
     };
   }, [selected]);
 
+  // returns the list of events for a specific day
   const getMarkedKeysForDay = (day) => {
     const markedDay = marked[day];
 
@@ -116,8 +114,7 @@ const CalendarComponent = () => {
     }
   }
 
-  
-  
+  // displays calendar and list of events for each day
   return (
     <View>
       <Text style={styles.text}>Main Event on April 13th!</Text>
@@ -143,7 +140,7 @@ const styles = StyleSheet.create({
     paddingBottom: 2,
   },
   eventsText: {
-    fontSize: 16, 
+    fontSize: 16,
   },
   calendar: {
     marginBottom: 10
