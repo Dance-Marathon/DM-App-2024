@@ -42,6 +42,10 @@ To run your project, navigate to the directory and run one of the following npm 
 - Run "npx expo start --tunnel" from DM-APP-2024 directory
 - Scan the QR code on phone and it will take you to Expo Go app
 
+# install
+- npm install @react-navigation/bottom-tabs
+- npm install --save react-native-calendars
+
 # DonorDrive API Links
 - Where most of the API came from
 - Based on another CMN initiative so same content from fetches
