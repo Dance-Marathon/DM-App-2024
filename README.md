@@ -45,6 +45,7 @@ To run your project, navigate to the directory and run one of the following npm 
 # install
 - npm install @react-navigation/bottom-tabs
 - npm install --save react-native-calendars
+- npm install react-native-elements
 
 # DonorDrive API Links
 - Where most of the API came from
