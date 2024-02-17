@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useMemo, useRef } from 'react';
 import { Calendar, CalendarUtils } from 'react-native-calendars';
 import { View, Text, StyleSheet, TextStyle, Button, TextInput } from 'react-native';
-
+import {addCalanderEntry, readCalanderEntries} from './Firebase/CalanderManager'
 const INITIAL_DATE = new Date();
 
 const CalendarComponent = () => {
@@ -116,6 +116,11 @@ const CalendarComponent = () => {
       />
       <Text style={styles.headerText}>{selectedDay}</Text>
       <Text style={styles.eventsText}>{eventsForDay}</Text>
+      <button onClick={async () => {
+        addCalanderEntry()
+        let entries = await readCalanderEntries()
+        console.log(entries)
+      }}>Add Entry</button>
     </View>
   );
 };
