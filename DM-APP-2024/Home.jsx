@@ -1,6 +1,7 @@
 // Page1.js (similar structure for other pages)
 import React from 'react';
 import { View, Text } from 'react-native';
+import {addCalanderEntry} from './Firebase/CalanderManager'
 
 const Home = () => {
   return (
