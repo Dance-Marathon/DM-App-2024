@@ -20,6 +20,7 @@ npx expo install @expo/webpack-config@^19.0.0
 npm install @react-navigation/native
 npm install react-native-screens react-native-safe-area-context
 npm install @react-navigation/bottom-tabs
+npm install @react-native-clipboard/clipboard
 
 # Run
 To run your project, navigate to the directory and run one of the following npm commands.
