@@ -1,6 +1,6 @@
-import { getAuth, signInWithEmailAndPassword, signOut } from 'firebase/auth';
-import { app } from './firebase'; // Import the firebase instance
-
+import { getAuth, signInWithEmailAndPassword, signOut, createUserWithEmailAndPassword } from 'firebase/auth';
+import { app } from './firebase';
+import { addUser } from './UserManager';
 
 const auth = getAuth(app);
 
@@ -13,6 +13,19 @@ const handleLogin = async (email, password) => {
     }
   };
 
+const handleSignUp = async( userData ) => {
+  try {
+    createUserWithEmailAndPassword(auth, userData.email, userData.password).then((data) => {
+      console.log(data.user.uid)
+      
+      addUser(userData, data.user.uid)
+    })
+
+    console.log('Signed Up successfully!');
+  } catch (error) {
+    console.error('Error logging in:', error.message);
+  }
+}
 const handleSignOut = async () => {
     signOut(auth).then(() => {
         console.log('Signed Out successfully!');
@@ -22,4 +35,4 @@ const handleSignOut = async () => {
 }
 
 
-export {handleLogin, handleSignOut}
+export {handleLogin, handleSignOut, handleSignUp}
