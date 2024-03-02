@@ -1,7 +1,7 @@
 // Page1.js (similar structure for other pages)
 import React, { useState, useEffect } from 'react';
-import { View, Text, Image, StyleSheet, Button, Linking, TextInput } from 'react-native';
-import { getUserInfo } from './api/index';
+import { View, Text, Image, StyleSheet, Button, Linking, TextInput, Modal } from 'react-native';
+import { getUserInfo, getUserMilestones } from './api/index';
 
 const defaultUserID = 1066318;
 
@@ -10,6 +10,10 @@ const Fundraiser = () => {
   const [tempID, setTempID] = useState('');
   const [userInfo, setUserInfo] = useState({});
   const [error, setError] = useState('');
+  const [milestoneInfo, setMilestoneInfo] = useState({});
+  const [milestoneIndex, setMilestoneIndex] = useState(0);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [allMilestones, setAllMilestones] = useState({});
 
   useEffect(() => {
     getUserInfo(userIDState)
@@ -22,12 +26,85 @@ const Fundraiser = () => {
       });
   }, [userIDState]);
 
+  useEffect(() => {
+    getUserMilestones(userIDState)
+      .then((data) => {
+        setMilestoneInfo(data);
+      })
+      .catch((err) => {
+        console.error(err);
+        setError(err);
+      });
+  }, [userIDState]);
+
+  useEffect(() => {
+    if (userIDState) {
+      for (let i = 0; i < userInfo.numMilestones; i++) {
+        const milestone = milestoneInfo.milestones[i];
+        if (userInfo.sumDonations < milestone.amount) {
+          console.log('Reached milestone:', milestone.description);
+          break;
+        }
+        setMilestoneIndex(i-1);
+      }
+    }
+  }, [userIDState, userInfo, milestoneInfo]);
+
+  useEffect(() => {
+    if (userIDState) {
+      const allMilestones = [];
+      for (let i = 0; i < userInfo.numMilestones; i++) {
+        const milestone = milestoneInfo.milestones[i];
+        allMilestones.push(milestone);
+      }
+      setAllMilestones(allMilestones);
+      console.log(allMilestones)
+    }
+  }, [userIDState, userInfo, milestoneInfo]);  
+  
+
   const handleUserIDUpdate = () => {
     setUserIDState(tempID);
   };
 
+
   return (
     <View style={styles.container}>
+      <Modal
+            animationType="slide"
+            transparent={true}
+            visible={modalVisible}
+            onRequestClose={() => {
+              Alert.alert('Modal has been closed.');
+              setModalVisible(!modalVisible);
+            }}>
+            <View style={styles.centeredView}>
+            <View style={styles.modalView}>
+              <Text>Milestones</Text>
+              <View>
+                {Array.isArray(allMilestones) && allMilestones.length > 0 ? (
+                  allMilestones.map((milestone, index) => (
+                    <Text
+                      key={index}
+                      style={{
+                        textDecorationLine: milestone.fundraisingGoal < userInfo.sumDonations ? 'line-through' : 'none'
+                      }}
+                    >
+                      {milestone.description} - ${milestone.fundraisingGoal}
+                    </Text>
+                  ))
+                ) : (
+                  <Text>No milestones to display</Text>
+                )}
+              </View>
+              <Button
+                style={[styles.button, styles.buttonClose]}
+                onPress={() => setModalVisible(!modalVisible)}
+                title="Hide Milestones"
+              />
+            </View>
+          </View>
+        </Modal>
       <Text>Fundraiser Page</Text>
       {userInfo && userInfo.displayName ? (
         <View>
@@ -37,11 +114,19 @@ const Fundraiser = () => {
             <Image source={{ uri: userInfo.avatarImageURL }} style={styles.avatar} />
           </View>
           <Text>Progress: ${userInfo.sumDonations} of ${userInfo.fundraisingGoal}</Text>
+          <Text>Number of donations: {userInfo.numDonations}</Text>
+          <Text>Next milestone: {milestoneInfo.milestones[milestoneIndex].description} - ${milestoneInfo.milestones[milestoneIndex].fundraisingGoal}</Text>
+          <Button
+            style={[styles.button, styles.buttonOpen]}
+            onPress={() => setModalVisible(true)}
+            title="Show Milestones"
+          />
           <Button
             onPress={() => Linking.openURL(userInfo.donateURL)}
             title="DonorDrive Page"
             color="#841584"
           />
+
         </View>
       ) : (
         <View>
@@ -80,7 +165,48 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingHorizontal: 10,
     marginTop: 10,
-  }
+  },
+  centeredView: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 22,
+  },
+  modalView: {
+    margin: 20,
+    backgroundColor: 'white',
+    borderRadius: 20,
+    padding: 35,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  button: {
+    borderRadius: 20,
+    padding: 10,
+    elevation: 2,
+  },
+  buttonOpen: {
+    backgroundColor: '#F194FF',
+  },
+  buttonClose: {
+    backgroundColor: '#2196F3',
+  },
+  textStyle: {
+    color: 'white',
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  modalText: {
+    marginBottom: 15,
+    textAlign: 'center',
+  },
 });
 
 export default Fundraiser;
