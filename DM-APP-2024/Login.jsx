@@ -34,9 +34,12 @@ const Login = () => {
             placeholder="Enter your password"
             secureTextEntry
           />
-        </View>
 
-        <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
+
+        </View>
+        <TouchableOpacity style={styles.loginButton} onPress={
+          () => handleLogin(email, password)
+          }>
           <Text style={styles.buttonText}>Login</Text>
         </TouchableOpacity>
       </View>

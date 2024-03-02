@@ -1,21 +1,18 @@
 import {db} from "./firestore.js"
-import { collection, addDoc, getDocs } from "firebase/firestore"; 
+import { collection, addDoc, getDocs, where } from "firebase/firestore"; 
+import {auth} from "./AuthManager.js"
 
+let addSpirtPoints = async () => {
+  console.log(auth._currentUser.uid)
+  let calanderEntries = new Map();
+  try {
+      const querySnapshot = await getDocs(collection(db, "Users"));
+      console.log(querySnapshot)
+    } catch (e) {
+      console.error("Error adding document: ", e);
+    }
+  return calanderEntries
 
-let addSpiritPointEntry = async () => {
-    try {
-        const docRef = await addDoc(collection(db, "Spirit Points"), {
-            ['2024-01-10']: {
-                periods: [
-                  { key: 'Chipotle Hospitality Night', startingDay: true, endingDay: true, color: 'blue' },
-                  { key: 'Test', startingDay: true, endingDay: true, color: 'black' },
-                ]
-              }
-        });
-        console.log("Document written with ID: ", docRef.id);
-      } catch (e) {
-        console.error("Error adding document: ", e);
-      }
 }
 
 let readSpiritPointEntries = async () => {
@@ -33,4 +30,4 @@ let readSpiritPointEntries = async () => {
       
 }
 
-export {addSpiritPointEntry, readSpiritPointEntries}
+export {readSpiritPointEntries, addSpirtPoints}

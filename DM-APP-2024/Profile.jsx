@@ -3,6 +3,7 @@ import React from 'react';
 import { View, Text } from 'react-native';
 import { handleSignOut } from './Firebase/AuthManager';
 import { handleSignUp } from './Firebase/AuthManager';
+import { addSpirtPoints } from './Firebase/SpirtPointManager';
 import {addCalanderEntry} from './Firebase/CalanderManager'
 
 const Profile = () => {
@@ -19,6 +20,12 @@ const Profile = () => {
             handleSignUp(userData)
           }} style={{ marginTop: '15px' }}>
             Sign Up
+          </button>
+          <button type="button" onClick={() => {
+            let userData = {email: "maxmartin54321@gmail.com", password: "test123",  donorID: "123", role: "Captain", team: "Digital Marketing"}
+            addSpirtPoints()
+          }} style={{ marginTop: '15px' }}>
+            Get Spirit Points
           </button>
     </View>
  

@@ -35,4 +35,4 @@ const handleSignOut = async () => {
 }
 
 
-export {handleLogin, handleSignOut, handleSignUp}
+export {handleLogin, handleSignOut, handleSignUp, auth}
