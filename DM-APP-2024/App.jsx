@@ -10,6 +10,7 @@ import Spirit from './Spirit';
 import Fundraiser from './Fundraiser';
 import About from './About';
 import Login from './Login';
+import Profile from './Profile';
 
 
 
@@ -43,6 +44,7 @@ const App = () => {
           <Tab.Screen name="Spirit" component={Spirit} />
           <Tab.Screen name="Fundraiser" component={Fundraiser} />
           <Tab.Screen name="About" component={About} />
+          <Tab.Screen name="Profile" component={Profile} />
         </Tab.Navigator>
       ) : (
         <Login />

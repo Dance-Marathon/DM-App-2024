@@ -1,4 +1,4 @@
-import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
+import { getAuth, signInWithEmailAndPassword, signOut } from 'firebase/auth';
 import { app } from './firebase'; // Import the firebase instance
 
 
@@ -13,5 +13,13 @@ const handleLogin = async (email, password) => {
     }
   };
 
+const handleSignOut = async () => {
+    signOut(auth).then(() => {
+        console.log('Signed Out successfully!');
+      }).catch((error) => {
+        console.error('Error signing out:', error.message);
+      });
+}
 
-export {handleLogin}
+
+export {handleLogin, handleSignOut}
