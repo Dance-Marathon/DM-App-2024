@@ -3,14 +3,18 @@ import React from 'react';
 import { View, Text } from 'react-native';
 import {addCalanderEntry} from './Firebase/CalanderManager'
 import { handleSignOut } from './Firebase/AuthManager';
-const Home = () => {
+const Profile = () => {
   return (
     <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-      <Text>Home Page</Text>
-  
+      <Text>Profile</Text>
+      <button type="button" onClick={() => {
+            handleSignOut()
+          }} style={{ marginTop: '15px' }}>
+            Sign Out
+          </button>
     </View>
  
   );
 }
 
-export default Home;
+export default Profile;
