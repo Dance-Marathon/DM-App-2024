@@ -11,6 +11,8 @@ import Fundraiser from './Fundraiser';
 import About from './About';
 import Login from './Login';
 
+
+
 const Tab = createBottomTabNavigator();
 
 const App = () => {

@@ -4,21 +4,14 @@ import React, { useState } from 'react';
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
 import { app } from './Firebase/firebase'; // Import the firebase instance
 
-const auth = getAuth(app);
+import {handleLogin} from './Firebase/AuthManager.js'
+
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  const handleLogin = async () => {
-    try {
-      await signInWithEmailAndPassword(auth, email, password);
-      console.log('Logged in successfully!');
-    } catch (error) {
-      console.error('Error logging in:', error.message);
-    }
-  };
-
+ 
   return (
     <div style={{ textAlign: 'center', marginTop: '100px' }}>
       <h2>Login</h2>
@@ -41,7 +34,9 @@ const Login = () => {
           placeholder="Enter your password"
         />
 
-        <button type="button" onClick={handleLogin} style={{ marginTop: '15px' }}>
+        <button type="button" onClick={() => {
+          handleLogin(email, password)
+        }} style={{ marginTop: '15px' }}>
           Login
         </button>
       </form>
