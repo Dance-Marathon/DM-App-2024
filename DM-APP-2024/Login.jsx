@@ -13,7 +13,6 @@ const Login = () => {
   };
 
   return (
-    <TouchableWithoutFeedback onPress={dismissKeyboard}>
       <View style={styles.container}>
         <Text style={styles.title}>Login</Text>
         <View style={styles.inputContainer}>
@@ -41,7 +40,6 @@ const Login = () => {
           <Text style={styles.buttonText}>Login</Text>
         </TouchableOpacity>
       </View>
-    </TouchableWithoutFeedback>
   );
 };
 
