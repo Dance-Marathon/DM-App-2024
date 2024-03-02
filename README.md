@@ -55,3 +55,7 @@ https://github.com/ammuench/extra-life-api/tree/master
 
 - More specific to DonorDrive
 https://github.com/DonorDrive/PublicAPI/tree/master
+
+# Testing Login
+Email: test@test.com
+Password: test123
