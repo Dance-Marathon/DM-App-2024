@@ -1,43 +1,52 @@
-import React from 'react';
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
-
-// Import necessary components from React Navigation
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import React, { useState, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { onAuthStateChanged } from 'firebase/auth';
+import { auth } from './Firebase/firebase';
 
-// Create a bottom tab navigator
-const Tab = createBottomTabNavigator();
-
-// Import your page components
 import Home from './Home';
 import CalendarPage from './CalendarPage';
 import Spirit from './Spirit';
 import Fundraiser from './Fundraiser';
 import About from './About';
+import Login from './Login';
 
-// Function to render the taskbar and pages
-function App() {
+const Tab = createBottomTabNavigator();
+
+const App = () => {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setUser(user);
+      setLoading(false);
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, []);
+
+  if (loading) {
+    return null; // or return a loading component if you have one
+  }
+
   return (
     <NavigationContainer>
-      <Tab.Navigator>
-        <Tab.Screen name="Home" component={Home} />
-        <Tab.Screen name="Calendar" component={CalendarPage} />
-        <Tab.Screen name="Spirit" component={Spirit} />
-        <Tab.Screen name="Fundraiser" component={Fundraiser} />
-        <Tab.Screen name="About" component={About} />
-      </Tab.Navigator>
+      {user ? (
+        <Tab.Navigator>
+          <Tab.Screen name="Home" component={Home} />
+          <Tab.Screen name="Calendar" component={CalendarPage} />
+          <Tab.Screen name="Spirit" component={Spirit} />
+          <Tab.Screen name="Fundraiser" component={Fundraiser} />
+          <Tab.Screen name="About" component={About} />
+        </Tab.Navigator>
+      ) : (
+        <Login />
+      )}
     </NavigationContainer>
   );
-}
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
+};
 
 export default App;
