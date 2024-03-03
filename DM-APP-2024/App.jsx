@@ -32,13 +32,19 @@ const App = () => {
   }, []);
 
   if (loading) {
-    return null; // or return a loading component if you have one
+    return null;
   }
 
   return (
     <NavigationContainer>
       {user ? (
-        <Tab.Navigator>
+        <Tab.Navigator screenOptions={{
+          tabBarStyle: { backgroundColor: '#233563' },
+          headerStyle: { backgroundColor: '#233563' },
+          tabBarActiveTintColor: 'white',
+          tabBarInactiveTintColor: 'white',
+          headerTintColor: 'white',
+        }}>
           <Tab.Screen name="Home" component={Home} />
           <Tab.Screen name="Calendar" component={CalendarPage} />
           <Tab.Screen name="Spirit" component={Spirit} />
