@@ -116,11 +116,11 @@ const CalendarComponent = () => {
       />
       <Text style={styles.headerText}>{selectedDay}</Text>
       <Text style={styles.eventsText}>{eventsForDay}</Text>
-      <button onClick={async () => {
+      <Button onClick={async () => {
         addCalanderEntry()
         let entries = await readCalanderEntries()
         console.log(entries)
-      }}>Add Entry</button>
+      }}title = "Add Entry"/>
     </View>
   );
 };
