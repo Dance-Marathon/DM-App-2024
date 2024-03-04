@@ -21,6 +21,7 @@ npm install @react-navigation/native
 npm install react-native-screens react-native-safe-area-context
 npm install @react-navigation/bottom-tabs
 npm install @react-native-clipboard/clipboard
+expo install expo-camera
 
 # Run
 To run your project, navigate to the directory and run one of the following npm commands.
