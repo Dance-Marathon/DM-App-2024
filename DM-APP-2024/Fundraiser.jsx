@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, Image, StyleSheet, Button, Linking, TextInput, Modal } from 'react-native';
 import { getUserInfo, getUserMilestones } from './api/index';
+import * as Clipboard from 'expo-clipboard';
 
 const defaultUserID = 1066318;
 
@@ -67,6 +68,11 @@ const Fundraiser = () => {
     setUserIDState(tempID);
   };
 
+  const copyToClipboard = () => {
+    const text = userInfo.donateURL;
+    Clipboard.setStringAsync(text);
+    alert('Text copied to clipboard!');
+  };
 
   return (
     <View style={styles.container}>
@@ -126,7 +132,9 @@ const Fundraiser = () => {
             title="DonorDrive Page"
             color="#841584"
           />
-
+          <View>
+            <Button title="Copy Text" onPress={copyToClipboard} />
+          </View>
         </View>
       ) : (
         <View>
