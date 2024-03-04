@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useMemo, useRef } from 'react';
 import { Calendar, CalendarUtils } from 'react-native-calendars';
-import { View, Text, StyleSheet, TextStyle, Button, TextInput } from 'react-native';
+import { View, Text, StyleSheet, TextStyle, Button, TextInput, TouchableOpacity } from 'react-native';
 import {addCalanderEntry, readCalanderEntries} from './Firebase/CalanderManager'
 const INITIAL_DATE = new Date();
 
@@ -105,22 +105,29 @@ const CalendarComponent = () => {
 
   // displays calendar and list of events for each day
   return (
-    <View>
+    <View style={styles.container}>
       <Text style={styles.text}>Main Event on April 13th!</Text>
-      <Calendar
-        enableSwipeMonths
-        markingType={'multi-period'}
-        style={styles.calendar}
-        markedDates={marked}
-        onDayPress={onDayPress}
-      />
-      <Text style={styles.headerText}>{selectedDay}</Text>
-      <Text style={styles.eventsText}>{eventsForDay}</Text>
-      <Button onClick={async () => {
-        addCalanderEntry()
-        let entries = await readCalanderEntries()
-        console.log(entries)
-      }}title = "Add Entry"/>
+      <View style={styles.calendarContainer}>
+        <Calendar
+          enableSwipeMonths
+          markingType={'multi-period'}
+          style={styles.calendar}
+          markedDates={marked}
+          onDayPress={onDayPress}
+        />
+      </View>
+      <TouchableOpacity style={styles.addButton} onPress={async () => {
+        await addCalanderEntry();
+        let entries = await readCalanderEntries();
+        console.log(entries);
+      }}>
+        <Text style={styles.addButtonText}>Add Entry</Text>
+      </TouchableOpacity>
+      <View style={styles.eventDetail}>
+        <Text>Click a Date to See Event</Text>
+        <Text style={styles.headerText}>{selectedDay}</Text>
+        <Text style={styles.eventsText}>{eventsForDay}</Text>
+      </View>
     </View>
   );
 };
@@ -128,16 +135,37 @@ const CalendarComponent = () => {
 export default CalendarComponent;
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#233563',
+  },
   headerText: {
     fontSize: 18,
     fontWeight: 'bold',
     paddingBottom: 2,
+    color: 'white',
+    marginLeft: 10,
   },
   eventsText: {
     fontSize: 16,
+    color: 'white',
+    marginBottom: 10,
+    marginLeft: 20,
   },
   calendar: {
-    marginBottom: 10
+    marginBottom: 10,
+    backgroundColor: '#6B80AA',
+    monthTextColor: 'white',
+    dayTextColor: 'white',
+    borderRadius: 10,
+    width: '95%',
+    marginLeft: 'auto',
+    marginRight: 'auto',
+    calendarBackground: 'red',
+  },
+  calendarContainer: {
+    width: '100%',
+    alignSelf: 'center',
   },
   switchContainer: {
     flexDirection: 'row',
@@ -150,9 +178,10 @@ const styles = StyleSheet.create({
   },
   text: {
     textAlign: 'center',
-    padding: 10,
-    backgroundColor: 'lightgrey',
-    fontSize: 16
+    paddingVertical: 20,
+    color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold',
   },
   disabledText: {
     color: 'grey'
@@ -184,6 +213,28 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     color: '#00BBF2'
-  }
-
+  },
+  addButton: {
+    marginHorizontal: 10,
+    backgroundColor: '#00adf5',
+    borderRadius: 5,
+    padding: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  addButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  eventDetail: {
+    backgroundColor: '#233D72', // Slightly lighter dark color for the event detail box
+    padding: 20,
+    borderRadius: 20,
+    margin: 10,
+    marginTop: 20,
+    height: 175,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
 });
