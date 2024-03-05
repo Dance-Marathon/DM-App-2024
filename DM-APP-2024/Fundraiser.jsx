@@ -3,6 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, Image, StyleSheet, Button, Linking, TextInput, Modal } from 'react-native';
 import { getUserInfo, getUserMilestones } from './api/index';
 import * as Clipboard from 'expo-clipboard';
+import { auth, db } from './Firebase/AuthManager';
+import { doc, getDoc } from 'firebase/firestore';
 
 const defaultUserID = 1066318;
 
@@ -15,6 +17,29 @@ const Fundraiser = () => {
   const [milestoneIndex, setMilestoneIndex] = useState(0);
   const [modalVisible, setModalVisible] = useState(false);
   const [allMilestones, setAllMilestones] = useState({});
+
+
+  const displayDocumentData = async () => {
+    try {
+      const currentUID = auth.currentUser.uid;
+      console.log(currentUID);
+      const docRef = doc(db, "Users", currentUID);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        console.log(data);
+        setUserIDState(data.donorID);
+      } else {
+        console.log("Document does not exist");
+      }
+    } catch (error) {
+      console.error("Error fetching document data:", error);
+    }
+  };
+
+  useEffect(() => {
+    displayDocumentData();
+  }, []);
 
   useEffect(() => {
     getUserInfo(userIDState)
@@ -112,7 +137,7 @@ const Fundraiser = () => {
           </View>
         </Modal>
       <Text>Fundraiser Page</Text>
-      {userInfo && userInfo.displayName ? (
+      {userInfo && userInfo.displayName && (
         <View>
           <Text>Display Name: {userInfo.displayName}</Text>
           <Text>Team: {userInfo.teamName}</Text>
@@ -135,13 +160,6 @@ const Fundraiser = () => {
           <View>
             <Button title="Copy Text" onPress={copyToClipboard} />
           </View>
-        </View>
-      ) : (
-        <View>
-          <Text>Enter DonorDrive ID:</Text>
-          <TextInput onChangeText={setTempID} value={tempID} style={styles.textInput}/>
-          <Button title='Enter' onPress={handleUserIDUpdate}>
-          </Button>
         </View>
       )}
       {error ? <Text message={error.message} /> : null}
