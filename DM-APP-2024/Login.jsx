@@ -1,6 +1,6 @@
 // Login.js (React Native)
 
-import React, { useState } from "react";
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -11,72 +11,80 @@ import {
   StyleSheet,
   Image,
   Picker,
-} from "react-native";
-import { handleLogin, handleSignUp } from "./Firebase/AuthManager.js"; // Import the handleLogin function
+} from 'react-native';
+import { handleLogin, handleSignUp } from './Firebase/AuthManager.js'; // Import the handleLogin function
+import { useNavigation } from '@react-navigation/native';
 
 const Login = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [donorDriveLink, setDonorDriveLink] = useState("");
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [donorDriveLink, setDonorDriveLink] = useState('');
   const [create, setCreate] = useState(true);
-  const [role, setRole] = useState("");
+  const [role, setRole] = useState('');
+  const navigation = useNavigation();
 
   const dismissKeyboard = () => {
     Keyboard.dismiss();
   };
 
+  const handleForgotPassword = () => {
+    navigation.navigate('ForgotPassword');
+  };
+
   return (
-    <View style={styles.container}>
-      <Image style={styles.logo} source={require("./images/year30_logo.png")} />
-      <View style={styles.loginbox}>
-        <View style={styles.inputContainer}>
-          <TextInput
-            style={styles.inputTop}
-            value={email}
-            onChangeText={(text) => setEmail(text)}
-            placeholder="Email Address"
-            keyboardType="email-address"
-            autoCapitalize="none"
-          />
-
-          <TextInput
-            style={styles.inputButtom}
-            value={password}
-            onChangeText={(text) => setPassword(text)}
-            placeholder="Password"
-            secureTextEntry
-          />
-
-          {!create && (
+    <TouchableWithoutFeedback onPress={dismissKeyboard}>
+      <View style={styles.container}>
+        <Image style={styles.logo} source={require('./images/year30_logo.png')} />
+        <View style={styles.loginbox}>
+          <View style={styles.inputContainer}>
             <TextInput
               style={styles.inputTop}
-              value={donorDriveLink}
-              onChangeText={setDonorDriveLink}
-              placeholder="Enter Your Donor Drive Link"
+              value={email}
+              onChangeText={(text) => setEmail(text)}
+              placeholder="Email Address"
+              keyboardType="email-address"
+              autoCapitalize="none"
+            />
+
+            <TextInput
+              style={styles.inputButtom}
+              value={password}
+              onChangeText={(text) => setPassword(text)}
+              placeholder="Password"
               secureTextEntry
             />
-          )}
 
-          {!create && (
-            <Picker
-            style={styles.inputButtom}
-              selectedValue={role}
-              onValueChange={(itemValue) => setRole(itemValue)}
-            >
-              <Picker.Item label="Dancer" value="Dancer" />
-              <Picker.Item label="ELP" value="ELP" />
-              <Picker.Item label="Ambassador" value="Ambassador" />
-              <Picker.Item label="Captain" value="Captain" />
-              <Picker.Item
-                label="Assistant Director"
-                value="Assistant Director"
+            {!create && (
+              <TextInput
+                style={styles.inputTop}
+                value={donorDriveLink}
+                onChangeText={setDonorDriveLink}
+                placeholder="Enter Your Donor Drive Link"
+                secureTextEntry
               />
-              <Picker.Item label="Overall" value="Overall" />
-              <Picker.Item label="Manager" value="Manager" />
-            </Picker>
-          )}
-        </View>
-        {create && (
+            )}
+
+            {!create && (
+              <Picker
+                style={styles.inputButtom}
+                selectedValue={role}
+                onValueChange={(itemValue) => setRole(itemValue)}
+              >
+                <Picker.Item label="Dancer" value="Dancer" />
+                <Picker.Item label="ELP" value="ELP" />
+                <Picker.Item label="Ambassador" value="Ambassador" />
+                <Picker.Item label="Captain" value="Captain" />
+                <Picker.Item
+                    label="Assistant Director"
+                    value="Assistant Director"
+                />
+                <Picker.Item label="Overall" value="Overall" />
+                <Picker.Item label="Manager" value="Manager" />
+              </Picker>
+            )}
+          </View>
+
+          {create && (
           <>
             <TouchableOpacity
               style={styles.loginButton}
@@ -100,14 +108,18 @@ const Login = () => {
           </>
         )}
 
-        <Text> _______________________________</Text>
+          <Text> _______________________________</Text>
 
-        <Text style={styles.forgotPassword}>Forgot password?</Text>
-        <Text style={styles.signUp}>
-          New User?<Text style={{ color: "#61A0DA" }}> Sign Up!</Text>
-        </Text>
+          <TouchableOpacity onPress={handleForgotPassword}>
+            <Text style={styles.forgotPassword}>Forgot password?</Text>
+          </TouchableOpacity>
+
+          <Text style={styles.signUp}>
+            New User?<Text style={{ color: '#61A0DA' }}> Sign Up!</Text>
+          </Text>
+        </View>
       </View>
-    </View>
+    </TouchableWithoutFeedback>
   );
 };
 
