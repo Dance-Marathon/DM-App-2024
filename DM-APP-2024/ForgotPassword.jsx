@@ -43,10 +43,12 @@ const ForgotPassword = ({ navigation }) => {
         </>
       ) : (
         <>
+        <View style={styles.secondPage}>
           <Text style={styles.successMessage}>Password reset instructions sent to your email.</Text>
           <TouchableOpacity style={styles.loginButton} onPress={() => navigation.goBack()}>
             <Text style={styles.buttonText}>Back to Login</Text>
           </TouchableOpacity>
+          </View>
         </>
       )}
     </View>
@@ -102,14 +104,17 @@ const styles = StyleSheet.create({
     backgroundColor: '#E2883C',
     padding: 15,
     borderRadius: 5,
-    alignSelf: 'stretch',
-    marginTop: 20,
+    marginTop: 10,
+    width: 150,
   },
   box: {
     width: '80%',
     backgroundColor: '#F2EFEE',
     borderRadius: 10,
     padding: 20,
+  },
+  secondPage: {
+    alignItems: 'center',
   },
 });
 
