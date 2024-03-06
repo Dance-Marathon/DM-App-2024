@@ -108,28 +108,21 @@ const Login = () => {
                 </TouchableOpacity>
               </>
             )}
-            {(
-              <>
-                <TouchableOpacity
-                  style={styles.loginButton}
-                  onPress={() => {
-                    setCreate(false);
-                    handleSignUp(email, password, role, donorDriveLink);
-                  }}
-                >
-                  <Text style={styles.buttonText}>New User?</Text>
-                </TouchableOpacity>
-              </>
-            )}
   
-            <Text> _______________________________</Text>
+            <Text style={{ marginLeft:10 }}> ________________________________</Text>
   
             <TouchableOpacity onPress={handleForgotPassword}>
               <Text style={styles.forgotPassword}>Forgot password?</Text>
             </TouchableOpacity>
-  
+
             <Text style={styles.signUp}>
-              New User?<Text style={{ color: '#61A0DA' }}> Sign Up!</Text>
+              New User?
+              <TouchableOpacity style={{ marginBottom: -3 }} onPress={() => {
+                  setCreate(false);
+                  handleSignUp(email, password, role, donorDriveLink);
+                }}>
+                <Text style={{ color: '#61A0DA' }}> Sign Up!</Text>
+              </TouchableOpacity>
             </Text>
           </View>
         </View>
