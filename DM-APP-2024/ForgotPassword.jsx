@@ -27,17 +27,19 @@ const ForgotPassword = ({ navigation }) => {
           <Text style={styles.subtitle}>
             Enter your email address and we'll send you instructions to reset your password.
           </Text>
-          <TextInput
-            style={styles.input}
-            value={email}
-            onChangeText={(text) => setEmail(text)}
-            placeholder="Email Address"
-            keyboardType="email-address"
-            autoCapitalize="none"
-          />
-          <TouchableOpacity style={styles.resetButton} onPress={handleResetPassword}>
-            <Text style={styles.buttonText}>Reset Password</Text>
-          </TouchableOpacity>
+          <View style={styles.box}>
+            <TextInput
+              style={styles.input}
+              value={email}
+              onChangeText={(text) => setEmail(text)}
+              placeholder="Email Address"
+              keyboardType="email-address"
+              autoCapitalize="none"
+            />
+            <TouchableOpacity style={styles.resetButton} onPress={handleResetPassword}>
+              <Text style={styles.buttonText}>Reset Password</Text>
+            </TouchableOpacity>
+          </View>
         </>
       ) : (
         <>
@@ -59,7 +61,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#233563',
   },
   title: {
-    fontSize: 24,
+    fontSize: 32,
     marginBottom: 20,
     color: 'white',
   },
@@ -67,6 +69,7 @@ const styles = StyleSheet.create({
     color: 'white',
     marginBottom: 20,
     textAlign: 'center',
+    width: '80%',
   },
   input: {
     height: 40,
@@ -101,6 +104,12 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     alignSelf: 'stretch',
     marginTop: 20,
+  },
+  box: {
+    width: '80%',
+    backgroundColor: '#F2EFEE',
+    borderRadius: 10,
+    padding: 20,
   },
 });
 
