@@ -1,5 +1,3 @@
-// Login.js (React Native)
-
 import React, { useState } from 'react';
 import {
   View,
@@ -10,118 +8,134 @@ import {
   Keyboard,
   StyleSheet,
   Image,
-  Picker,
+  Picker
 } from 'react-native';
-import { handleLogin, handleSignUp } from './Firebase/AuthManager.js'; // Import the handleLogin function
+import { handleLogin, handleSignUp } from './Firebase/AuthManager.js';
 import { useNavigation } from '@react-navigation/native';
 
 const Login = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [donorDriveLink, setDonorDriveLink] = useState('');
-  const [create, setCreate] = useState(true);
-  const [role, setRole] = useState('');
-  const navigation = useNavigation();
-
-  const dismissKeyboard = () => {
-    Keyboard.dismiss();
-  };
-
-  const handleForgotPassword = () => {
-    navigation.navigate('ForgotPassword');
-  };
-
-  return (
-    <TouchableWithoutFeedback onPress={dismissKeyboard}>
-      <View style={styles.container}>
-        <Image style={styles.logo} source={require('./images/year30_logo.png')} />
-        <View style={styles.loginbox}>
-          <View style={styles.inputContainer}>
-            <TextInput
-              style={styles.inputTop}
-              value={email}
-              onChangeText={(text) => setEmail(text)}
-              placeholder="Email Address"
-              keyboardType="email-address"
-              autoCapitalize="none"
-            />
-
-            <TextInput
-              style={styles.inputButtom}
-              value={password}
-              onChangeText={(text) => setPassword(text)}
-              placeholder="Password"
-              secureTextEntry
-            />
-
-            {!create && (
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [donorDriveLink, setDonorDriveLink] = useState('');
+    const [create, setCreate] = useState(true);
+    const [role, setRole] = useState('');
+    const [loginFailed, setLoginFailed] = useState(false);
+    const navigation = useNavigation();
+  
+    const dismissKeyboard = () => {
+      Keyboard.dismiss();
+    };
+  
+    const handleForgotPassword = () => {
+      navigation.navigate('ForgotPassword');
+    };
+  
+    const handleLoginPress = async () => {
+      const loginResult = await handleLogin(email, password);
+  
+      if (loginResult === 'success') {
+        setLoginFailed(false);
+      } else {
+        setLoginFailed(true);
+      }
+    };
+  
+    return (
+      <TouchableWithoutFeedback onPress={dismissKeyboard}>
+        <View style={styles.container}>
+          <Image style={styles.logo} source={require('./images/year30_logo.png')} />
+          
+          {loginFailed && (
+            <Text style={styles.errorMessage}>Incorrect email or password</Text>
+          )}
+  
+          <View style={styles.loginbox}>
+            <View style={styles.inputContainer}>
               <TextInput
                 style={styles.inputTop}
-                value={donorDriveLink}
-                onChangeText={setDonorDriveLink}
-                placeholder="Enter Your Donor Drive Link"
+                value={email}
+                onChangeText={(text) => setEmail(text)}
+                placeholder="Email Address"
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
+  
+              <TextInput
+                style={styles.inputButtom}
+                value={password}
+                onChangeText={(text) => setPassword(text)}
+                placeholder="Password"
                 secureTextEntry
               />
-            )}
-
-            {!create && (
-              <Picker
-                style={styles.inputButtom}
-                selectedValue={role}
-                onValueChange={(itemValue) => setRole(itemValue)}
-              >
-                <Picker.Item label="Dancer" value="Dancer" />
-                <Picker.Item label="ELP" value="ELP" />
-                <Picker.Item label="Ambassador" value="Ambassador" />
-                <Picker.Item label="Captain" value="Captain" />
-                <Picker.Item
-                    label="Assistant Director"
-                    value="Assistant Director"
+  
+              {!create && (
+                <TextInput
+                  style={styles.inputTop}
+                  value={donorDriveLink}
+                  onChangeText={setDonorDriveLink}
+                  placeholder="Enter Your Donor Drive Link"
+                  secureTextEntry
                 />
-                <Picker.Item label="Overall" value="Overall" />
-                <Picker.Item label="Manager" value="Manager" />
-              </Picker>
+              )}
+  
+              {!create && (
+                <Picker
+                  style={styles.inputButtom}
+                  selectedValue={role}
+                  onValueChange={(itemValue) => setRole(itemValue)}
+                >
+                    <Picker.Item label="Dancer" value="Dancer" />
+                    <Picker.Item label="ELP" value="ELP" />
+                    <Picker.Item label="Ambassador" value="Ambassador" />
+                    <Picker.Item label="Captain" value="Captain" />
+                    <Picker.Item
+                        label="Assistant Director"
+                        value="Assistant Director"
+                    />
+                    <Picker.Item label="Overall" value="Overall" />
+                    <Picker.Item label="Manager" value="Manager" />
+                </Picker>
+              )}
+            </View>
+  
+            {create && (
+              <>
+                <TouchableOpacity
+                  style={styles.loginButton}
+                  onPress={handleLoginPress}
+                >
+                  <Text style={styles.buttonText}>Log In</Text>
+                </TouchableOpacity>
+              </>
             )}
+            {(
+              <>
+                <TouchableOpacity
+                  style={styles.loginButton}
+                  onPress={() => {
+                    setCreate(false);
+                    handleSignUp(email, password, role, donorDriveLink);
+                  }}
+                >
+                  <Text style={styles.buttonText}>New User?</Text>
+                </TouchableOpacity>
+              </>
+            )}
+  
+            <Text> _______________________________</Text>
+  
+            <TouchableOpacity onPress={handleForgotPassword}>
+              <Text style={styles.forgotPassword}>Forgot password?</Text>
+            </TouchableOpacity>
+  
+            <Text style={styles.signUp}>
+              New User?<Text style={{ color: '#61A0DA' }}> Sign Up!</Text>
+            </Text>
           </View>
-
-          {create && (
-          <>
-            <TouchableOpacity
-              style={styles.loginButton}
-              onPress={() => handleLogin(email, password)}
-            >
-              <Text style={styles.buttonText}>Log In</Text>
-            </TouchableOpacity>
-          </>
-        )}
-        {(
-          <>
-            <TouchableOpacity
-              style={styles.loginButton}
-              onPress={() => {
-                setCreate(false);
-                handleSignUp(email, password, role, donorDriveLink);
-              }}
-            >
-              <Text style={styles.buttonText}>New User?</Text>
-            </TouchableOpacity>
-          </>
-        )}
-
-          <Text> _______________________________</Text>
-
-          <TouchableOpacity onPress={handleForgotPassword}>
-            <Text style={styles.forgotPassword}>Forgot password?</Text>
-          </TouchableOpacity>
-
-          <Text style={styles.signUp}>
-            New User?<Text style={{ color: '#61A0DA' }}> Sign Up!</Text>
-          </Text>
         </View>
-      </View>
-    </TouchableWithoutFeedback>
-  );
-};
+      </TouchableWithoutFeedback>
+    );
+  };
 
 const styles = StyleSheet.create({
   container: {
@@ -187,6 +201,12 @@ const styles = StyleSheet.create({
     width: 225,
     height: 225,
     marginBottom: 50,
+  },
+  errorMessage: {
+    color: 'white',
+    textAlign: 'center',
+    marginTop: 15,
+    marginBottom: 15,
   },
 });
 
