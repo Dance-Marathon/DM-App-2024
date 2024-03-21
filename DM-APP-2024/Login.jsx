@@ -41,7 +41,7 @@ const Login = () => {
       }
     };
 
-    const data = [
+    const roles = [
       { label: 'Dancer', value: 'Dancer' },
       { label: 'ELP', value: 'ELP' },
       { label: 'Ambassador', value: 'Ambassador' },
@@ -96,7 +96,7 @@ const Login = () => {
                 selectedTextStyle={styles.selectedTextStyle}
                 inputSearchStyle={styles.inputSearchStyle}
                 iconStyle={styles.iconStyle}
-                data={data}
+                data={roles}
                 search
                 maxHeight={300}
                 labelField="label"
@@ -105,8 +105,8 @@ const Login = () => {
                 searchPlaceholder="Search..."
                 value={role}
                 onChange={item => {
-                  setRole(item.value);
-                  console.log(role);
+                  setRole(role);
+                  console.log(item.value);
                   setIsFocus(false);
                 }}
               />
