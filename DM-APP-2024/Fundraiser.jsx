@@ -5,6 +5,7 @@ import { getUserInfo, getUserMilestones } from './api/index';
 import * as Clipboard from 'expo-clipboard';
 import { auth, db } from './Firebase/AuthManager';
 import { doc, getDoc } from 'firebase/firestore';
+import * as Progress from 'react-native-progress';
 
 const defaultUserID = 1066318;
 
@@ -99,6 +100,10 @@ const Fundraiser = () => {
     alert('Text copied to clipboard!');
   };
 
+  const ProgressBar = () => {
+    const progress = userInfo.sumDonations / userInfo.fundraisingGoal;
+  };
+
   return (
     <View style={styles.container}>
       <Modal
@@ -136,15 +141,21 @@ const Fundraiser = () => {
             </View>
           </View>
         </Modal>
-      <Text>Fundraiser Page</Text>
       {userInfo && userInfo.displayName && (
-        <View>
-          <Text>Display Name: {userInfo.displayName}</Text>
-          <Text>Team: {userInfo.teamName}</Text>
-          <View style={styles.imageContainer}>
+        <View style={styles.info}>
+          <View style={styles.profileContainer}>
             <Image source={{ uri: userInfo.avatarImageURL }} style={styles.avatar} />
+            <View style={styles.profileSection}>
+              <Text style={styles.displayName}>{userInfo.displayName}</Text>
+              <Text style={styles.tag}>{userInfo.teamName}</Text>
+            </View>
           </View>
-          <Text>Progress: ${userInfo.sumDonations} of ${userInfo.fundraisingGoal}</Text>
+          <View style={styles.textContainer}>
+            <Text style={{color:'white', marginRight:65}}>${userInfo.sumDonations} RAISED</Text>
+            <Text style={{color:'white'}}>GOAL ${userInfo.fundraisingGoal}</Text>
+          </View>
+          <Progress.Bar progress={userInfo.sumDonations/userInfo.fundraisingGoal} width={250} borderColor='white' 
+                          color='white' height={20} borderRadius={10} marginBottom={10}/>
           <Text>Number of donations: {userInfo.numDonations}</Text>
           <Text>Next milestone: {milestoneInfo.milestones[milestoneIndex].description} - ${milestoneInfo.milestones[milestoneIndex].fundraisingGoal}</Text>
           <Button
@@ -158,7 +169,7 @@ const Fundraiser = () => {
             color="#841584"
           />
           <View>
-            <Button title="Copy Text" onPress={copyToClipboard} />
+            <Button title="Copy DonorDrive URL" onPress={copyToClipboard} />
           </View>
         </View>
       )}
@@ -172,6 +183,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#233563',
   },
   avatar: {
     width: 100,
@@ -232,6 +244,34 @@ const styles = StyleSheet.create({
   modalText: {
     marginBottom: 15,
     textAlign: 'center',
+  },
+  info: {
+    alignItems: 'center',
+    marginTop: 20,
+    marginBottom: 20,
+  },
+  profileContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    margin: 10,
+  },
+  avatar: {
+    width: 80,
+    height: 80,
+    borderRadius: 40, // Make sure it is half of hight/width
+    marginRight: 10,
+  },
+  textContainer: {
+    flexDirection: 'row',
+  },
+  displayName: {
+    fontWeight: 'bold',
+    fontSize: 24,
+    color: 'white',
+  },
+  tag: {
+    fontSize: 14,
+    color: 'white',
   },
 });
 
