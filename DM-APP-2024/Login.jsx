@@ -8,10 +8,10 @@ import {
   Keyboard,
   StyleSheet,
   Image,
-  Picker
 } from 'react-native';
 import { handleLogin, handleSignUp } from './Firebase/AuthManager.js';
 import { useNavigation } from '@react-navigation/native';
+import { Dropdown } from 'react-native-element-dropdown';
 
 const Login = () => {
     const [email, setEmail] = useState('');
@@ -21,6 +21,7 @@ const Login = () => {
     const [role, setRole] = useState('');
     const [loginFailed, setLoginFailed] = useState(false);
     const navigation = useNavigation();
+    const [isFocus, setIsFocus] = useState(false);
   
     const dismissKeyboard = () => {
       Keyboard.dismiss();
@@ -39,6 +40,16 @@ const Login = () => {
         setLoginFailed(true);
       }
     };
+
+    const data = [
+      { label: 'Dancer', value: 'Dancer' },
+      { label: 'ELP', value: 'ELP' },
+      { label: 'Ambassador', value: 'Ambassador' },
+      { label: 'Captain', value: 'Captain' },
+      { label: 'Assistant Director', value: 'Assistant Director' },
+      { label: 'Overall', value: 'Overall' },
+      { label: 'Manager', value: 'Manager' },
+    ];
   
     return (
       <TouchableWithoutFeedback onPress={dismissKeyboard}>
@@ -61,7 +72,7 @@ const Login = () => {
               />
   
               <TextInput
-                style={styles.inputButtom}
+                style={styles.inputMiddle}
                 value={password}
                 onChangeText={(text) => setPassword(text)}
                 placeholder="Password"
@@ -70,32 +81,36 @@ const Login = () => {
   
               {!create && (
                 <TextInput
-                  style={styles.inputTop}
+                  style={styles.inputBottom}
                   value={donorDriveLink}
                   onChangeText={setDonorDriveLink}
                   placeholder="Enter Your Donor Drive Link"
                   secureTextEntry
                 />
               )}
-  
+
               {!create && (
-                <Picker
-                  style={styles.inputButtom}
-                  selectedValue={role}
-                  onValueChange={(itemValue) => setRole(itemValue)}
-                >
-                    <Picker.Item label="Dancer" value="Dancer" />
-                    <Picker.Item label="ELP" value="ELP" />
-                    <Picker.Item label="Ambassador" value="Ambassador" />
-                    <Picker.Item label="Captain" value="Captain" />
-                    <Picker.Item
-                        label="Assistant Director"
-                        value="Assistant Director"
-                    />
-                    <Picker.Item label="Overall" value="Overall" />
-                    <Picker.Item label="Manager" value="Manager" />
-                </Picker>
-              )}
+                <Dropdown
+                style={styles.dropdown}
+                placeholderStyle={styles.placeholderStyle}
+                selectedTextStyle={styles.selectedTextStyle}
+                inputSearchStyle={styles.inputSearchStyle}
+                iconStyle={styles.iconStyle}
+                data={data}
+                search
+                maxHeight={300}
+                labelField="label"
+                valueField="role"
+                placeholder={!isFocus ? 'Select item' : '...'}
+                searchPlaceholder="Search..."
+                value={role}
+                onChange={item => {
+                  setRole(item.value);
+                  console.log(role);
+                  setIsFocus(false);
+                }}
+              />
+                )}
             </View>
   
             {create && (
@@ -158,7 +173,16 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     backgroundColor: "#D9D9D9",
   },
-  inputButtom: {
+  inputMiddle: {
+    height: 40,
+    borderColor: "black",
+    borderWidth: 1,
+    marginBottom: 10,
+    paddingHorizontal: 10,
+    borderRadius: 5,
+    backgroundColor: "#D9D9D9",
+  },
+  inputBottom: {
     height: 40,
     borderColor: "black",
     borderWidth: 1,
@@ -198,6 +222,32 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 15,
     marginBottom: 15,
+  },
+  dropdown: {
+    marginTop: 10,
+    height: 40,
+    borderColor: "black",
+    borderWidth: 1,
+    paddingHorizontal: 10,
+    borderRadius: 5,
+    backgroundColor: "#D9D9D9",
+  },
+  icon: {
+    marginRight: 5,
+  },
+  placeholderStyle: {
+    fontSize: 16,
+  },
+  selectedTextStyle: {
+    fontSize: 16,
+  },
+  iconStyle: {
+    width: 20,
+    height: 20,
+  },
+  inputSearchStyle: {
+    height: 40,
+    fontSize: 16,
   },
 });
 
