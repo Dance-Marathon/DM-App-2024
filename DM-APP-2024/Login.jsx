@@ -20,6 +20,7 @@ const Login = () => {
     const [create, setCreate] = useState(true);
     const [role, setRole] = useState('');
     const [loginFailed, setLoginFailed] = useState(false);
+    const [signUpField, setSignUpField] = useState(false);
     const navigation = useNavigation();
     const [isFocus, setIsFocus] = useState(false);
   
@@ -41,6 +42,16 @@ const Login = () => {
       }
     };
 
+    const handleSignUpPress = async () => {
+      const signUpResult = await handleSignUp(email, password, role, donorDriveLink);
+  
+      if (signUpResult === 'success') {
+        setSignUpField(false);
+      } else {
+        setSignUpField(true);
+      }
+    };
+
     const roles = [
       { label: 'Dancer', value: 'Dancer' },
       { label: 'ELP', value: 'ELP' },
@@ -59,7 +70,11 @@ const Login = () => {
           {loginFailed && (
             <Text style={styles.errorMessage}>Incorrect email or password</Text>
           )}
-  
+
+          {signUpField && (
+            <Text style={styles.errorMessage}>Error Signing Up</Text>
+          )}
+
           <View style={styles.loginbox}>
             <View style={styles.inputContainer}>
               <TextInput
@@ -111,7 +126,20 @@ const Login = () => {
                 }}
               />
                 )}
+
+            {!create && (
+              <>
+                <TouchableOpacity
+                  style={styles.createAccountButton}
+                  onPress={handleSignUpPress}
+                >
+                  <Text style={styles.buttonText}>Sign Up</Text>
+                </TouchableOpacity>
+              </>
+            )}
             </View>
+
+
   
             {create && (
               <>
@@ -134,7 +162,6 @@ const Login = () => {
               New User?
               <TouchableOpacity style={{ marginBottom: -3 }} onPress={() => {
                   setCreate(false);
-                  handleSignUp(email, password, role, donorDriveLink);
                 }}>
                 <Text style={{ color: '#61A0DA' }}> Sign Up!</Text>
               </TouchableOpacity>
@@ -196,6 +223,13 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     alignSelf: "stretch",
     marginBottom: 10,
+  },
+  createAccountButton: {
+    backgroundColor: "#E2883C",
+    padding: 15,
+    borderRadius: 5,
+    alignSelf: "stretch",
+    marginTop: 10,
   },
   buttonText: {
     color: "white",
