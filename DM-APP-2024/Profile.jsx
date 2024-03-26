@@ -8,7 +8,6 @@ import { addCalanderEntry } from './Firebase/CalanderManager';
 const Profile = () => {
   return (
     <View style={styles.container}>
-      <Text>Profile</Text>
       <TouchableOpacity style={styles.button} onPress={() => handleSignOut()}>
         <Text style={styles.buttonText}>Sign Out</Text>
       </TouchableOpacity>
@@ -39,6 +38,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#233563', 
   },
   button: {
     backgroundColor: '#61A0DA',
