@@ -88,6 +88,16 @@ const CalendarComponent = () => {
           { key: 'Miracles in Color 5k', startingDay: true, endingDay: true, color: 'purple' },
         ]
       },
+      ['2024-04-13']: {
+        periods: [
+          { key: 'Main Event!', startingDay: true, endingDay: false, color: 'orange' },
+        ]
+      },
+      ['2024-04-14']: {
+        periods: [
+          { key: 'Main Event!', startingDay: false, endingDay: true, color: 'orange' },
+        ]
+      },
     };
   }, [selected]);
 
@@ -124,7 +134,7 @@ const CalendarComponent = () => {
         <Text style={styles.addButtonText}>Add Entry</Text>
       </TouchableOpacity>
       <View style={styles.eventDetail}>
-        <Text>Click a Date to See Event</Text>
+        <Text style={styles.subtitle}>Click a Date to See Events</Text>
         <Text style={styles.headerText}>{selectedDay}</Text>
         <Text style={styles.eventsText}>{eventsForDay}</Text>
       </View>
@@ -145,6 +155,13 @@ const styles = StyleSheet.create({
     paddingBottom: 2,
     color: 'white',
     marginLeft: 10,
+  },
+  subtitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginTop: 0,
+    marginBottom: 20,
+    color: 'white',
   },
   eventsText: {
     fontSize: 16,
