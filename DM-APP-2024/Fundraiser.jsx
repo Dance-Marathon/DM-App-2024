@@ -18,6 +18,7 @@ const Fundraiser = () => {
   const [milestoneIndex, setMilestoneIndex] = useState(0);
   const [modalVisible, setModalVisible] = useState(false);
   const [allMilestones, setAllMilestones] = useState({});
+  const [role, setRole] = useState('');
 
 
   const displayDocumentData = async () => {
@@ -30,6 +31,7 @@ const Fundraiser = () => {
         const data = docSnap.data();
         console.log(data);
         setUserIDState(data.donorID);
+        setRole(data.role);
       } else {
         console.log("Document does not exist");
       }
@@ -148,16 +150,17 @@ const Fundraiser = () => {
             <View style={styles.profileSection}>
               <Text style={styles.displayName}>{userInfo.displayName}</Text>
               <Text style={styles.tag}>{userInfo.teamName}</Text>
+              <Text style={styles.tag}>{role}</Text>
             </View>
           </View>
           <View style={styles.textContainer}>
-            <Text style={{color:'white', marginRight:65}}>${userInfo.sumDonations} RAISED</Text>
-            <Text style={{color:'white'}}>GOAL ${userInfo.fundraisingGoal}</Text>
+            <Text style={{color:'white', marginRight:65, marginBottom:5}}>${userInfo.sumDonations} RAISED</Text>
+            <Text style={{color:'white', marginBottom:5}}>GOAL ${userInfo.fundraisingGoal}</Text>
           </View>
           <Progress.Bar progress={userInfo.sumDonations/userInfo.fundraisingGoal} width={250} borderColor='white' 
                           color='white' height={20} borderRadius={10} marginBottom={10}/>
-          <Text>Number of donations: {userInfo.numDonations}</Text>
-          <Text>Next milestone: {milestoneInfo.milestones[milestoneIndex].description} - ${milestoneInfo.milestones[milestoneIndex].fundraisingGoal}</Text>
+          <Text style={styles.tag}>Next milestone: {milestoneInfo.milestones[milestoneIndex].description} - ${milestoneInfo.milestones[milestoneIndex].fundraisingGoal}</Text>
+          <Text style={styles.tag}>Number of donations: {userInfo.numDonations}</Text>
           <Button
             style={[styles.button, styles.buttonOpen]}
             onPress={() => setModalVisible(true)}

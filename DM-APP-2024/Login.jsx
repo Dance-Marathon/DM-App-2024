@@ -100,7 +100,6 @@ const Login = () => {
                   value={donorDriveLink}
                   onChangeText={setDonorDriveLink}
                   placeholder="Enter Your Donor Drive Link"
-                  secureTextEntry
                 />
               )}
 
@@ -120,8 +119,8 @@ const Login = () => {
                 searchPlaceholder="Search..."
                 value={role}
                 onChange={item => {
-                  setRole(role);
-                  console.log(item.value);
+                  setRole(item.value);
+                  console.log(role);
                   setIsFocus(false);
                 }}
               />
