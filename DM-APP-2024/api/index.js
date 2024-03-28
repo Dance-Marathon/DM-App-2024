@@ -54,6 +54,7 @@ export const getUserDonations = async (id, limit = 100, page = 1) => {
                     userDonationsJson.countPages = Math.ceil(userDonationsJson.countDonations / limit);
                     userDonationsJson.donations = await res.json();
                     resolve(userDonationsJson);
+                    console.log('Donations:', userDonationsJson);
                 } catch (e) {
                     reject(e);
                 }

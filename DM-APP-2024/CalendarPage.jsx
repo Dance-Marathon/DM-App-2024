@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useRef } from 'react';
+import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { Calendar, CalendarUtils } from 'react-native-calendars';
 import { View, Text, StyleSheet, TextStyle, Button, TextInput, TouchableOpacity } from 'react-native';
 import {addCalanderEntry, readCalanderEntries} from './Firebase/CalanderManager'
@@ -16,7 +16,7 @@ const CalendarComponent = () => {
     const eventsForToday = getMarkedKeysForDay(day.dateString);
 
     const headerText = `${day.dateString}:`;
-    const eventsText = eventsForToday.map(event => `${event.key} (${event.color})`).join('\n');
+    const eventsText = eventsForToday.map(event => `${event.key}`).join('\n');
 
 
     //const eventsForDayText = `${headerText}\n${eventsText}`;
@@ -113,26 +113,43 @@ const CalendarComponent = () => {
     }
   }
 
+  const [{key, theme}, setTheme] = useState({key: 'dark', theme: 'light'})
+
   // displays calendar and list of events for each day
   return (
     <View style={styles.container}>
       <Text style={styles.text}>Main Event on April 13th!</Text>
-      <View style={styles.calendarContainer}>
+      <View style={styles.calendarContainer} key={key}>
         <Calendar
           enableSwipeMonths
           markingType={'multi-period'}
           style={styles.calendar}
           markedDates={marked}
           onDayPress={onDayPress}
+          theme={{
+            backgroundColor: '#4F6797',
+            calendarBackground: '#4F6797',
+            textSectionTitleColor: 'white', // Color of the month and year in the title
+            dayTextColor: 'white',
+            monthTextColor: 'white', // Specifically for month text color
+            indicatorColor: 'white',
+            textDayFontWeight: '300',
+            textMonthFontWeight: 'bold',
+            textDayHeaderFontWeight: '300',
+            textDayFontSize: 16,
+            textMonthFontSize: 16,
+            textDayHeaderFontSize: 16,
+            arrowColor: 'white',
+          }}
         />
       </View>
-      <TouchableOpacity style={styles.addButton} onPress={async () => {
+      {/*<TouchableOpacity style={styles.addButton} onPress={async () => {
         await addCalanderEntry();
         let entries = await readCalanderEntries();
         console.log(entries);
       }}>
         <Text style={styles.addButtonText}>Add Entry</Text>
-      </TouchableOpacity>
+      </TouchableOpacity>*/}
       <View style={styles.eventDetail}>
         <Text style={styles.subtitle}>Click a Date to See Events</Text>
         <Text style={styles.headerText}>{selectedDay}</Text>
@@ -171,7 +188,7 @@ const styles = StyleSheet.create({
   },
   calendar: {
     marginBottom: 10,
-    backgroundColor: '#6B80AA',
+    backgroundColor: '#4F6797',
     monthTextColor: 'white',
     dayTextColor: 'white',
     borderRadius: 10,

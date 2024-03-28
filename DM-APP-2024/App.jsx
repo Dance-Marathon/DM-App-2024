@@ -4,6 +4,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack'; // Correct import
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from './Firebase/firebase';
+import {Icon} from 'react-native-elements';
 
 import Home from './Home';
 import CalendarPage from './CalendarPage';
@@ -48,12 +49,36 @@ const App = () => {
             headerTintColor: 'white',
           }}
         >
-          <Tab.Screen name="Home" component={Home} />
-          <Tab.Screen name="Calendar" component={CalendarPage} />
-          <Tab.Screen name="Spirit" component={Spirit} />
-          <Tab.Screen name="Fundraiser" component={Fundraiser} />
-          <Tab.Screen name="About" component={About} />
-          <Tab.Screen name="Profile" component={Profile} />
+          <Tab.Screen name="Home" component={Home} options={{
+            tabBarIcon: ({ color, size }) => (
+              <Icon name="home" type="font-awesome" color="white" />
+            ),
+          }}/>
+          <Tab.Screen name="Calendar" component={CalendarPage} options={{
+            tabBarIcon: ({ color, size }) => (
+              <Icon name="calendar" type="font-awesome" color="white" />
+            ),
+          }}/>
+          <Tab.Screen name="Spirit" component={Spirit} options={{
+            tabBarIcon: ({ color, size }) => (
+              <Icon name="camera" type="font-awesome" color="white" />
+            ),
+          }}/>
+          <Tab.Screen name="Fundraiser" component={Fundraiser} options={{
+            tabBarIcon: ({ color, size }) => (
+              <Icon name="money" type="font-awesome" color="white" />
+            ),
+          }}/>
+          <Tab.Screen name="About" component={About} options={{
+            tabBarIcon: ({ color, size }) => (
+              <Icon name="address-card" type="font-awesome" color="white" />
+            ),
+          }}/>
+          <Tab.Screen name="Profile" component={Profile} options={{
+            tabBarIcon: ({ color, size }) => (
+              <Icon name="user" type="font-awesome" color="white" />
+            ),
+          }}/>
         </Tab.Navigator>
       ) : (
         <Stack.Navigator initialRouteName="Login">
