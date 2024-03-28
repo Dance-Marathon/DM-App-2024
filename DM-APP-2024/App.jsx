@@ -74,11 +74,6 @@ const App = () => {
               <Icon name="address-card" type="font-awesome" color="white" />
             ),
           }}/>
-          <Tab.Screen name="Profile" component={Profile} options={{
-            tabBarIcon: ({ color, size }) => (
-              <Icon name="user" type="font-awesome" color="white" />
-            ),
-          }}/>
         </Tab.Navigator>
       ) : (
         <Stack.Navigator initialRouteName="Login">

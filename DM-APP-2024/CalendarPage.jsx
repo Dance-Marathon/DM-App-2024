@@ -1,274 +1,123 @@
+// Page1.js (similar structure for other pages)
 import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
-import { Calendar, CalendarUtils } from 'react-native-calendars';
-import { View, Text, StyleSheet, TextStyle, Button, TextInput, TouchableOpacity } from 'react-native';
-import {addCalanderEntry, readCalanderEntries} from './Firebase/CalanderManager'
+import { View, Text, StyleSheet } from 'react-native';
+import {addCalanderEntry} from './Firebase/CalanderManager'
+import { handleSignOut } from './Firebase/AuthManager';
+import { Agenda } from 'react-native-calendars';
+import firebase from './Firebase/firebase';
+import { auth, db } from './Firebase/AuthManager';
+import { doc, getDoc, collection, getDocs } from 'firebase/firestore';
 const INITIAL_DATE = new Date();
 
-const CalendarComponent = () => {
-  // used to track events per day
-  const [selected, setSelected] = useState(INITIAL_DATE);
-  const [selectedDay, setSelectedDay] = useState('');
-  const [eventsForDay, setEventsForDay] = useState('');
+const Home = () => {
+  const [isFetching, setIsFetching] = useState(false);
+  const [items, setItems] = useState({});
 
-  // what happens each time a day is pressed
-  const onDayPress = useCallback((day) => {
-    setSelected(day.dateString);
-    const eventsForToday = getMarkedKeysForDay(day.dateString);
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchData();
+    }, 30000); // Refresh every 30 seconds
 
-    const headerText = `${day.dateString}:`;
-    const eventsText = eventsForToday.map(event => `${event.key}`).join('\n');
+    fetchData(); // Also fetch immediately on component mount
 
-
-    //const eventsForDayText = `${headerText}\n${eventsText}`;
-    setSelectedDay(headerText)
-    setEventsForDay(eventsText);
+    return () => clearInterval(interval); // Clear interval on component unmount
   }, []);
 
-  // list of all events for each day
-  const marked = useMemo(() => {
-    return {
-      ['2024-01-10']: {
-        periods: [
-          { key: 'Chipotle Hospitality Night', startingDay: true, endingDay: true, color: 'blue' },
-          { key: 'Test', startingDay: true, endingDay: true, color: 'black' },
-        ]
-      },
-      ['2024-01-16']: {
-        periods: [
-          { key: 'Faculty Staff Appreciation Week', startingDay: true, endingDay: false, color: 'orange' },
-        ]
-      },
-      ['2024-01-17']: {
-        periods: [
-          { key: 'Faculty Staff Appreciation Week', startingDay: false, endingDay: false, color: 'orange' },
-        ]
-      },
-      ['2024-01-18']: {
-        periods: [
-          { key: 'Faculty Staff Appreciation Week', startingDay: false, endingDay: false, color: 'orange' },
-        ]
-      },
-      ['2024-01-19']: {
-        periods: [
-          { key: 'Faculty Staff Appreciation Week', startingDay: false, endingDay: true, color: 'orange' },
-        ]
-      },
-      ['2024-01-22']: {
-        periods: [
-          { key: 'Dancer Week', startingDay: true, endingDay: false, color: 'green' },
-        ]
-      },
-      ['2024-01-23']: {
-        periods: [
-          { key: 'Dancer Week', startingDay: false, endingDay: false, color: 'green' },
-        ]
-      },
-      ['2024-01-24']: {
-        periods: [
-          { key: 'Dancer Week', startingDay: false, endingDay: false, color: 'green' },
-        ]
-      },
-      ['2024-01-25']: {
-        periods: [
-          { key: 'Dancer Week', startingDay: false, endingDay: false, color: 'green' },
-        ]
-      },
-      ['2024-01-26']: {
-        periods: [
-          { key: 'Dancer Week', startingDay: false, endingDay: true, color: 'green' },
-        ]
-      },
-      ['2024-02-15']: {
-        periods: [
-          { key: 'Stand Up and Holler', startingDay: true, endingDay: true, color: 'pink' },
-        ]
-      },
-      ['2024-02-18']: {
-        periods: [
-          { key: 'Miracles in Color 5k', startingDay: true, endingDay: true, color: 'purple' },
-        ]
-      },
-      ['2024-04-13']: {
-        periods: [
-          { key: 'Main Event!', startingDay: true, endingDay: false, color: 'orange' },
-        ]
-      },
-      ['2024-04-14']: {
-        periods: [
-          { key: 'Main Event!', startingDay: false, endingDay: true, color: 'orange' },
-        ]
-      },
-    };
-  }, [selected]);
+  const fetchData = async () => {
+    setIsFetching(true);
+    try {
+      const eventsCollectionRef = collection(db, "testCalendar");
+      const querySnapshot = await getDocs(eventsCollectionRef);
+      const fetchedItems = {};
 
-  // returns the list of events for a specific day and the color they are associated with
-  const getMarkedKeysForDay = (day) => {
-    const markedDay = marked[day];
+      querySnapshot.forEach((doc) => {
+        const docData = doc.data();
+        Object.keys(docData).forEach((date) => {
+          fetchedItems[date] = docData[date].events.map(event => ({
+            time: event.time,
+            title: event.title,
+            description: event.description
+          }));
+        });
+      });
 
-    if (markedDay) {
-      return markedDay.periods.map(period => ({ key: period.key, color: period.color }));
+      setItems(fetchedItems);
+    } catch (error) {
+      console.error("Error fetching events:", error);
+      // Handle errors as needed
     }
-    else {
-      return [];
-    }
+    setIsFetching(false);
+  };
+
+  const renderItem = (item) => {
+    return (
+      <View style={styles.itemContainer}>
+        <Text style={styles.time}>{item.time}</Text>
+        <Text style={styles.title}>{item.title}</Text>
+        <Text style={styles.description}>{item.description}</Text>
+      </View>
+    );
+  };
+
+  if (isFetching) {
+    return <Text>Loading...</Text>;
   }
 
-  const [{key, theme}, setTheme] = useState({key: 'dark', theme: 'light'})
-
-  // displays calendar and list of events for each day
   return (
-    <View style={styles.container}>
-      <Text style={styles.text}>Main Event on April 13th!</Text>
-      <View style={styles.calendarContainer} key={key}>
-        <Calendar
-          enableSwipeMonths
-          markingType={'multi-period'}
-          style={styles.calendar}
-          markedDates={marked}
-          onDayPress={onDayPress}
-          theme={{
-            backgroundColor: '#4F6797',
-            calendarBackground: '#4F6797',
-            textSectionTitleColor: 'white', // Color of the month and year in the title
-            dayTextColor: 'white',
-            monthTextColor: 'white', // Specifically for month text color
-            indicatorColor: 'white',
-            textDayFontWeight: '300',
-            textMonthFontWeight: 'bold',
-            textDayHeaderFontWeight: '300',
-            textDayFontSize: 16,
-            textMonthFontSize: 16,
-            textDayHeaderFontSize: 16,
-            arrowColor: 'white',
-          }}
-        />
-      </View>
-      {/*<TouchableOpacity style={styles.addButton} onPress={async () => {
-        await addCalanderEntry();
-        let entries = await readCalanderEntries();
-        console.log(entries);
-      }}>
-        <Text style={styles.addButtonText}>Add Entry</Text>
-      </TouchableOpacity>*/}
-      <View style={styles.eventDetail}>
-        <Text style={styles.subtitle}>Click a Date to See Events</Text>
-        <Text style={styles.headerText}>{selectedDay}</Text>
-        <Text style={styles.eventsText}>{eventsForDay}</Text>
-      </View>
-    </View>
+    <Agenda
+      items={items}
+      renderItem={renderItem}
+      pastScrollRange={6}
+      futureScrollRange={6}
+       // If provided, a standard RefreshControl will be added for "Pull to Refresh" functionality. Make sure to also set the refreshing prop correctly
+      onRefresh={() => console.log('refreshing...')}
+      // Set this true while waiting for new data from a refresh
+      refreshing={false}
+      // Add a custom RefreshControl component, used to provide pull-to-refresh functionality for the ScrollView
+      refreshControl={null}
+      renderEmptyDate={() => {
+        return (
+          <View style={styles.itemContainer}>
+            <Text> Nothing</Text>
+          </View>
+        );
+      }}
+    />
   );
-};
-
-export default CalendarComponent;
+}
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#233563',
+  itemContainer: {
+    backgroundColor: 'white',
+    padding: 20,
+    marginRight: 10,
+    marginTop: 17,
+    borderRadius: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
-  headerText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    paddingBottom: 2,
-    color: 'white',
-    marginLeft: 10,
-  },
-  subtitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginTop: 0,
-    marginBottom: 20,
-    color: 'white',
-  },
-  eventsText: {
+  itemTime: {
     fontSize: 16,
-    color: 'white',
-    marginBottom: 10,
-    marginLeft: 20,
-  },
-  calendar: {
-    marginBottom: 10,
-    backgroundColor: '#4F6797',
-    monthTextColor: 'white',
-    dayTextColor: 'white',
-    borderRadius: 10,
-    width: '95%',
-    marginLeft: 'auto',
-    marginRight: 'auto',
-    calendarBackground: 'red',
-  },
-  calendarContainer: {
-    width: '100%',
-    alignSelf: 'center',
-  },
-  switchContainer: {
-    flexDirection: 'row',
-    margin: 10,
-    alignItems: 'center'
-  },
-  switchText: {
-    margin: 10,
-    fontSize: 16
-  },
-  text: {
-    textAlign: 'center',
-    paddingVertical: 20,
-    color: 'white',
-    fontSize: 18,
     fontWeight: 'bold',
   },
-  disabledText: {
-    color: 'grey'
+  itemTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginTop: 5,
   },
-  defaultText: {
-    color: 'purple'
-  },
-  customCalendar: {
-    height: 250,
+  emptyDateContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
     borderBottomWidth: 1,
     borderBottomColor: 'lightgrey'
   },
-  customDay: {
-    textAlign: 'center'
-  },
-  customHeader: {
-    backgroundColor: '#FCC',
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginHorizontal: -4,
-    padding: 8
-  },
-  customTitleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 10
-  },
-  customTitle: {
+  emptyDateText: {
     fontSize: 16,
-    fontWeight: 'bold',
-    color: '#00BBF2'
-  },
-  addButton: {
-    marginHorizontal: 10,
-    backgroundColor: '#00adf5',
-    borderRadius: 5,
-    padding: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  addButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  eventDetail: {
-    backgroundColor: '#233D72', // Slightly lighter dark color for the event detail box
-    padding: 20,
-    borderRadius: 20,
-    margin: 10,
-    marginTop: 20,
-    height: 175,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
+    color: 'grey'
+  }
 });
+
+export default Home;

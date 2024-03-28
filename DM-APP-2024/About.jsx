@@ -1,7 +1,8 @@
 // Page1.js (similar structure for other pages)
 import React from 'react';
-import { View, Text, Image, Linking, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, Image, Linking, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import {Button, Icon} from 'react-native-elements';
+import { handleSignOut } from './Firebase/AuthManager';
 
 
 const About = () => {
@@ -90,6 +91,9 @@ const About = () => {
             buttonStyle={styles.lastButton} 
           />
         </View>
+        <TouchableOpacity style={styles.signOutButton} onPress={() => handleSignOut()}>
+          <Text style={styles.buttonText}>Sign Out</Text>
+        </TouchableOpacity>
       </View>
     </ScrollView>
   );
@@ -141,6 +145,19 @@ const styles = StyleSheet.create({
     paddingLeft: 15,
     borderRadius: 5,
     borderWidth: 0,
+  },
+  buttonText: {
+    color: 'white',
+    textAlign: 'center',
+    fontWeight: 'bold',
+  },
+  signOutButton: {
+    backgroundColor: '#E2883C',
+    padding: 15,
+    borderRadius: 5,
+    marginTop: 15,
+    width: 200,
+    marginBottom: 20,
   },
 });
 
