@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CLIENT_ID</key>
+	<string>194311892456-q0b9to3bu872so0lsn4botqbh5pbp6sj.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.194311892456-q0b9to3bu872so0lsn4botqbh5pbp6sj</string>
+	<key>API_KEY</key>
+	<string>AIzaSyCUfjtMBPiuwfFYx8l4slNFqOCC6vByxcs</string>
+	<key>GCM_SENDER_ID</key>
+	<string>194311892456</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.digitalmarketing.app</string>
+	<key>PROJECT_ID</key>
+	<string>dm-app-2024</string>
+	<key>STORAGE_BUCKET</key>
+	<string>dm-app-2024.appspot.com</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:194311892456:ios:7c399a8f58d8a90186885d</string>
+	<key>DATABASE_URL</key>
+	<string>https://dm-app-2024-default-rtdb.firebaseio.com</string>
+</dict>
+</plist>
