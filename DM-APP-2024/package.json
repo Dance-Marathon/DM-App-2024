@@ -20,7 +20,9 @@
     "@react-navigation/native": "^6.1.14",
     "@react-navigation/stack": "^6.3.25",
     "crypto-browserify": "^3.12.0",
+    "eas-cli": "^7.6.2",
     "expo": "~50.0.14",
+    "expo-build-properties": "~0.11.1",
     "expo-camera": "~14.1.1",
     "expo-clipboard": "~5.0.1",
     "expo-dev-client": "~3.3.11",
@@ -40,8 +42,7 @@
     "react-native-screens": "~3.29.0",
     "react-native-select-dropdown": "^3.4.0",
     "react-native-web": "~0.19.6",
-    "stream": "^0.0.2",
-    "expo-build-properties": "~0.11.1"
+    "stream": "^0.0.2"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0"
