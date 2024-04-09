@@ -26,7 +26,7 @@ const Home = () => {
   const fetchData = async () => {
     setIsFetching(true);
     try {
-      const eventsCollectionRef = collection(db, "testCalendar");
+      const eventsCollectionRef = collection(db, "Calendar2024");
       const querySnapshot = await getDocs(eventsCollectionRef);
       const fetchedItems = {};
 
@@ -52,8 +52,8 @@ const Home = () => {
   const renderItem = (item) => {
     return (
       <View style={styles.itemContainer}>
-        <Text style={styles.time}>{item.time}</Text>
         <Text style={styles.title}>{item.title}</Text>
+        <Text style={styles.time}>{item.time}</Text>
         <Text style={styles.description}>{item.description}</Text>
       </View>
     );

@@ -59,11 +59,11 @@ const App = () => {
               <Icon name="calendar" type="font-awesome" color="white" />
             ),
           }}/>
-          <Tab.Screen name="Spirit" component={Spirit} options={{
+          {/* <Tab.Screen name="Spirit" component={Spirit} options={{
             tabBarIcon: ({ color, size }) => (
               <Icon name="camera" type="font-awesome" color="white" />
             ),
-          }}/>
+          }}/> */}
           <Tab.Screen name="Fundraiser" component={Fundraiser} options={{
             tabBarIcon: ({ color, size }) => (
               <Icon name="money" type="font-awesome" color="white" />

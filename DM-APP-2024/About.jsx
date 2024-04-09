@@ -1,14 +1,48 @@
 // Page1.js (similar structure for other pages)
-import React from 'react';
-import { View, Text, Image, Linking, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, Image, Linking, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import {Button, Icon} from 'react-native-elements';
 import { handleSignOut } from './Firebase/AuthManager';
+import { Agenda } from 'react-native-calendars';
+import firebase from './Firebase/firebase';
+import { auth, db } from './Firebase/AuthManager';
+import { doc, getDoc, collection, getDocs } from 'firebase/firestore';
+const INITIAL_DATE = new Date();
+import { deleteUserAccount } from './Firebase/AuthManager';
 
 
 const About = () => {
+  const [response, setResponse] = useState(false);
+
   const openWebsite = (url) => {
     Linking.openURL(url);
   }
+
+  useEffect(() => {
+    if (response) {
+      removeFunctions();
+    }
+  }, [response]);
+
+  const removeFunctions = async () => {
+    deleteUserAccount();
+    handleSignOut();
+  };
+
+  // Function to confirm deletion with the user
+  const confirmDeletion = () => {
+    Alert.alert(
+      'Delete Account',
+      'Are you sure you want to delete your account? This action cannot be undone.',
+      [
+        // The "Yes" button
+        { text: 'Yes', onPress: () => setResponse(true) },
+        // The "No" button
+        { text: 'No', style: 'cancel' },
+      ],
+      { cancelable: false }
+    );
+  };
 
   return (
     <ScrollView style={styles.scrollView}>
@@ -93,6 +127,9 @@ const About = () => {
         </View>
         <TouchableOpacity style={styles.signOutButton} onPress={() => handleSignOut()}>
           <Text style={styles.buttonText}>Sign Out</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.signOutButton} onPress={() => confirmDeletion()}>
+          <Text style={styles.buttonText}>Delete Account</Text>
         </TouchableOpacity>
       </View>
     </ScrollView>
