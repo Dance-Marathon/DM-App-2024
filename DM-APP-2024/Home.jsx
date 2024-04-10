@@ -1,85 +1,116 @@
 // Page1.js (similar structure for other pages)
-import React, { useEffect } from "react";
-import { View, Text, Platform } from "react-native";
+import React, { useEffect, useState } from "react";
+import {
+  View,
+  Text,
+  Platform,
+  Image,
+  Modal,
+  StyleSheet,
+  TouchableOpacity,
+  Dimensions,
+  ScrollView,
+} from "react-native";
 import fetch from "node-fetch";
-// import { pushNotifications } from './api/expo-notifications';
-
-import * as Notifications from "expo-notifications";
-import * as Device from "expo-device";
+import { UpComingEventsScreen } from "./UpcomingEvents";
+import UpcomingEventsScreen from "./UpcomingEvents";
 const INITIAL_DATE = new Date();
 
-async function pushNotifications() {
-  let token;
-  if (Device.isDevice) {
-    const { status: existingStatus } =
-      await Notifications.getPermissionsAsync();
-    let finalStatus = existingStatus;
-    if (existingStatus !== "granted") {
-      const { status } = await Notifications.requestPermissionsAsync();
-      finalStatus = status;
-    }
-    if (finalStatus !== "granted") {
-      alert("Failed to get push token for push notification!");
-      return;
-    }
-    token = (await Notifications.getExpoPushTokenAsync()).data;
-  } else {
-    alert("Must use physical device for Push Notifications");
-  }
-
-  if (Platform.OS === "android") {
-    Notifications.setNotificationChannelAsync("default", {
-      name: "default",
-      importance: Notifications.AndroidImportance.MAX,
-      vibrationPattern: [0, 250, 250, 250],
-      lightColor: "#FF231F7C",
-    });
-  }
-
-  return token;
-}
-
-async function sendPushNotification(expoPushToken) {
-  const message = {
-    to: expoPushToken,
-    sound: "default",
-    title: "Original Title",
-    body: "And here is the body!",
-    data: { someData: "goes here" },
-  };
-
-  await fetch("https://exp.host/--/api/v2/push/send", {
-    method: "POST",
-    headers: {
-      Accept: "application/json",
-      "Accept-encoding": "gzip, deflate",
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(message),
-  });
-}
-
 const Home = () => {
-  useEffect(() => {
-    // pushNotifications().then((token) => console.log(token));
-    console.log("Ran in home");
-    // sendPushNotification('ExponentPushToken[5LN8TcC3JIJTdI86DflIb-]');
-    const getAndSendNotification = async () => {
-      const token = await pushNotifications();
-      console.log(token);
-      if (token) {
-        await sendPushNotification(token);
-        console.log("Sent notification");
-      }
-    };
-    getAndSendNotification();
-  }, []);
-  // pushNotifications().then(token => console.log(token));
+  const [modalVisible, setModalVisible] = useState(false);
+
   return (
-    <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-      <Text>Home Page</Text>
+    <View
+      style={{
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+        backgroundColor: "#233563",
+      }}
+    >
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ width: "95%", alignSelf: "center" }}
+      >
+        <Text style={styles.header}>MAIN EVENT FLOOR PLAN</Text>
+        <View style={styles.eventItem}>
+          <TouchableOpacity onPress={() => setModalVisible(true)}>
+            <Image
+              source={require("./images/rotateplan.png")}
+              style={{
+                width: eventItemWidth,
+                height: 100,
+                alignSelf: "center",
+                resizeMode: "stretch",
+              }}
+            />
+          </TouchableOpacity>
+        </View>
+
+        <Modal
+          visible={modalVisible}
+          animationType="slide"
+          transparent={true}
+          onRequestClose={() => {
+            setModalVisible(!modalVisible);
+          }}
+        >
+          <View style={styles.centeredView}>
+            <View style={styles.modalView}>
+              <TouchableOpacity onPress={() => setModalVisible(!modalVisible)}>
+                <Image
+                  source={require("./images/floorplan.png")}
+                  style={{ width: 300, height: 500, resizeMode: "contain" }}
+                />
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+        <UpcomingEventsScreen />
+      </ScrollView>
     </View>
   );
 };
 
 export default Home;
+
+const eventItemWidth = Dimensions.get("window").width * 0.9;
+
+const styles = StyleSheet.create({
+  eventItem: {
+    width: eventItemWidth,
+    backgroundColor: "white",
+    padding: 20,
+    borderRadius: 10,
+    alignSelf: "center",
+  },
+  centeredView: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 22,
+  },
+  modalView: {
+    margin: 20,
+    backgroundColor: "white",
+    borderRadius: 20,
+    padding: 35,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  header: {
+    fontSize: 24,
+    fontWeight: "bold",
+    marginBottom: 20,
+    marginTop: 20,
+    color: "white",
+    textAlign: "center",
+  },
+});
