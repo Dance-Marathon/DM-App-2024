@@ -5,6 +5,7 @@ import { createStackNavigator } from '@react-navigation/stack'; // Correct impor
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from './Firebase/firebase';
 import {Icon} from 'react-native-elements';
+import { StyleSheet, Text, View } from "react-native";
 
 import Home from './Home';
 import CalendarPage from './CalendarPage';
@@ -15,10 +16,35 @@ import Login from './Login';
 import Profile from './Profile';
 import ForgotPassword from './ForgotPassword';
 
+import {
+  useFonts,
+  Montserrat_100Thin,
+  Montserrat_200ExtraLight,
+  Montserrat_300Light,
+  Montserrat_400Regular,
+  Montserrat_500Medium,
+  Montserrat_600SemiBold,
+  Montserrat_700Bold,
+  Montserrat_800ExtraBold,
+  Montserrat_900Black,
+} from "@expo-google-fonts/montserrat";
+
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
 
 const App = () => {
+  let [fontsLoaded] = useFonts({
+    Montserrat_100Thin,
+    Montserrat_200ExtraLight,
+    Montserrat_300Light,
+    Montserrat_400Regular,
+    Montserrat_500Medium,
+    Montserrat_600SemiBold,
+    Montserrat_700Bold,
+    Montserrat_800ExtraBold,
+    Montserrat_900Black,
+  });
+  
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -47,6 +73,7 @@ const App = () => {
             tabBarActiveTintColor: 'white',
             tabBarInactiveTintColor: 'white',
             headerTintColor: 'white',
+             tabBarLabelStyle: { fontFamily: 'Montserrat_400Regular' },
           }}
         >
           <Tab.Screen name="Home" component={Home} options={{
