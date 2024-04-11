@@ -353,11 +353,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     margin: 10,
+    width: 350,
+    justifyContent: 'center',
   },
   avatar: {
     width: 80,
     height: 80,
-    borderRadius: 40, // Make sure it is half of hight/width
+    borderRadius: 40, // Make sure it is half of height/width
     marginRight: 10,
   },
   textContainer: {
