@@ -42,7 +42,10 @@
     "react-native-screens": "~3.29.0",
     "react-native-select-dropdown": "^3.4.0",
     "react-native-web": "~0.19.6",
-    "stream": "^0.0.2"
+    "stream": "^0.0.2",
+    "expo-notifications": "~0.27.6",
+    "expo-device": "~5.9.3",
+    "expo-constants": "~15.4.5"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0"

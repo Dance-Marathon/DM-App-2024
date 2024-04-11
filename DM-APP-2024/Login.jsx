@@ -115,7 +115,7 @@ const Login = () => {
                 maxHeight={300}
                 labelField="label"
                 valueField="role"
-                placeholder={!isFocus ? 'Select item' : '...'}
+                placeholder={!isFocus ? 'Select Your Role' : '...'}
                 searchPlaceholder="Search..."
                 value={role}
                 onChange={item => {
