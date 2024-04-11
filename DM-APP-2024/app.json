@@ -2,7 +2,7 @@
   "expo": {
     "name": "DM at UF",
     "slug": "DM-APP-2024",
-    "version": "1.0.3",
+    "version": "1.0.5",
     "sdkVersion": "50.0.0",
     "orientation": "portrait",
     "icon": "./images/year30_icon.png",
