@@ -79,19 +79,19 @@ const About = () => {
           <Button
             icon={<Icon name="info" type="font-awesome" color="white" />}
             title="  CMN & UF Health"
-            onPress={() => openWebsite('https://floridadm.org/uf-health')}
+            onPress={() => openWebsite('https://floridadm.org/about')}
             buttonStyle={styles.button}  
           />
           <Button
             icon={<Icon name="question" type="font-awesome" color="white" />} 
             title="  Frequently Asked Questions"
-            onPress={() => openWebsite('https://floridadm.org/faq')}
+            onPress={() => openWebsite('https://floridadm.org/events')}
             buttonStyle={styles.button} 
           />
           <Button
             icon={<Icon name="heart" type="font-awesome" color="white" size={16} />} 
             title="  Meet the Kids"
-            onPress={() => openWebsite('https://floridadm.org/meet-the-kids.php')}
+            onPress={() => openWebsite('https://floridadm.org/about')}
             buttonStyle={styles.button} 
           />
           <Button
