@@ -2,16 +2,23 @@
   "expo": {
     "name": "DM-APP-2024",
     "slug": "DM-APP-2024",
-    "version": "1.0.0",
+    "version": "1.0.3",
+    "sdkVersion": "50.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./images/year30_icon.png",
     "userInterfaceStyle": "light",
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-    "assetBundlePatterns": ["**/*"],
+    "platforms": [
+      "ios",
+      "android"
+    ],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true,
       "googleServicesFile": "./GoogleService-Info.plist",
@@ -63,6 +70,19 @@
         "projectId": "c3f7692a-6282-4c71-9061-62a8cc0a464e"
       }
     },
+<<<<<<< HEAD
     "plugins": ["@react-native-firebase/app"]
+=======
+    "plugins": [
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "useFrameworks": "static"
+          }
+        }
+      ]
+    ]
+>>>>>>> bb4139e07ff4c9a9bcdb4d81a7409aa4302531ad
   }
 }

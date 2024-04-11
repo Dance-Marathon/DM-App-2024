@@ -2,14 +2,30 @@ import {
   getAuth,
   signInWithEmailAndPassword,
   signOut,
-  createUserWithEmailAndPassword,
+  createUserWithEmailAndPassword, 
+  deleteUser,
 } from "firebase/auth";
 import { app } from "./firebase";
 import { addUser } from "./UserManager";
-import { getFirestore, setDoc, doc } from "firebase/firestore";
+import { getFirestore, setDoc, doc, deleteDoc } from "firebase/firestore";
 
 const auth = getAuth(app);
 const db = getFirestore(app);
+
+const deleteUserAccount = async () => {
+  const user = auth.currentUser;
+  console.log("Deleting user account...");
+  console.log(user);
+  try{
+    const userDoc = doc(db, "Users", user.uid);
+    await deleteDoc(userDoc);
+    await user.delete()
+    console.log("User account deleted!");
+  }
+  catch (error) {
+    console.error("Error deleting user account:", error.message);
+  }
+};
 
 const handleLogin = async (email, password) => {
   try {
@@ -56,4 +72,4 @@ const handleSignOut = async () => {
     });
 };
 
-export { handleLogin, handleSignOut, handleSignUp, auth, db };
+export { handleLogin, handleSignOut, handleSignUp, deleteUserAccount, auth, db };
