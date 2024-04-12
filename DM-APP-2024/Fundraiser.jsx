@@ -11,7 +11,6 @@ const defaultUserID = 1066318;
 
 const Fundraiser = () => {
   const [userIDState, setUserIDState] = useState('');
-  const [tempID, setTempID] = useState('');
   const [userInfo, setUserInfo] = useState({});
   const [error, setError] = useState('');
   const [milestoneInfo, setMilestoneInfo] = useState({});
@@ -130,10 +129,6 @@ const Fundraiser = () => {
     setSortedDonations(sorted);
     console.log('Sorted:',sortedDonations);
   }, []);
-
-  const handleUserIDUpdate = () => {
-    setUserIDState(tempID);
-  };
 
   const copyToClipboard = () => {
     const text = userInfo.donateURL;
