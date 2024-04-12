@@ -12,7 +12,6 @@ import { Text, View, Button, Platform, StyleSheet } from 'react-native';
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
-import { StyleSheet, Text, View } from "react-native";
 
 import Home from './Home';
 import CalendarPage from './CalendarPage';
