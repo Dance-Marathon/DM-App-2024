@@ -8,10 +8,11 @@ import messaging from '@react-native-firebase/messaging'; // Import Firebase Mes
 import { Alert } from 'react-native'; // Import Alert for displaying notifications
 import {Icon} from 'react-native-elements';
 
-import { Text, View, Button, Platform } from 'react-native';
+import { Text, View, Button, Platform, StyleSheet } from 'react-native';
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
+import { StyleSheet, Text, View } from "react-native";
 
 import Home from './Home';
 import CalendarPage from './CalendarPage';
@@ -21,6 +22,19 @@ import About from './About';
 import Login from './Login';
 import Profile from './Profile';
 import ForgotPassword from './ForgotPassword';
+
+import {
+  useFonts,
+  Montserrat_100Thin,
+  Montserrat_200ExtraLight,
+  Montserrat_300Light,
+  Montserrat_400Regular,
+  Montserrat_500Medium,
+  Montserrat_600SemiBold,
+  Montserrat_700Bold,
+  Montserrat_800ExtraBold,
+  Montserrat_900Black,
+} from "@expo-google-fonts/montserrat";
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -90,6 +104,18 @@ const App = () => {
     };
   }, []);
 
+  let [fontsLoaded] = useFonts({
+    Montserrat_100Thin,
+    Montserrat_200ExtraLight,
+    Montserrat_300Light,
+    Montserrat_400Regular,
+    Montserrat_500Medium,
+    Montserrat_600SemiBold,
+    Montserrat_700Bold,
+    Montserrat_800ExtraBold,
+    Montserrat_900Black,
+  });
+  
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -141,6 +167,7 @@ const App = () => {
             tabBarActiveTintColor: 'white',
             tabBarInactiveTintColor: 'white',
             headerTintColor: 'white',
+             tabBarLabelStyle: { fontFamily: 'Montserrat_400Regular' },
           }}
         >
           <Tab.Screen name="Home" component={Home} options={{
