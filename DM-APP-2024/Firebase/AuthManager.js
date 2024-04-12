@@ -36,8 +36,22 @@ const handleLogin = async (email, password) => {
   }
 };
 
+function extractParticipantID(url) {
+  const searchString = 'participantID=';
+  const startIndex = url.indexOf(searchString) + searchString.length;
+  if (startIndex > -1) {
+    // Extract the next 7 characters after 'participantID='
+    const participantID = url.substring(startIndex, startIndex + 7);
+    return participantID;
+  }
+  return null; // or handle the case where 'participantID=' is not found
+}
+
 const handleSignUp = async (email, password, role, donorDriveLink) => {
   try {
+    if (!email || !password || !role || !donorDriveLink) {
+      throw new Error('All fields are required');
+    }
     await createUserWithEmailAndPassword(auth, email, password)
       .then((userCredential) => {
         // Signed in
@@ -49,7 +63,7 @@ const handleSignUp = async (email, password, role, donorDriveLink) => {
           role: role,
           uid: user.uid,
           donorLink: donorDriveLink,
-          donorID: donorDriveLink.slice(-7),
+          donorID: extractParticipantID(donorDriveLink),
         });
       })
       .catch((error) => {
