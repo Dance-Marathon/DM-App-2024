@@ -4,8 +4,8 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from './Firebase/firebase';
-import messaging from '@react-native-firebase/messaging'; // Import Firebase Messaging
-import { Alert } from 'react-native'; // Import Alert for displaying notifications
+//import messaging from '@react-native-firebase/messaging'; // Import Firebase Messaging
+//import { Alert } from 'react-native'; // Import Alert for displaying notifications
 import {Icon} from 'react-native-elements';
 
 import { Text, View, Button, Platform, StyleSheet } from 'react-native';
@@ -23,6 +23,7 @@ import Login from './Login';
 import Profile from './Profile';
 import ForgotPassword from './ForgotPassword';
 
+/*
 import {
   useFonts,
   Montserrat_100Thin,
@@ -35,6 +36,7 @@ import {
   Montserrat_800ExtraBold,
   Montserrat_900Black,
 } from "@expo-google-fonts/montserrat";
+*/
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -104,6 +106,7 @@ const App = () => {
     };
   }, []);
 
+  /*
   let [fontsLoaded] = useFonts({
     Montserrat_100Thin,
     Montserrat_200ExtraLight,
@@ -115,6 +118,7 @@ const App = () => {
     Montserrat_800ExtraBold,
     Montserrat_900Black,
   });
+  */
   
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
