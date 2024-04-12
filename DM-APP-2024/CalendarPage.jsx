@@ -16,7 +16,7 @@ const Home = () => {
   useEffect(() => {
     const interval = setInterval(() => {
       fetchData();
-    }, 30000); // Refresh every 30 seconds
+    }, 120000); // Refresh every two minutes
 
     fetchData(); // Also fetch immediately on component mount
 
@@ -67,8 +67,8 @@ const Home = () => {
     <Agenda
       items={items}
       renderItem={renderItem}
-      pastScrollRange={6}
-      futureScrollRange={6}
+      pastScrollRange={1}
+      futureScrollRange={1}
        // If provided, a standard RefreshControl will be added for "Pull to Refresh" functionality. Make sure to also set the refreshing prop correctly
       onRefresh={() => console.log('refreshing...')}
       // Set this true while waiting for new data from a refresh

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -8,65 +8,96 @@ import {
   Keyboard,
   StyleSheet,
   Image,
-} from 'react-native';
-import { handleLogin, handleSignUp } from './Firebase/AuthManager.js';
-import { useNavigation } from '@react-navigation/native';
-import { Dropdown } from 'react-native-element-dropdown';
+  KeyboardAvoidingView,
+  Platform,
+} from "react-native";
+import { handleLogin, handleSignUp } from "./Firebase/AuthManager.js";
+import { useNavigation } from "@react-navigation/native";
+import { Dropdown } from "react-native-element-dropdown";
+import { Icon } from "react-native-elements";
 
-const Login = () => {
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [donorDriveLink, setDonorDriveLink] = useState('');
-    const [create, setCreate] = useState(true);
-    const [role, setRole] = useState('');
-    const [loginFailed, setLoginFailed] = useState(false);
-    const [signUpField, setSignUpField] = useState(false);
-    const navigation = useNavigation();
-    const [isFocus, setIsFocus] = useState(false);
-  
-    const dismissKeyboard = () => {
-      Keyboard.dismiss();
-    };
-  
-    const handleForgotPassword = () => {
-      navigation.navigate('ForgotPassword');
-    };
-  
-    const handleLoginPress = async () => {
-      const loginResult = await handleLogin(email, password);
-  
-      if (loginResult === 'success') {
-        setLoginFailed(false);
-      } else {
-        setLoginFailed(true);
-      }
-    };
+const Login = ({route}) => {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [donorDriveLink, setDonorDriveLink] = useState("");
+  const [create, setCreate] = useState(true);
+  const [role, setRole] = useState("");
+  const [loginFailed, setLoginFailed] = useState(false);
+  const [signUpField, setSignUpField] = useState(false);
+  const navigation = useNavigation();
+  const [isFocus, setIsFocus] = useState(false);
+  const [passwordVisible, setPasswordVisible] = useState(false);
 
-    const handleSignUpPress = async () => {
-      const signUpResult = await handleSignUp(email, password, role, donorDriveLink);
-  
-      if (signUpResult === 'success') {
-        setSignUpField(false);
-      } else {
-        setSignUpField(true);
-      }
-    };
+  const {expoPushToken} = route.params;
 
-    const roles = [
-      { label: 'Dancer', value: 'Dancer' },
-      { label: 'ELP', value: 'ELP' },
-      { label: 'Ambassador', value: 'Ambassador' },
-      { label: 'Captain', value: 'Captain' },
-      { label: 'Assistant Director', value: 'Assistant Director' },
-      { label: 'Overall', value: 'Overall' },
-      { label: 'Manager', value: 'Manager' },
-    ];
-  
-    return (
-      <TouchableWithoutFeedback onPress={dismissKeyboard}>
+  const dismissKeyboard = () => {
+    Keyboard.dismiss();
+  };
+
+  const handleForgotPassword = () => {
+    navigation.navigate("ForgotPassword");
+  };
+
+  const handleLoginPress = async () => {
+    const loginResult = await handleLogin(email, password);
+
+    if (loginResult === "success") {
+      setLoginFailed(false);
+    } else {
+      setLoginFailed(true);
+    }
+  };
+
+  const handleSignUpPress = async () => {
+
+    
+    const signUpResult = await handleSignUp(
+      email,
+      password,
+      role,
+      donorDriveLink,
+      expoPushToken
+    );
+
+    if (signUpResult === "success") {
+      setSignUpField(false);
+    } else {
+      setSignUpField(true);
+    }
+  };
+
+  const roles = [
+    { label: "Dancer", value: "Dancer" },
+    { label: "ELP", value: "ELP" },
+    { label: "Ambassador", value: "Ambassador" },
+    { label: "Captain", value: "Captain" },
+    { label: "Assistant Director", value: "Assistant Director" },
+    { label: "Overall", value: "Overall" },
+    { label: "Manager", value: "Manager" },
+  ];
+
+  return (
+    <TouchableWithoutFeedback onPress={dismissKeyboard}>
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 20}
+      >
         <View style={styles.container}>
-          <Image style={styles.logo} source={require('./images/year30_logo.png')} />
-          
+          {create && (
+            <Image
+              style={styles.logoBig}
+              source={require("./images/year30_logo.png")}
+            />
+          )}
+
+          {!create && (
+            <Image
+              style={styles.logoSmall}
+              source={require("./images/year30_logo.png")}
+            />
+          )}
+
           {loginFailed && (
             <Text style={styles.errorMessage}>Incorrect email or password</Text>
           )}
@@ -85,15 +116,28 @@ const Login = () => {
                 keyboardType="email-address"
                 autoCapitalize="none"
               />
-  
+
+              <View style={styles.passwordContainer}>
               <TextInput
                 style={styles.inputMiddle}
                 value={password}
                 onChangeText={(text) => setPassword(text)}
                 placeholder="Password"
-                secureTextEntry
+                secureTextEntry={!passwordVisible}
               />
-  
+              <TouchableOpacity
+                onPress={() => setPasswordVisible(!passwordVisible)}
+                style={styles.iconContainer}
+              >
+                <Icon
+                  name={passwordVisible ? "visibility-off" : "visibility"}
+                  type="material" // specify the icon set, 'material' is the default
+                  size={24}
+                  color="grey"
+                />
+              </TouchableOpacity>
+              </View>
+
               {!create && (
                 <TextInput
                   style={styles.inputBottom}
@@ -105,41 +149,40 @@ const Login = () => {
 
               {!create && (
                 <Dropdown
-                style={styles.dropdown}
-                placeholderStyle={styles.placeholderStyle}
-                selectedTextStyle={styles.selectedTextStyle}
-                inputSearchStyle={styles.inputSearchStyle}
-                iconStyle={styles.iconStyle}
-                data={roles}
-                search
-                maxHeight={300}
-                labelField="label"
-                valueField="role"
-                placeholder={!isFocus ? 'Select item' : '...'}
-                searchPlaceholder="Search..."
-                value={role}
-                onChange={item => {
-                  setRole(item.value);
-                  console.log(role);
-                  setIsFocus(false);
-                }}
-              />
-                )}
+                  style={styles.dropdown}
+                  placeholderStyle={styles.placeholderStyle}
+                  selectedTextStyle={styles.selectedTextStyle}
+                  inputSearchStyle={styles.inputSearchStyle}
+                  iconStyle={styles.iconStyle}
+                  data={roles}
+                  search
+                  maxHeight={300}
+                  labelField="label"
+                  valueField="value"
+                  placeholder={!isFocus ? "Select Your Role" : "..."}
+                  searchPlaceholder="Search..."
+                  value={role}
+                  onChange={(item) => {
+                    setRole(item.value);
+                    setIsFocus(false); // This ensures the dropdown loses focus after selection
+                  }}
+                />
+              )}
+            </View>
 
             {!create && (
               <>
                 <TouchableOpacity
                   style={styles.createAccountButton}
-                  onPress={handleSignUpPress}
+                  onPress={async () => {
+                    await handleSignUpPress()
+                  }}
                 >
                   <Text style={styles.buttonText}>Sign Up</Text>
                 </TouchableOpacity>
               </>
             )}
-            </View>
 
-
-  
             {create && (
               <>
                 <TouchableOpacity
@@ -150,26 +193,45 @@ const Login = () => {
                 </TouchableOpacity>
               </>
             )}
-  
-            <Text style={{ marginLeft:10 }}> ________________________________</Text>
-  
+
+            <View style={styles.divider} />
+
             <TouchableOpacity onPress={handleForgotPassword}>
               <Text style={styles.forgotPassword}>Forgot password?</Text>
             </TouchableOpacity>
 
-            <Text style={styles.signUp}>
-              New User?
-              <TouchableOpacity style={{ marginBottom: -3 }} onPress={() => {
-                  setCreate(false);
-                }}>
-                <Text style={{ color: '#61A0DA' }}> Sign Up!</Text>
-              </TouchableOpacity>
-            </Text>
+            {create && (
+              <Text style={styles.signUp}>
+                New User?
+                <TouchableOpacity
+                  style={{ marginBottom: -3 }}
+                  onPress={() => {
+                    setCreate(false);
+                  }}
+                >
+                  <Text style={{ color: "#61A0DA" }}> Sign Up!</Text>
+                </TouchableOpacity>
+              </Text>
+            )}
+            {!create && (
+              <Text style={styles.signUp}>
+                Old User?
+                <TouchableOpacity
+                  style={{ marginBottom: -3 }}
+                  onPress={() => {
+                    setCreate(true);
+                  }}
+                >
+                  <Text style={{ color: "#61A0DA" }}> Log In!</Text>
+                </TouchableOpacity>
+              </Text>
+            )}
           </View>
         </View>
-      </TouchableWithoutFeedback>
-    );
-  };
+      </KeyboardAvoidingView>
+    </TouchableWithoutFeedback>
+  );
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -177,6 +239,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "#233563",
+    width: "100%",
   },
   logoContainer: {
     marginBottom: 30,
@@ -194,19 +257,29 @@ const styles = StyleSheet.create({
     height: 40,
     borderColor: "black",
     borderWidth: 1,
-    marginBottom: 10,
+    marginBottom: 15,
     paddingHorizontal: 10,
     borderRadius: 5,
     backgroundColor: "#D9D9D9",
+  },
+  passwordContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    width: "span",
+    position: "relative",
   },
   inputMiddle: {
     height: 40,
     borderColor: "black",
     borderWidth: 1,
-    marginBottom: 10,
     paddingHorizontal: 10,
     borderRadius: 5,
     backgroundColor: "#D9D9D9",
+    width: "100%",
+  },
+  iconContainer: {
+    position: "absolute",
+    right: "5%",
   },
   inputBottom: {
     height: 40,
@@ -215,6 +288,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     borderRadius: 5,
     backgroundColor: "#D9D9D9",
+    marginTop: 15,
   },
   loginButton: {
     backgroundColor: "#E2883C",
@@ -228,36 +302,47 @@ const styles = StyleSheet.create({
     padding: 15,
     borderRadius: 5,
     alignSelf: "stretch",
-    marginTop: 10,
+    marginBottom: 10,
   },
   buttonText: {
     color: "white",
     textAlign: "center",
     fontWeight: "bold",
   },
+  divider: {
+    borderBottomColor: "black",
+    borderBottomWidth: 1,
+    alignSelf: "stretch",
+    marginVertical: 12,
+  },
   forgotPassword: {
     color: "#61A0DA",
     textAlign: "center",
-    marginTop: 15,
   },
   signUp: {
     color: "black",
     textAlign: "center",
-    marginTop: 15,
+    marginTop: 5,
   },
-  logo: {
+  logoBig: {
     width: 225,
     height: 225,
     marginBottom: 50,
   },
+  logoSmall: {
+    width: 225,
+    height: 225,
+    marginBottom: 50,
+    marginTop: 50,
+  },
   errorMessage: {
-    color: 'white',
-    textAlign: 'center',
+    color: "white",
+    textAlign: "center",
     marginTop: 15,
     marginBottom: 15,
   },
   dropdown: {
-    marginTop: 10,
+    marginTop: 15,
     height: 40,
     borderColor: "black",
     borderWidth: 1,

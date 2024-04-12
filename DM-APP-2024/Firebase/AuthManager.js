@@ -47,7 +47,7 @@ function extractParticipantID(url) {
   return null; // or handle the case where 'participantID=' is not found
 }
 
-const handleSignUp = async (email, password, role, donorDriveLink) => {
+const handleSignUp = async (email, password, role, donorDriveLink, expopushtoken) => {
   try {
     if (!email || !password || !role || !donorDriveLink) {
       throw new Error('All fields are required');
@@ -64,6 +64,7 @@ const handleSignUp = async (email, password, role, donorDriveLink) => {
           uid: user.uid,
           donorLink: donorDriveLink,
           donorID: extractParticipantID(donorDriveLink),
+          notificationToken: expopushtoken,
         });
       })
       .catch((error) => {
