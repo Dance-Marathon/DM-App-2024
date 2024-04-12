@@ -36,7 +36,7 @@ const Home = () => {
         <View style={styles.eventItem}>
           <TouchableOpacity onPress={() => setModalVisible(true)}>
             <Image
-              source={require("./images/rotateplan.png")}
+              source={require("./images/rotatedfloor.png")}
               style={{
                 width: eventItemWidth,
                 height: 100,
@@ -59,7 +59,7 @@ const Home = () => {
             <View style={styles.modalView}>
               <TouchableOpacity onPress={() => setModalVisible(!modalVisible)}>
                 <Image
-                  source={require("./images/floorplan.png")}
+                  source={require("./images/floor.png")}
                   style={{ width: 300, height: 500, resizeMode: "contain" }}
                 />
               </TouchableOpacity>
