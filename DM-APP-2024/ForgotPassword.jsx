@@ -1,7 +1,7 @@
 // ForgotPassword.js (React Native)
 
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, TouchableWithoutFeedback } from 'react-native';
 import { getAuth, sendPasswordResetEmail } from 'firebase/auth';
 
 const auth = getAuth();
@@ -20,6 +20,7 @@ const ForgotPassword = ({ navigation }) => {
   };
 
   return (
+    <TouchableWithoutFeedback onPress={dismissKeyboard}>
     <View style={styles.container}>
       <Text style={styles.title}>Forgot Password</Text>
       {!resetSent ? (
@@ -52,6 +53,7 @@ const ForgotPassword = ({ navigation }) => {
         </>
       )}
     </View>
+    </TouchableWithoutFeedback>
   );
 };
 
