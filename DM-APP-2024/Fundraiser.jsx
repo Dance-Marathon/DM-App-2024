@@ -105,16 +105,18 @@ const Fundraiser = () => {
   }, [userIDState, userInfo, milestoneInfo]);  
 
   useEffect(() => {
-    if (userIDState) {
+    if (userIDState && donationInfo?.donations) {
       const allDonations = [];
       for (let i = 0; i < userInfo.numDonations; i++) {
-        const donations = donationInfo.donations[i];
-        allDonations.push(donations);
+        const donation = donationInfo.donations[i];
+        if (donation?.amount != null) { 
+          allDonations.push(donation);
+        }
       }
       setAllDonations(allDonations);
-      console.log(allDonations)
+      console.log(allDonations);
     }
-  }, [userIDState, userInfo, milestoneInfo]);  
+  }, [userIDState, userInfo, donationInfo]);   
 
   // Method to sort the donations by their createdDateUTC in descending order
   useEffect(() => {
