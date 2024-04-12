@@ -162,7 +162,7 @@ const eventsData = [
       date: "4/13 9:00PM-9:30PM",
       details:
         "Join us on the floor to honor Nina Karlinsky and hear Dr. Karlinsky speak at 9:00 - 9:30 PM!",
-      image: require("../images/hitthegong.png"),
+      image: require("../images/in_memoriam.png"),
     },
     {
       id: "21",
