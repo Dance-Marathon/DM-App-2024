@@ -11,7 +11,6 @@ const defaultUserID = 1066318;
 
 const Fundraiser = () => {
   const [userIDState, setUserIDState] = useState('');
-  const [tempID, setTempID] = useState('');
   const [userInfo, setUserInfo] = useState({});
   const [error, setError] = useState('');
   const [milestoneInfo, setMilestoneInfo] = useState({});
@@ -105,16 +104,18 @@ const Fundraiser = () => {
   }, [userIDState, userInfo, milestoneInfo]);  
 
   useEffect(() => {
-    if (userIDState) {
+    if (userIDState && donationInfo?.donations) {
       const allDonations = [];
       for (let i = 0; i < userInfo.numDonations; i++) {
-        const donations = donationInfo.donations[i];
-        allDonations.push(donations);
+        const donation = donationInfo.donations[i];
+        if (donation?.amount != null) { 
+          allDonations.push(donation);
+        }
       }
       setAllDonations(allDonations);
-      console.log(allDonations)
+      console.log(allDonations);
     }
-  }, [userIDState, userInfo, milestoneInfo]);  
+  }, [userIDState, userInfo, donationInfo]);   
 
   // Method to sort the donations by their createdDateUTC in descending order
   useEffect(() => {
@@ -128,10 +129,6 @@ const Fundraiser = () => {
     setSortedDonations(sorted);
     console.log('Sorted:',sortedDonations);
   }, []);
-
-  const handleUserIDUpdate = () => {
-    setUserIDState(tempID);
-  };
 
   const copyToClipboard = () => {
     const text = userInfo.donateURL;
@@ -353,11 +350,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     margin: 10,
+    width: 350,
+    justifyContent: 'center',
   },
   avatar: {
     width: 80,
     height: 80,
-    borderRadius: 40, // Make sure it is half of hight/width
+    borderRadius: 40, // Make sure it is half of height/width
     marginRight: 10,
   },
   textContainer: {
@@ -418,4 +417,3 @@ const styles = StyleSheet.create({
 });
 
 export default Fundraiser;
-
