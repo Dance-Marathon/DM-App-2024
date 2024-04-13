@@ -22,6 +22,8 @@ import Login from './Login';
 import Profile from './Profile';
 import ForgotPassword from './ForgotPassword';
 
+import { addUserExpoPushToken } from "./Firebase/AuthManager";
+
 /*
 import {
   useFonts,
@@ -74,7 +76,7 @@ async function registerForPushNotificationsAsync() {
     token = await Notifications.getExpoPushTokenAsync({
       projectId: Constants.expoConfig.extra.eas.projectId,
     });
-    console.log(token);
+    console.log('Token from register function:',token);
   } else {
     alert('Must use physical device for Push Notifications');
   }
@@ -88,9 +90,27 @@ const App = () => {
   const notificationListener = useRef();
   const responseListener = useRef();
 
+  async function handleToken() {
+    const currentUID = auth.currentUser.uid;
+    const docRef = doc(db, "Users", currentUID);
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+      const data = docSnap.data();
+      if (!data.notificationToken) {
+        await addUserExpoPushToken(auth.currentUser.uid, expoPushToken);
+    } else {
+      console.log("Token exists");
+    }}
+  };
+
+  useEffect(() => {
+    handleToken();
+  }, [expoPushToken])
+
   useEffect(() => {
     registerForPushNotificationsAsync().then(token => {
-      setExpoPushToken(token)
+      setExpoPushToken(token);
+      // addUserExpoPushToken(auth.currentUser.uid, expoPushToken);
     } );
 
     notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
@@ -177,6 +197,7 @@ const App = () => {
         <Tab.Screen
           name="Home"
           component={Home}
+          initialParams={{ expoPushToken: expoPushToken }}
           options={{
             tabBarIcon: ({ color, size }) => (
               <Icon
@@ -249,4 +270,4 @@ const App = () => {
   );
 };
 
-export default App
+export default App;

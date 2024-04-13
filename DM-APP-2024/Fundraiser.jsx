@@ -79,7 +79,7 @@ const Fundraiser = () => {
   }, [userIDState]);
 
   useEffect(() => {
-    if (userIDState) {
+    if (userIDState && userInfo.numMilestones) {
       for (let i = 0; i < userInfo.numMilestones; i++) {
         const milestone = milestoneInfo.milestones[i];
         if (userInfo.sumDonations < milestone.amount) {
@@ -155,7 +155,7 @@ const Fundraiser = () => {
           <View style={styles.modalView}>
             <Text>Milestones</Text>
             <View>
-              {Array.isArray(allMilestones) && allMilestones.length > 0 ? (
+              {Array.isArray(allMilestones) && userInfo.numMilestones > 0 ? (
                 allMilestones.map((milestone, index) => (
                   <Text
                     key={index}
@@ -209,13 +209,9 @@ const Fundraiser = () => {
             color="white"
             height={20}
             borderRadius={10}
-            marginBottom={5}
+            marginBottom={10}
           />
-          <Text style={{ marginBottom: 5, fontSize: 14, color: "white" }}>
-            Next milestone:{" "}
-            {milestoneInfo.milestones[milestoneIndex].description} - $
-            {milestoneInfo.milestones[milestoneIndex].fundraisingGoal}
-          </Text>
+
           <View style={styles.rectangleView}>
             <Text
               style={{

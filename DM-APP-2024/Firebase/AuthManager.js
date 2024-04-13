@@ -47,6 +47,23 @@ function extractParticipantID(url) {
   return null; // or handle the case where 'participantID=' is not found
 }
 
+async function addUserExpoPushToken(userId, expoPushToken) {
+  try {
+    const currentUID = auth.currentUser.uid;
+    const docRef = doc(db, "Users", currentUID);
+    console.log('Data:',docRef);
+
+    // Update the user's document with the ExpoPushToken
+    await setDoc(docRef, {
+      notificationToken: expoPushToken
+    }, { merge: true });
+
+    console.log(`ExpoPushToken ${expoPushToken} added to user ${userId}`);
+  } catch (error) {
+    console.error("Error adding ExpoPushToken to Firestore:", error);
+  }
+}
+
 const handleSignUp = async (email, password, role, donorDriveLink, expopushtoken) => {
   try {
     if (!email || !password || !role || !donorDriveLink) {
@@ -87,4 +104,4 @@ const handleSignOut = async () => {
     });
 };
 
-export { handleLogin, handleSignOut, handleSignUp, deleteUserAccount, auth, db };
+export { handleLogin, handleSignOut, handleSignUp, deleteUserAccount, auth, db, addUserExpoPushToken };

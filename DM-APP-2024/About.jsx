@@ -113,7 +113,13 @@ const About = () => {
             icon={<Icon name="envelope" type="font-awesome" color="white" />} 
             title="  Email DM at UF"
             onPress={() => openWebsite('mailto:floridadm@floridadm.org')}
-            buttonStyle={styles.lastButton} 
+            buttonStyle={styles.button} 
+          />
+          <Button
+            icon={<Icon name="exclamation" type="font-awesome" color="white"/>} 
+            title="  Issues with the app"
+            onPress={() => openWebsite('https://forms.gle/x5oAfEKs4UZLHj3w9')}
+            buttonStyle={styles.exclamationButton} 
           />
         </View>
         <Text style={styles.title} >PHOTOS</Text>
@@ -196,7 +202,16 @@ const styles = StyleSheet.create({
     width: 200,
     marginBottom: 20,
   },
+  exclamationButton: {
+    backgroundColor: '#233D72',
+    margin: 2,
+    justifyContent: 'flex-start',
+    paddingLeft: 22,
+    borderRadius: 5,
+    borderWidth: 0,
+  },
 });
+
 
 
 export default About;

@@ -24,6 +24,8 @@ import { auth, db } from './Firebase/AuthManager';
 import { doc, getDoc, collection, getDocs } from 'firebase/firestore';
 import { Input } from "react-native-elements";
 
+import { addUserExpoPushToken } from "./Firebase/AuthManager";
+
 const fetchData = async () => {
   try {
     const eventsCollectionRef = collection(db, "Users");
@@ -52,7 +54,7 @@ const allTokens = [
 
 async function sendPushNotificationsToAll(expoPushTokens, title, message) {
   console.log('Sending notifications...');
-  messages = []
+  const messages = []
 /*   const messages = expoPushTokens.map(token => ({
     to: token,
     sound: 'default',
@@ -86,13 +88,15 @@ async function sendPushNotificationsToAll(expoPushTokens, title, message) {
   }
 }
 
-const Home = () => {
+const Home = ({route}) => {
 
   const [title, setTitle] = useState('');
   const [message, setMessage] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
   const [role, setRole] = useState('');
   const [userIDState, setUserIDState] = useState('');
+
+  const {expoPushToken} = route.params;
 
   const displayDocumentData = async () => {
     try {
@@ -114,8 +118,30 @@ const Home = () => {
   };
 
   useEffect(() => {
-    displayDocumentData();
-  }, []);
+    // This function will only set the user's role if auth.currentUser is not null
+    const getUserRole = async () => {
+      if (auth.currentUser) {
+        await displayDocumentData();
+        const currentUID = auth.currentUser.uid;
+        const docRef = doc(db, "Users", currentUID);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          if (!data.notificationToken) {
+            await addUserExpoPushToken(auth.currentUser.uid, expoPushToken);
+        } else {
+          console.log("Token exists");
+        }}
+      } else {
+        console.log('auth.currentUser is null, waiting for authentication.');
+      }
+    };
+  
+    // Call the function to set the user's role
+    getUserRole();
+  
+    // If you're using Firebase v9+, consider using onAuthStateChanged here to re-run this effect when the user logs in.
+  }, [auth.currentUser]);
 
   let handleClick = async () => {
     fetchItems = await fetchData();
@@ -155,10 +181,8 @@ const Home = () => {
                 autoCapitalize="none"
               />
           </>
-       
-
           ) : (
-        <></>)}
+        <><Text style={styles.topText}>If your Fundraiser Page is not working, please find someone on Digital Marketing.</Text></>)}
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ width: "95%", alignSelf: "center" }}
@@ -264,4 +288,10 @@ const styles = StyleSheet.create({
       borderRadius: 5,
       backgroundColor: "#D9D9D9",
     },
+    topText: {
+      color: 'white',
+      fontSize: 12,
+      textAlign: 'center',
+      margin: 10,
+    }
 });

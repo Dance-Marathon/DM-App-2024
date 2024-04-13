@@ -180,9 +180,15 @@ const eventsData = [
     {
       id: "23",
       name: "Theme Hour: Night at the Main Event",
-      date: "4/13 11:10PM-1:10AM",
-      details:
-        "Come down to the floor to participate in our third Theme Hour at 11:10 - 1:10 AM! Dress up as your favorite character from the movie (examples include a dinosaur, Teddy Roosevelt, a security guard, and more!) and join the fun events going on such as a tablet scavenger hunt, digging for dinosaur bones, coloring crowns, jewelry crafting, and more! The main entertainment during this theme hour will be Sigs Inside, karaoke, and a statues frozen game! Expect to be transported back in time!",
+      date: "4/13 11:10PM-11:59PM",
+      details: "Come down to the floor to participate in our third Theme Hour at 11:10 - 1:10 AM! Dress up as your favorite character from the movie (examples include a dinosaur, Teddy Roosevelt, a security guard, and more!) and join the fun events going on such as a tablet scavenger hunt, digging for dinosaur bones, coloring crowns, jewelry crafting, and more! The main entertainment during this theme hour will be Sigs Inside, karaoke, and a statues frozen game! Expect to be transported back in time!",
+      image: require("../images/nightatthemainevent.png"),
+    },
+    {
+      id: "52",
+      name: "Theme Hour: Night at the Main Event",
+      date: "4/14 12:00AM-1:10AM",
+      details: "Come down to the floor to participate in our third Theme Hour at 11:10 - 1:10 AM! Dress up as your favorite character from the movie (examples include a dinosaur, Teddy Roosevelt, a security guard, and more!) and join the fun events going on such as a tablet scavenger hunt, digging for dinosaur bones, coloring crowns, jewelry crafting, and more! The main entertainment during this theme hour will be Sigs Inside, karaoke, and a statues frozen game! Expect to be transported back in time!",
       image: require("../images/nightatthemainevent.png"),
     },
     {
