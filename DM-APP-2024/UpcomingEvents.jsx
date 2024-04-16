@@ -35,7 +35,7 @@ const parseEventDate = (eventDateString) => {
   );
   const endDateTime = new Date(startDateTime);
   endDateTime.setHours(
-    parseInt(endParts[0]) + (endTime.includes("PM") ? 12 : 0),
+    parseInt(endParts[0]) + ((endParts[0] != 12) && endTime.includes("PM") ? 12 : 0),
     parseInt(endParts[1])
   );
   return { startDateTime, endDateTime };

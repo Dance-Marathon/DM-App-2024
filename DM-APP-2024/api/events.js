@@ -8,7 +8,7 @@ const eventsData = [
     },
     {
       id: "1",
-      name: "Openg Ceremonies",
+      name: "Opening Ceremonies",
       date: "4/13 11:00AM-12:10PM",
       details:
         "Join us in opening ceremonies as we start our Main Event 2024 from 11:00 - 12:10 PM!",
