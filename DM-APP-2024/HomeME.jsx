@@ -122,7 +122,6 @@ const Home = ({route}) => {
   const [title, setTitle] = useState('');
   const [message, setMessage] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
-  const [notificationModalVisible, setNotificationModalVisible] = useState(false);
   const [role, setRole] = useState('');
   const [userIDState, setUserIDState] = useState('');
   const [allNotifications, setAllNotifications] = useState({});
@@ -234,7 +233,7 @@ const Home = ({route}) => {
 
   let handleClick = async () => {
     fetchItems = await fetchData();
-    sendPushNotificationsToAll(fetchItems, {
+    /* sendPushNotificationsToAll(fetchItems, {
       date: getCurrentDate(),
       message: message,
       time: getCurrentTime(),
@@ -243,13 +242,13 @@ const Home = ({route}) => {
       console.log('All notifications sent!');
     }).catch(error => {
       console.error('Error sending notifications:', error);
-    });
-    /* sendPushNotification('ExponentPushToken[UVH4ZkJqvUH8iQJRWE2Z5o]',{
+    }); */
+    sendPushNotification('ExponentPushToken[UVH4ZkJqvUH8iQJRWE2Z5o]',{
       date: getCurrentDate(),
       message: message,
       time: getCurrentTime(),
       title: title
-    }); */
+    });
     addNotification({
       date: getCurrentDate(),
       message: message,
@@ -281,8 +280,9 @@ const Home = ({route}) => {
     const renderNotif = ({ item }) => {
       return (
         <View style={styles.notificationContainer}>
-          <Text style={styles.notificationTitle}>{item.title} - {item.date} at {item.time}</Text>
+          <Text style={styles.notificationTitle}>{item.title}</Text>
           <Text style={styles.notificationMessage}>{item.message}</Text>
+          <Text style={styles.notificationDate}>{item.date} at {item.time}</Text>
         </View>
       );
     };
@@ -296,34 +296,14 @@ const Home = ({route}) => {
         backgroundColor: "#233563",
       }}
     >
-      {role === "Admin" ? (
+        <FlatList
+          data={allNotifications}
+          renderItem={renderNotif} // Your renderItem function to display the notification
+          keyExtractor={item => item.id} // Unique key for each notification
+        />
+        {role === "Admin" ? (
           <>
-          <TouchableOpacity
-              style={styles.showNotificationButton}
-              onPress={() => setModalVisible(true)}>
-                <Text style={styles.buttonText}>Show Notification Center</Text>
-            </TouchableOpacity>
-          </>
-          ) : (
-        <></>)}
-        <TouchableOpacity
-          style={styles.showNotificationButton}
-          onPress={() => setNotificationModalVisible(true)}>
-            <Text style={styles.buttonText}>Show Past Notifications</Text>
-        </TouchableOpacity>
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={modalVisible}
-        onRequestClose={() => {
-          Alert.alert("Modal has been closed.");
-          setModalVisible(!modalVisible);
-        }}
-      >
-        <View style={styles.centeredView}>
-          <View style={styles.modalView}>
-            <Text>Notification Center</Text>
-            <View style={styles.itemContainer}>
+          <View style={styles.itemContainer}>
                   <TextInput
                   style={styles.inputTop}
                   onChangeText={(text) => setTitle(text)}
@@ -344,39 +324,50 @@ const Home = ({route}) => {
                   buttonStyle={styles.button} 
                 />
             </View>
-            <Button
-              style={[styles.button, styles.buttonClose]}
-              onPress={() => setModalVisible(!modalVisible)}
-              title="Hide Tool"
-            />
-          </View>
-        </View>
-      </Modal>
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={notificationModalVisible}
-        onRequestClose={() => {
-          Alert.alert("Modal has been closed.");
-          setNotificationModalVisible(!notificationModalVisible);
-        }}
+          </>
+          ) : (
+        <><Text style={styles.topText}>If your Fundraiser Page is not working, please find someone on Digital Marketing.</Text></>)}
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ width: "95%", alignSelf: "center" }}
       >
-        <View style={styles.centeredView}>
-          <View style={styles.modalView}>
-            <Text>Past Notifications</Text>
-            <FlatList
-              data={allNotifications}
-              renderItem={renderNotif} // Your renderItem function to display the notification
-              keyExtractor={item => item.id} // Unique key for each notification
+        <Text style={styles.header}>MAIN EVENT FLOOR PLAN</Text>
+        <View style={styles.eventItem}>
+          <TouchableOpacity onPress={() => setModalVisible(true)}>
+            <Image
+              source={require("./images/rotatedfloor.png")}
+              style={{
+                width: eventItemWidth,
+                height: 100,
+                alignSelf: "center",
+                resizeMode: "stretch",
+
+              }}
             />
-            <Button
-              style={[styles.button, styles.buttonClose]}
-              onPress={() => setNotificationModalVisible(!notificationModalVisible)}
-              title="Hide Tool"
-            />
-          </View>
+          </TouchableOpacity>
         </View>
-      </Modal>
+
+        <Modal
+          visible={modalVisible}
+          animationType="slide"
+          transparent={true}
+          onRequestClose={() => {
+            setModalVisible(!modalVisible);
+          }}
+        >
+          <View style={styles.centeredView}>
+            <View style={styles.modalView}>
+              <TouchableOpacity onPress={() => setModalVisible(!modalVisible)}>
+                <Image
+                  source={require("./images/floor.png")}
+                  style={{ width: 300, height: 500, resizeMode: "contain" }}
+                />
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+        <UpcomingEventsScreen />
+      </ScrollView>
     </View>
   );
 };
@@ -432,38 +423,30 @@ const styles = StyleSheet.create({
     borderBottomWidth: 2,
     borderColor: '#2B457A',
     },
-  inputTop: {
-    height: 40,
-    borderColor: "black",
-    borderWidth: 1,
-    marginBottom: 15,
-    paddingHorizontal: 10,
-    borderRadius: 5,
-    backgroundColor: "#D9D9D9",
-  },
-  topText: {
-    color: 'white',
-    fontSize: 12,
-    textAlign: 'center',
-    margin: 10,
-  },
-  notificationContainer: {
-    backgroundColor: 'white',
-    padding: 20,
-    marginRight: 10,
-    marginTop: 17,
-    borderRadius: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  showNotificationButton: {
-    backgroundColor: '#E2883C',
-    padding: 15,
-    borderRadius: 5,
-    marginTop: 15,
-    width: 200,
-    marginBottom: 20,
-  },
+    inputTop: {
+      height: 40,
+      borderColor: "black",
+      borderWidth: 1,
+      marginBottom: 15,
+      paddingHorizontal: 10,
+      borderRadius: 5,
+      backgroundColor: "#D9D9D9",
+    },
+    topText: {
+      color: 'white',
+      fontSize: 12,
+      textAlign: 'center',
+      margin: 10,
+    },
+    itemContainer: {
+      backgroundColor: 'white',
+      padding: 20,
+      marginRight: 10,
+      marginTop: 17,
+      borderRadius: 5,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+    },
 });
