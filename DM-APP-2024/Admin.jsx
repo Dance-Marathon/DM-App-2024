@@ -8,12 +8,14 @@ import {
   Modal,
   StyleSheet,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   Dimensions,
   ScrollView,
   Button,
   TextInput,
   FlatList,
-  Alert
+  Alert,
+  Keyboard,
 } from "react-native";
 import UpcomingEventsScreen from "./UpcomingEvents";
 const INITIAL_DATE = new Date();
@@ -128,6 +130,10 @@ const Home = ({route}) => {
   const [allNotifications, setAllNotifications] = useState({});
 
   const {expoPushToken} = route.params;
+
+  const dismissKeyboard = () => {
+    Keyboard.dismiss();
+  };
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -278,114 +284,68 @@ const Home = ({route}) => {
       );
     };
 
-    const renderNotif = ({ item }) => {
-      return (
-        <View style={styles.notificationContainer}>
-          <Text style={styles.notificationTitle}>{item.title} - {item.date} at {item.time}</Text>
-          <Text style={styles.notificationMessage}>{item.message}</Text>
-        </View>
-      );
-    };
-
-  return (
-    <View
-      style={{
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-        backgroundColor: "#233563",
-      }}
-    >
-      {/* {role === "Admin" ? (
-          <>
-          <TouchableOpacity
-              style={styles.showNotificationButton}
-              onPress={() => setModalVisible(true)}>
-                <Text style={styles.buttonText}>Show Notification Center</Text>
-            </TouchableOpacity>
-          </>
-          ) : (
-        <></>)} */}
-        <TouchableOpacity
-          style={styles.showNotificationButton}
-          onPress={() => setNotificationModalVisible(true)}>
-            <Text style={styles.buttonText}>Show Past Notifications</Text>
-        </TouchableOpacity>
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={modalVisible}
-        onRequestClose={() => {
-          Alert.alert("Modal has been closed.");
-          setModalVisible(!modalVisible);
-        }}
-      >
-        <View style={styles.centeredView}>
-          <View style={styles.modalView}>
-            <Text>Notification Center</Text>
-            <View style={styles.itemContainer}>
-                  <TextInput
-                  style={styles.inputTop}
-                  onChangeText={(text) => setTitle(text)}
-                  placeholder="Title"
-                  autoCapitalize="none"
-                  value={title}
-                />
-                    <TextInput
-                  style={styles.inputTop}
-                  onChangeText={(text) => setMessage(text)}
-                  placeholder="Message"
-                  autoCapitalize="none"
-                  value={message}
-                />
-                <Button
-                  title="Send Notification"
-                  onPress={() => confirmSend()}
-                  buttonStyle={styles.button} 
-                />
-            </View>
-            <Button
-              style={[styles.button, styles.buttonClose]}
-              onPress={() => setModalVisible(!modalVisible)}
-              title="Hide Tool"
-            />
-          </View>
-        </View>
-      </Modal>
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={notificationModalVisible}
-        onRequestClose={() => {
-          Alert.alert("Modal has been closed.");
-          setNotificationModalVisible(!notificationModalVisible);
-        }}
-      >
-        <View style={styles.centeredView}>
-          <View style={styles.modalView}>
-            <Text>Past Notifications</Text>
-            <FlatList
-              data={allNotifications}
-              renderItem={renderNotif} // Your renderItem function to display the notification
-              keyExtractor={item => item.id} // Unique key for each notification
-            />
-            <Button
-              style={[styles.button, styles.buttonClose]}
-              onPress={() => setNotificationModalVisible(!notificationModalVisible)}
-              title="Hide Tool"
-            />
-          </View>
-        </View>
-      </Modal>
+return (
+    <TouchableWithoutFeedback onPress={dismissKeyboard}>
+    <View style={styles.container}>
+      <TextInput
+        style={styles.input}
+        onChangeText={(text) => setTitle(text)}
+        placeholder="Title"
+        autoCapitalize="none"
+        value={title}
+      />
+      <TextInput
+        style={[styles.input, { minHeight: 40 }]}
+        onChangeText={(text) => setMessage(text)}
+        placeholder="Message"
+        autoCapitalize="none"
+        value={message}
+        multiline={true}
+        numberOfLines={4} // Set the number of lines you want to show initially
+        textAlignVertical="top" // Align text to the top
+      />
+      <Button
+        title="Send Notification"
+        onPress={confirmSend}
+        buttonStyle={styles.button}
+      />
     </View>
+    </TouchableWithoutFeedback>
   );
 };
-
 export default Home;
 
 const eventItemWidth = Dimensions.get("window").width * 0.9;
 
 const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#233563',
+        paddingHorizontal: 20,
+      },
+      input: {
+        height: 40,
+        borderColor: 'black',
+        borderWidth: 1,
+        marginBottom: 15,
+        paddingHorizontal: 10,
+        borderRadius: 5,
+        backgroundColor: '#D9D9D9',
+        width: '100%',
+      },
+      button: {
+        backgroundColor: '#233D72',
+        margin: 2,
+        justifyContent: 'flex-start',
+        paddingLeft: 15,
+        borderRadius: 5,
+        borderWidth: 0,
+        borderBottomWidth: 2,
+        borderColor: '#2B457A',
+        width: '100%',
+      },
   eventItem: {
     width: eventItemWidth,
     backgroundColor: "white",
