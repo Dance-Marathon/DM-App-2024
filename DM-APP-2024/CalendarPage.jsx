@@ -15,38 +15,54 @@ const Home = () => {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      fetchData();
+      fetchDataAndFillDates();
     }, 120000); // Refresh every two minutes
 
-    fetchData(); // Also fetch immediately on component mount
+    fetchDataAndFillDates(); // Also fetch immediately on component mount
 
     return () => clearInterval(interval); // Clear interval on component unmount
   }, []);
 
-  const fetchData = async () => {
-    setIsFetching(true);
+  const fetchDataAndFillDates = async () => {
+    setIsFetching(true); // Assuming you have a loading state
+  
     try {
       const eventsCollectionRef = collection(db, "Calendar2024");
       const querySnapshot = await getDocs(eventsCollectionRef);
       const fetchedItems = {};
-
+  
       querySnapshot.forEach((doc) => {
         const docData = doc.data();
         Object.keys(docData).forEach((date) => {
-          fetchedItems[date] = docData[date].events.map(event => ({
+          fetchedItems[date] = docData[date].events.map((event) => ({
             time: event.time,
             title: event.title,
-            description: event.description
+            description: event.description,
           }));
         });
       });
-
-      setItems(fetchedItems);
+  
+      // Now, fill in the empty dates
+      const oneMonthAgo = new Date();
+      oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+      const oneMonthFromNow = new Date();
+      oneMonthFromNow.setMonth(oneMonthFromNow.getMonth() + 1);
+  
+      let currentDate = new Date(oneMonthAgo);
+      while (currentDate <= oneMonthFromNow) {
+        const dateStr = currentDate.toISOString().split('T')[0];
+        if (!fetchedItems[dateStr]) {
+          fetchedItems[dateStr] = []; // Set dates without events to an empty array
+        }
+        currentDate.setDate(currentDate.getDate() + 1); // Move to the next day
+      }
+  
+      setItems(fetchedItems); // Update your state with the new items
     } catch (error) {
       console.error("Error fetching events:", error);
-      // Handle errors as needed
     }
-    setIsFetching(false);
+  
+    setIsFetching(false); // Update the loading state
   };
 
   const renderItem = (item) => {
@@ -63,25 +79,25 @@ const Home = () => {
     return <Text>Loading...</Text>;
   }
 
+  const renderEmptyDate = () => {
+    console.log("renderEmptyDate called");
+    return (
+      <View style={styles.emptyDateContainer}>
+        <Text style={styles.emptyDateText}>Nothing</Text>
+      </View>
+    );
+  }
+
   return (
     <Agenda
       items={items}
       renderItem={renderItem}
       pastScrollRange={1}
       futureScrollRange={1}
-       // If provided, a standard RefreshControl will be added for "Pull to Refresh" functionality. Make sure to also set the refreshing prop correctly
       onRefresh={() => console.log('refreshing...')}
-      // Set this true while waiting for new data from a refresh
       refreshing={false}
-      // Add a custom RefreshControl component, used to provide pull-to-refresh functionality for the ScrollView
       refreshControl={null}
-      renderEmptyDate={() => {
-        return (
-          <View style={styles.itemContainer}>
-            <Text> Nothing</Text>
-          </View>
-        );
-      }}
+      renderEmptyDate={renderEmptyDate}
     />
   );
 }
