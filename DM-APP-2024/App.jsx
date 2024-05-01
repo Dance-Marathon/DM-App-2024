@@ -3,11 +3,9 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 import { onAuthStateChanged } from 'firebase/auth';
-import { auth } from './Firebase/firebase';
-//import messaging from '@react-native-firebase/messaging'; // Import Firebase Messaging
-//import { Alert } from 'react-native'; // Import Alert for displaying notifications
-import {Icon} from 'react-native-elements';
-
+import { auth, db } from './Firebase/AuthManager';
+import { doc, getDoc, collection, getDocs, setDoc, updateDoc, arrayUnion } from 'firebase/firestore';
+import { Icon } from 'react-native-elements';
 import { Text, View, Button, Platform, StyleSheet } from 'react-native';
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
@@ -21,23 +19,9 @@ import About from './About';
 import Login from './Login';
 import Profile from './Profile';
 import ForgotPassword from './ForgotPassword';
+import Admin from './Admin';
 
 import { addUserExpoPushToken } from "./Firebase/AuthManager";
-
-/*
-import {
-  useFonts,
-  Montserrat_100Thin,
-  Montserrat_200ExtraLight,
-  Montserrat_300Light,
-  Montserrat_400Regular,
-  Montserrat_500Medium,
-  Montserrat_600SemiBold,
-  Montserrat_700Bold,
-  Montserrat_800ExtraBold,
-  Montserrat_900Black,
-} from "@expo-google-fonts/montserrat";
-*/
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -76,7 +60,7 @@ async function registerForPushNotificationsAsync() {
     token = await Notifications.getExpoPushTokenAsync({
       projectId: Constants.expoConfig.extra.eas.projectId,
     });
-    console.log('Token from register function:',token);
+    console.log('Token from register function:', token);
   } else {
     alert('Must use physical device for Push Notifications');
   }
@@ -89,6 +73,45 @@ const App = () => {
   const [notification, setNotification] = useState(false);
   const notificationListener = useRef();
   const responseListener = useRef();
+  const [role, setRole] = useState('');
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  const displayDocumentData = async () => {
+    try {
+      const currentUID = auth.currentUser.uid;
+      console.log("Current UID:", currentUID);
+      const docRef = doc(db, "Users", currentUID);
+      console.log("Doc Ref:", docRef);
+      const docSnap = await getDoc(docRef);
+      console.log("Doc Snap:", docSnap);
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        console.log("Document Data:", data);
+        console.log("User Role:", data.role);
+          setRole(data.role);
+      } else {
+        console.log("Document does not exist");
+      }
+    } catch (error) {
+      console.error("Error fetching document data:", error);
+    }
+  };
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      setUser(user);
+      setLoading(false);
+
+      if (user) {
+        await displayDocumentData();
+      }
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, []);
 
   async function handleToken() {
     const currentUID = auth.currentUser.uid;
@@ -105,13 +128,12 @@ const App = () => {
 
   useEffect(() => {
     handleToken();
-  }, [expoPushToken])
+  }, [expoPushToken]);
 
   useEffect(() => {
     registerForPushNotificationsAsync().then(token => {
       setExpoPushToken(token);
-      // addUserExpoPushToken(auth.currentUser.uid, expoPushToken);
-    } );
+    });
 
     notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
       setNotification(notification);
@@ -127,132 +149,94 @@ const App = () => {
     };
   }, []);
 
-  /*
-  let [fontsLoaded] = useFonts({
-    Montserrat_100Thin,
-    Montserrat_200ExtraLight,
-    Montserrat_300Light,
-    Montserrat_400Regular,
-    Montserrat_500Medium,
-    Montserrat_600SemiBold,
-    Montserrat_700Bold,
-    Montserrat_800ExtraBold,
-    Montserrat_900Black,
-  });
-  */
-  
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
-      setLoading(false);
-    });
-
-    return () => {
-      unsubscribe();
-    };
-  }, []);
-
   if (loading) {
     return null;
   }
 
-  async function sendPushNotification(expoPushToken) {
-    console.log('Sending...');
-    console.log(expoPushToken);
-    const message = {
-      to: expoPushToken,
-      sound: 'default',
-      title: 'Original Title',
-      body: 'And here is the body!',
-      data: { someData: 'goes here' },
-    };
-  
-    await fetch('https://exp.host/--/api/v2/push/send', {
-      method: 'POST',
-      headers: {
-        Accept: 'application/json',
-        'Accept-encoding': 'gzip, deflate',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(message),
-    });
-    console.log('Sent!');
-  }
+  console.log("Role:", role);
 
   return (
     <><NavigationContainer>
       {user ? (
         <Tab.Navigator
-        screenOptions={{
-          tabBarStyle: { backgroundColor: '#233563' },
-          headerStyle: { backgroundColor: '#233563' },
-          tabBarActiveTintColor: 'orange',
-          tabBarInactiveTintColor: 'white',
-          headerTintColor: 'white',
-        }}
-      >
-        <Tab.Screen
-          name="Home"
-          component={Home}
-          initialParams={{ expoPushToken: expoPushToken }}
-          options={{
-            tabBarIcon: ({ color, size }) => (
-              <Icon
-                name="home"
-                type="font-awesome"
-                color={color}
-              />
-            ),
+          screenOptions={{
+            tabBarStyle: { backgroundColor: '#233563' },
+            headerStyle: { backgroundColor: '#233563' },
+            tabBarActiveTintColor: 'orange',
+            tabBarInactiveTintColor: 'white',
+            headerTintColor: 'white',
           }}
-        />
-        <Tab.Screen
-          name="Calendar"
-          component={CalendarPage}
-          options={{
-            tabBarIcon: ({ color, size }) => (
-              <Icon
-                name="calendar"
-                type="font-awesome"
-                color={color}
-              />
-            ),
-          }}
-        />
-        {/* <Tab.Screen name="Spirit" component={Spirit} options={{
-            tabBarIcon: ({ color, size }) => (
-              <Icon name="camera" type="font-awesome" color={color} />
-            ),
-          }}/> */}
-        <Tab.Screen
-          name="Fundraiser"
-          component={Fundraiser}
-          options={{
-            tabBarIcon: ({ color, size }) => (
-              <Icon
-                name="money"
-                type="font-awesome"
-                color={color}
-              />
-            ),
-          }}
-        />
-        <Tab.Screen
-          name="About"
-          component={About}
-          options={{
-            tabBarIcon: ({ color, size }) => (
-              <Icon
-                name="address-card"
-                type="font-awesome"
-                color={color}
-              />
-            ),
-          }}
-        />
-      </Tab.Navigator>
+        >
+          {role === "Admin" ? (
+            <Tab.Screen
+              name="Admin"
+              component={Admin}
+              initialParams={{ expoPushToken: expoPushToken }}
+              options={{
+                tabBarIcon: ({ color, size }) => (
+                  <Icon
+                    name="user-secret"
+                    type="font-awesome"
+                    color={color}
+                  />
+                ),
+              }}
+            />
+          ) : (<></>)}
+          <Tab.Screen
+            name="Home"
+            component={Home}
+            initialParams={{ expoPushToken: expoPushToken }}
+            options={{
+              tabBarIcon: ({ color, size }) => (
+                <Icon
+                  name="home"
+                  type="font-awesome"
+                  color={color}
+                />
+              ),
+            }}
+          />
+          <Tab.Screen
+            name="Calendar"
+            component={CalendarPage}
+            options={{
+              tabBarIcon: ({ color, size }) => (
+                <Icon
+                  name="calendar"
+                  type="font-awesome"
+                  color={color}
+                />
+              ),
+            }}
+          />
+          <Tab.Screen
+            name="Fundraiser"
+            component={Fundraiser}
+            options={{
+              tabBarIcon: ({ color, size }) => (
+                <Icon
+                  name="money"
+                  type="font-awesome"
+                  color={color}
+                />
+              ),
+            }}
+          />
+          <Tab.Screen
+            name="About"
+            component={About}
+            options={{
+              tabBarIcon: ({ color, size }) => (
+                <Icon
+                  name="address-card"
+                  type="font-awesome"
+                  color={color}
+                />
+              ),
+            }}
+          />
+        </Tab.Navigator>
       ) : (
         <Stack.Navigator initialRouteName="Login">
           <Stack.Screen
