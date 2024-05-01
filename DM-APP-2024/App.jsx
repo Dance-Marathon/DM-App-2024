@@ -188,6 +188,7 @@ const App = () => {
             component={Home}
             initialParams={{ expoPushToken: expoPushToken }}
             options={{
+              headerShown: false,
               tabBarIcon: ({ color, size }) => (
                 <Icon
                   name="home"

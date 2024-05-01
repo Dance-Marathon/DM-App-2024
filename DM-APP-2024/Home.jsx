@@ -13,12 +13,13 @@ import {
   Button,
   TextInput,
   FlatList,
-  Alert
+  Alert,
 } from "react-native";
 import UpcomingEventsScreen from "./UpcomingEvents";
 const INITIAL_DATE = new Date();
 import { auth, db } from './Firebase/AuthManager';
 import { doc, getDoc, collection, getDocs, setDoc, updateDoc, arrayUnion } from 'firebase/firestore';
+import { Icon } from 'react-native-elements';
 
 import { addUserExpoPushToken } from "./Firebase/AuthManager";
 
@@ -307,10 +308,16 @@ const Home = ({route}) => {
           ) : (
         <></>)} */}
         <TouchableOpacity
-          style={styles.showNotificationButton}
-          onPress={() => setNotificationModalVisible(true)}>
-            <Text style={styles.buttonText}>Show Past Notifications</Text>
-        </TouchableOpacity>
+        style={styles.bellIconContainer}
+        onPress={() => setNotificationModalVisible(true)}
+          >
+          <Icon
+            name="bell"
+            type="font-awesome"
+            color="white"
+            size={24}
+          />
+      </TouchableOpacity>
       <Modal
         animationType="slide"
         transparent={true}
@@ -465,5 +472,11 @@ const styles = StyleSheet.create({
     marginTop: 15,
     width: 200,
     marginBottom: 20,
+  },
+  bellIconContainer: {
+    position: 'absolute',
+    top: 50,
+    right: 20,
+    zIndex: 1, // Ensure it's above other elements
   },
 });
