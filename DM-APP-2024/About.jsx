@@ -131,12 +131,14 @@ const About = () => {
             buttonStyle={styles.lastButton} 
           />
         </View>
-        <TouchableOpacity style={styles.signOutButton} onPress={() => handleSignOut()}>
-          <Text style={styles.buttonText}>Sign Out</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.signOutButton} onPress={() => confirmDeletion()}>
-          <Text style={styles.buttonText}>Delete Account</Text>
-        </TouchableOpacity>
+        <View style={styles.buttonContainer} >
+          <TouchableOpacity style={styles.signOutButton} onPress={() => handleSignOut()}>
+            <Text style={styles.buttonText}>Sign Out</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.deleteAccountButton} onPress={() => confirmDeletion()}>
+            <Text style={styles.buttonText}>Delete Account</Text>
+          </TouchableOpacity>
+          </View>
       </View>
     </ScrollView>
   );
@@ -193,14 +195,24 @@ const styles = StyleSheet.create({
     color: 'white',
     textAlign: 'center',
     fontWeight: 'bold',
+    fontSize:18,
   },
   signOutButton: {
-    backgroundColor: '#E2883C',
-    padding: 15,
+    backgroundColor: "#E2883C",
+    padding: 8,
     borderRadius: 5,
-    marginTop: 15,
-    width: 200,
-    marginBottom: 20,
+    marginBottom: 10, 
+    marginTop: 10,
+    flex: 1,
+  },
+  deleteAccountButton: {
+    backgroundColor: "#E2883C",
+    padding: 8,
+    borderRadius: 5,
+    marginLeft: 10,
+    marginBottom: 10, 
+    marginTop: 10,
+    flex: 1,
   },
   exclamationButton: {
     backgroundColor: '#233D72',
@@ -209,6 +221,11 @@ const styles = StyleSheet.create({
     paddingLeft: 22,
     borderRadius: 5,
     borderWidth: 0,
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: 350,
   },
 });
 
