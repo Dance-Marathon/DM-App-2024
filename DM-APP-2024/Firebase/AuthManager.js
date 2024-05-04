@@ -37,15 +37,33 @@ const handleLogin = async (email, password) => {
 };
 
 function extractParticipantID(url) {
+  // First, try to extract using the query parameter 'participantID='
+  const searchString = 'participantID=';
+  let startIndex = url.indexOf(searchString);
+  if (startIndex !== -1) {
+    return url.slice(startIndex + searchString.length, startIndex + searchString.length + 7);
+  }
+
+  // If not found, try to match the URL pattern ending in seven digits
+  const urlPattern = /\/(\d{7})$/; // Regex to match exactly seven digits at the end of the URL
+  const match = url.match(urlPattern);
+  if (match) {
+    return match[1]; // Return the matched group of digits
+  }
+
+  // Return null if no ID is found
+  return null;
+}
+
+/* function extractParticipantID(url) {
   const searchString = 'participantID=';
   const startIndex = url.indexOf(searchString) + searchString.length;
   if (startIndex > -1) {
-    // Extract the next 7 characters after 'participantID='
     const participantID = url.substring(startIndex, startIndex + 7);
     return participantID;
   }
-  return null; // or handle the case where 'participantID=' is not found
-}
+  return null;
+} */
 
 async function addUserExpoPushToken(userId, expoPushToken) {
   try {
