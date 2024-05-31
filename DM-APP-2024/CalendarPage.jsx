@@ -43,13 +43,13 @@ const Home = () => {
       });
   
       // Now, fill in the empty dates
-      const oneMonthAgo = new Date();
-      oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
-      const oneMonthFromNow = new Date();
-      oneMonthFromNow.setMonth(oneMonthFromNow.getMonth() + 1);
+      const twoMonthAgo = new Date();
+      twoMonthAgo.setMonth(twoMonthAgo.getMonth() - 2);
+      const twoMonthFromNow = new Date();
+      twoMonthFromNow.setMonth(twoMonthFromNow.getMonth() + 2);
   
-      let currentDate = new Date(oneMonthAgo);
-      while (currentDate <= oneMonthFromNow) {
+      let currentDate = new Date(twoMonthAgo);
+      while (currentDate <= twoMonthFromNow) {
         const dateStr = currentDate.toISOString().split('T')[0];
         if (!fetchedItems[dateStr]) {
           fetchedItems[dateStr] = []; // Set dates without events to an empty array
