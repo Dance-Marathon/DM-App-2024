@@ -87,14 +87,14 @@ const Login = ({route}) => {
           {create && (
             <Image
               style={styles.logoBig}
-              source={require("./images/year30_logo.png")}
+              source={require("./images/dmlogo_white.png")}
             />
           )}
 
           {!create && (
             <Image
               style={styles.logoSmall}
-              source={require("./images/year30_logo.png")}
+              source={require("./images/dmlogo_white.png")}
             />
           )}
 
@@ -325,12 +325,12 @@ const styles = StyleSheet.create({
     marginTop: 5,
   },
   logoBig: {
-    width: 225,
+    width: 350,
     height: 225,
     marginBottom: 50,
   },
   logoSmall: {
-    width: 225,
+    width: 350,
     height: 225,
     marginBottom: 50,
     marginTop: 50,

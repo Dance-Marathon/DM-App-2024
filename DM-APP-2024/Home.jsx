@@ -14,6 +14,7 @@ import {
   TextInput,
   FlatList,
   Alert,
+  Linking,
 } from "react-native";
 import UpcomingEventsScreen from "./UpcomingEvents";
 const INITIAL_DATE = new Date();
@@ -288,6 +289,10 @@ const Home = ({route}) => {
       );
     };
 
+    const openWebsite = (url) => {
+      Linking.openURL(url);
+    }
+
   return (
     <View
       style={{
@@ -317,6 +322,15 @@ const Home = ({route}) => {
             color="white"
             size={24}
           />
+      </TouchableOpacity>
+      <Text style={styles.applicationTitle}>Ambassador Applications Are Now Open!</Text>
+      <Image source={require('./images/ambassador_application.png')} style={styles.applicationImage}/>
+      <Text style={styles.applicationText}>
+        Applications can be found on the website under "Get Involved" or by pressing the button below.
+        Interview sign ups will be sent to you after you submit your application.
+      </Text>
+      <TouchableOpacity style={styles.applicationButton} onPress={() => openWebsite('https://ufl.qualtrics.com/jfe/form/SV_eG7brijBCrJ8mk6')}>
+        <Text style={styles.applicationButtonText}>Apply Here!</Text>
       </TouchableOpacity>
       <Modal
         animationType="slide"
@@ -478,5 +492,43 @@ const styles = StyleSheet.create({
     top: 50,
     right: 20,
     zIndex: 1, // Ensure it's above other elements
+  },
+  applicationImage: {
+    width: 350,
+    height: 350,
+    borderColor: "white",
+    borderWidth: 5,
+  },
+  applicationTitle: {
+    fontSize: 30,
+    fontWeight: "bold",
+    marginBottom: 10,
+    marginTop: 40,
+    width: "92%",
+    color: "white",
+    textAlign: "center",
+  },
+  applicationText: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 20,
+    marginTop: 10,
+    width: "92%",
+    color: "white",
+    textAlign: "center",
+  },
+  applicationButton: {
+    backgroundColor: "#E2883C",
+    padding: 10,
+    height: 45,
+    width: '60%',
+    borderRadius: 5,
+    marginBottom: 10, 
+  },
+  applicationButtonText: {
+    color: 'white',
+    textAlign: 'center',
+    fontWeight: 'bold',
+    fontSize:18,
   },
 });
