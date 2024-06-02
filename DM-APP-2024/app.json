@@ -3,7 +3,7 @@
     "name": "DM at UF",
     "slug": "DM-APP-2024",
     "version": "1.0.8",
-    "sdkVersion": "50.0.0",
+    "sdkVersion": "51.0.0",
     "orientation": "portrait",
     "icon": "./images/year30_icon.png",
     "userInterfaceStyle": "light",
