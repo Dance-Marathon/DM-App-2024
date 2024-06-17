@@ -134,7 +134,7 @@ const Home = ({route}) => {
   const dismissKeyboard = () => {
     Keyboard.dismiss();
   };
-
+/* 
   useEffect(() => {
     const interval = setInterval(() => {
       fetchAllNotifications();
@@ -143,7 +143,7 @@ const Home = ({route}) => {
     fetchData(); // Also fetch immediately on component mount
 
     return () => clearInterval(interval); // Clear interval on component unmount
-  }, []);
+  }, []); */
 
   const addNotification = async (notification) => {
     try {

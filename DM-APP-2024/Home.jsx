@@ -24,105 +24,8 @@ import { Icon } from 'react-native-elements';
 
 import { addUserExpoPushToken } from "./Firebase/AuthManager";
 
-const fetchData = async () => {
-  try {
-    const eventsCollectionRef = collection(db, "Users");
-    const querySnapshot = await getDocs(eventsCollectionRef);
-    const fetchedItems = [];
-
-    querySnapshot.forEach((doc) => {
-      const docData = doc.data();
-        //console.log(docData);
-        fetchedItems.push(docData.notificationToken);
-
-    });
-
-    //console.log('Item:',fetchedItems);
-    return fetchedItems;
-  } catch (error) {
-    console.error("Error fetching events:", error);
-    // Handle errors as needed
-  }
-};
-
-async function sendPushNotificationsToAll(expoPushTokens, notification) {
-  console.log('Sending notifications...');
-  const messages = []
-/*   const messages = expoPushTokens.map(token => ({
-    to: token,
-    sound: 'default',
-    title: 'Original Title',
-    body: 'And here is the body!',
-    data: { someData: 'goes here' },
-  })); */
-
-  for (const token of expoPushTokens) {
-    messages.push({
-    to: token,
-    sound: 'default',
-    title: notification.title,
-    body: notification.message,
-    //data: { someData: 'goes here' },
-    })
-
-    console.log(token)
-  }
-  for (const message of messages) {
-    //console.log(`Sending to token: ${message.to}`);
-    await fetch('https://exp.host/--/api/v2/push/send', {
-      method: 'POST',
-      headers: {
-        Accept: 'application/json',
-        'Accept-encoding': 'gzip, deflate',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(message),
-    });
-  }
-}
-
-async function sendPushNotification(expoPushToken, notification) {
-  const message = {
-    to: expoPushToken,
-    sound: 'default',
-    title: notification.title,
-    body: notification.message,
-  };
-
-  await fetch('https://exp.host/--/api/v2/push/send', {
-    method: 'POST',
-    headers: {
-      Accept: 'application/json',
-      'Accept-encoding': 'gzip, deflate',
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(message),
-  });
-}
-
-function getCurrentDate() {
-  const date = new Date();
-  const year = date.getFullYear();
-  const month = (date.getMonth() + 1).toString().padStart(2, '0'); // Convert month to 2 digits
-  const day = date.getDate().toString().padStart(2, '0'); // Convert day to 2 digits
-  return `${year}-${month}-${day}`;
-}
-
-function getCurrentTime() {
-  const date = new Date();
-  let hours = date.getHours();
-  const minutes = date.getMinutes().toString().padStart(2, '0');
-  const ampm = hours >= 12 ? 'PM' : 'AM';
-  hours = hours % 12;
-  hours = hours ? hours : 12; // the hour '0' should be '12'
-  hours = hours.toString().padStart(2, '0'); // Convert hours to 2 digits
-  return `${hours}:${minutes} ${ampm}`;
-}
-
 const Home = ({route}) => {
 
-  const [title, setTitle] = useState('');
-  const [message, setMessage] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
   const [notificationModalVisible, setNotificationModalVisible] = useState(false);
   const [role, setRole] = useState('');
@@ -130,41 +33,6 @@ const Home = ({route}) => {
   const [allNotifications, setAllNotifications] = useState({});
 
   const {expoPushToken} = route.params;
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      fetchAllNotifications();
-    }, 120000); // Refresh every two minutes
-
-    fetchData(); // Also fetch immediately on component mount
-
-    return () => clearInterval(interval); // Clear interval on component unmount
-  }, []);
-
-  const addNotification = async (notification) => {
-    try {
-      const notificationsRef = collection(db, "Notifications");
-      const notificationDate = notification.date; // Ensure that 'notification' has a 'date' property
-      const dateDocRef = doc(notificationsRef, notificationDate);
-      const docSnapshot = await getDoc(dateDocRef);
-  
-      if (docSnapshot.exists()) {
-        // If the document exists, append the new event to the 'events' array
-        await updateDoc(dateDocRef, {
-          events: arrayUnion(notification),
-        });
-      } else {
-        // If the document does not exist, create it with the 'events' array containing the new event
-        await setDoc(dateDocRef, {
-          events: [notification],
-        });
-      }
-      console.log("Notification added successfully");
-    } catch (error) {
-      console.error("Error adding notification:", error);
-      throw error; // Rethrow the error to handle it in the calling function
-    }
-  };
 
   const fetchAllNotifications = async () => {
     try {
@@ -234,51 +102,9 @@ const Home = ({route}) => {
     getUserRole();
   }, [auth.currentUser]);
 
-  let handleClick = async () => {
-    fetchItems = await fetchData();
-    sendPushNotificationsToAll(fetchItems, {
-      date: getCurrentDate(),
-      message: message,
-      time: getCurrentTime(),
-      title: title
-    }).then(() => {
-      console.log('All notifications sent!');
-    }).catch(error => {
-      console.error('Error sending notifications:', error);
-    });
-    /* sendPushNotification('ExponentPushToken[UVH4ZkJqvUH8iQJRWE2Z5o]',{
-      date: getCurrentDate(),
-      message: message,
-      time: getCurrentTime(),
-      title: title
-    }); */
-    addNotification({
-      date: getCurrentDate(),
-      message: message,
-      time: getCurrentTime(),
-      title: title
-    });
-    setTitle('');
-    setMessage('');
-    }
-
     useEffect(() => {
       fetchAllNotifications();
     }, []);
-
-    const confirmSend = () => {
-      Alert.alert(
-        'Send Notification',
-        'Are you sure you want to send this notification?',
-        [
-          // The "Yes" button
-          { text: 'Yes', onPress: () => handleClick() },
-          // The "No" button
-          { text: 'No', style: 'cancel' },
-        ],
-        { cancelable: false }
-      );
-    };
 
     const renderNotif = ({ item }) => {
       return (
@@ -341,7 +167,7 @@ const Home = ({route}) => {
           setModalVisible(!modalVisible);
         }}
       >
-        <View style={styles.centeredView}>
+        {/* <View style={styles.centeredView}>
           <View style={styles.modalView}>
             <Text>Notification Center</Text>
             <View style={styles.itemContainer}>
@@ -371,7 +197,7 @@ const Home = ({route}) => {
               title="Hide Tool"
             />
           </View>
-        </View>
+        </View> */}
       </Modal>
       <Modal
         animationType="slide"

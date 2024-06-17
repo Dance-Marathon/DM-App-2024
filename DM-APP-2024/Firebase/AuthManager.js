@@ -82,6 +82,41 @@ async function addUserExpoPushToken(userId, expoPushToken) {
   }
 }
 
+async function updateDDLink(userId, newLink) {
+  try {
+    const currentUID = auth.currentUser.uid;
+    const docRef = doc(db, "Users", currentUID);
+    console.log('Data:',docRef);
+
+    // Update the user's document with the ExpoPushToken
+    await setDoc(docRef, {
+      donorLink: newLink,
+      donorID: extractParticipantID(newLink)
+    }, { merge: true });
+
+    console.log(`DonorDrive Link ${newLink} added to user ${userId}`);
+  } catch (error) {
+    console.error("Error adding Link to Firestore:", error);
+  }
+}
+
+async function updateRole(userId, newRole) {
+  try {
+    const currentUID = auth.currentUser.uid;
+    const docRef = doc(db, "Users", currentUID);
+    console.log('Data:',docRef);
+
+    // Update the user's document with the ExpoPushToken
+    await setDoc(docRef, {
+      role: newRole
+    }, { merge: true });
+
+    console.log(`Role ${newRole} added to user ${userId}`);
+  } catch (error) {
+    console.error("Error adding Role to Firestore:", error);
+  }
+}
+
 const handleSignUp = async (email, password, role, donorDriveLink, expopushtoken) => {
   try {
     if (!email || !password || !role || !donorDriveLink) {
@@ -122,4 +157,4 @@ const handleSignOut = async () => {
     });
 };
 
-export { handleLogin, handleSignOut, handleSignUp, deleteUserAccount, auth, db, addUserExpoPushToken };
+export { handleLogin, handleSignOut, handleSignUp, deleteUserAccount, auth, db, addUserExpoPushToken, updateDDLink, updateRole };

@@ -1,18 +1,32 @@
 // Page1.js (similar structure for other pages)
 import React, { useState, useEffect } from 'react';
-import { View, Text, Image, Linking, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
-import {Button, Icon} from 'react-native-elements';
+import { View, Text, Image, Linking, StyleSheet, ScrollView, TouchableOpacity, Alert, TextInput, Modal } from 'react-native';
+import { Button, Icon } from 'react-native-elements';
 import { handleSignOut } from './Firebase/AuthManager';
 import { Agenda } from 'react-native-calendars';
 import firebase from './Firebase/firebase';
 import { auth, db } from './Firebase/AuthManager';
-import { doc, getDoc, collection, getDocs } from 'firebase/firestore';
+import { doc, getDoc, collection, getDocs, setDoc, updateDoc, arrayUnion } from 'firebase/firestore';
 const INITIAL_DATE = new Date();
-import { deleteUserAccount } from './Firebase/AuthManager';
-
+import { deleteUserAccount, updateDDLink, updateRole } from './Firebase/AuthManager';
+import { Dropdown } from "react-native-element-dropdown";
 
 const About = () => {
   const [response, setResponse] = useState(false);
+  const [newLink, setNewLink] = useState('');
+  const [newRole, setNewRole] = useState('');
+  const [accountModalVisable, setAccountModalVisable] = useState(false);
+  const [isFocus, setIsFocus] = useState(false);
+
+  const roles = [
+    { label: "Dancer", value: "Dancer" },
+    { label: "ELP", value: "ELP" },
+    { label: "Ambassador", value: "Ambassador" },
+    { label: "Captain", value: "Captain" },
+    { label: "Assistant Director", value: "Assistant Director" },
+    { label: "Overall", value: "Overall" },
+    { label: "Manager", value: "Manager" },
+  ];
 
   const openWebsite = (url) => {
     Linking.openURL(url);
@@ -42,6 +56,22 @@ const About = () => {
       ],
       { cancelable: false }
     );
+  };
+
+  const changeLink = async () => {
+    const currentUID = auth.currentUser.uid;
+    if (newLink !== '') {
+      updateDDLink(currentUID, newLink);
+    }
+  };
+
+  const changeRole = () => {
+    const currentUID = auth.currentUser.uid;
+    updateRole(currentUID, newRole);
+  };
+
+  const toggleAccountModel = () => {
+    setAccountModalVisable(!accountModalVisable);
   };
 
   return (
@@ -132,6 +162,11 @@ const About = () => {
           />
         </View>
         <View style={styles.buttonContainer} >
+          <TouchableOpacity style={styles.signOutButton} onPress={toggleAccountModel}>
+            <Text style={styles.buttonText}>Update Account Info</Text>
+          </TouchableOpacity>
+          </View>
+        <View style={styles.buttonContainer} >
           <TouchableOpacity style={styles.signOutButton} onPress={() => handleSignOut()}>
             <Text style={styles.buttonText}>Sign Out</Text>
           </TouchableOpacity>
@@ -139,11 +174,53 @@ const About = () => {
             <Text style={styles.buttonText}>Delete Account</Text>
           </TouchableOpacity>
           </View>
-      </View>
+        </View>
+        <Modal visible={accountModalVisable} transparent={true} animationType="slide">
+        <View style={styles.modalView}>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter new DonorDrive link"
+            value={newLink}
+            onChangeText={text => setNewLink(text)}
+          />
+          <TouchableOpacity
+            style={styles.updateButton}
+            onPress={changeLink} >
+            <Text style={styles.modalButtonText}>Update Link</Text>
+          </TouchableOpacity>
+          <Dropdown
+            style={styles.dropdown}
+            placeholderStyle={styles.placeholderStyle}
+            selectedTextStyle={styles.selectedTextStyle}
+            inputSearchStyle={styles.inputSearchStyle}
+            iconStyle={styles.iconStyle}
+            data={roles}
+            search
+            maxHeight={300}
+            labelField="label"
+            valueField="value"
+            placeholder={!isFocus ? "Select Your Role" : "..."}
+            searchPlaceholder="Search..."
+            value={newRole}
+            onChange={(item) => {
+              setNewRole(item.value);
+              setIsFocus(false); // This ensures the dropdown loses focus after selection
+            }}
+          />
+          <TouchableOpacity
+            style={styles.updateButton}
+            onPress={changeRole} >
+            <Text style={styles.modalButtonText}>Update Role</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.closeButton}
+            onPress={toggleAccountModel} >
+            <Text style={styles.closeButtonText}>Close</Text>
+          </TouchableOpacity>
+        </View>
+      </Modal>
     </ScrollView>
   );
-    
-  
 }
 
 const styles = StyleSheet.create({
@@ -226,6 +303,86 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     width: 350,
+  },
+  modalView: {
+    marginTop: 250,
+    margin: 20,
+    backgroundColor: 'white',
+    borderRadius: 20,
+    padding: 20,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  centeredView: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 22,
+  },
+  dropdown: {
+    marginTop: 15,
+    height: 40,
+    borderColor: "black",
+    borderWidth: 1,
+    paddingHorizontal: 10,
+    borderRadius: 5,
+    backgroundColor: "#D9D9D9",
+    width: 200,
+  },
+  icon: {
+    marginRight: 5,
+  },
+  placeholderStyle: {
+    fontSize: 16,
+  },
+  selectedTextStyle: {
+    fontSize: 16,
+  },
+  iconStyle: {
+    width: 20,
+    height: 20,
+  },
+  inputSearchStyle: {
+    height: 40,
+    fontSize: 16,
+  },
+  input: {
+    height: 40,
+    borderColor: "black",
+    borderWidth: 1,
+    paddingHorizontal: 10,
+    borderRadius: 5,
+    backgroundColor: "#D9D9D9",
+    width: "90%",
+  },
+  updateButton: {
+    backgroundColor: "#E2883C",
+    padding: 10,
+    borderRadius: 5,
+    marginTop: 10,
+  },
+  modalButtonText: {
+    color: "white",
+    textAlign: "center",
+    fontWeight: "bold",
+  },
+  closeButton: {
+    padding: 10,
+    borderRadius: 5,
+    marginTop: 10,
+    alignSelf: "stretch",
+  },
+  closeButtonText: {
+    color: '#233D72',
+    textAlign: "center",
+    fontWeight: "bold",
   },
 });
 

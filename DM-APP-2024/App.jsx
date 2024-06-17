@@ -20,6 +20,7 @@ import Login from './Login';
 import Profile from './Profile';
 import ForgotPassword from './ForgotPassword';
 import Admin from './Admin';
+import Blog from './Blog';
 
 import { addUserExpoPushToken } from "./Firebase/AuthManager";
 
@@ -218,6 +219,19 @@ const App = () => {
               tabBarIcon: ({ color, size }) => (
                 <Icon
                   name="money"
+                  type="font-awesome"
+                  color={color}
+                />
+              ),
+            }}
+          />
+          <Tab.Screen
+            name="Blog"
+            component={Blog}
+            options={{
+              tabBarIcon: ({ color, size }) => (
+                <Icon
+                  name="book"
                   type="font-awesome"
                   color={color}
                 />
