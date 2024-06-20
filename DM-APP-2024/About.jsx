@@ -63,11 +63,13 @@ const About = () => {
     if (newLink !== '') {
       updateDDLink(currentUID, newLink);
     }
+    toggleAccountModel();
   };
 
   const changeRole = () => {
     const currentUID = auth.currentUser.uid;
     updateRole(currentUID, newRole);
+    toggleAccountModel();
   };
 
   const toggleAccountModel = () => {
