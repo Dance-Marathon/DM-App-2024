@@ -1,4 +1,3 @@
-// Page1.js (similar structure for other pages)
 import React, { useEffect, useState } from "react";
 import {
   View,
@@ -126,30 +125,18 @@ const Home = ({route}) => {
         justifyContent: "center",
         alignItems: "center",
         backgroundColor: "#233563",
-      }}
-    >
-      {/* {role === "Admin" ? (
-          <>
-          <TouchableOpacity
-              style={styles.showNotificationButton}
-              onPress={() => setModalVisible(true)}>
-                <Text style={styles.buttonText}>Show Notification Center</Text>
-            </TouchableOpacity>
-          </>
-          ) : (
-        <></>)} */}
-        <TouchableOpacity
-        style={styles.bellIconContainer}
-        onPress={() => setNotificationModalVisible(true)}
-          >
-          <Icon
-            name="bell"
-            type="font-awesome"
-            color="white"
-            size={24}
-          />
+      }}>
+      <TouchableOpacity
+      style={styles.bellIconContainer}
+      onPress={() => setNotificationModalVisible(true)} >
+        <Icon
+          name="bell"
+          type="font-awesome"
+          color="white"
+          size={24}
+        />
       </TouchableOpacity>
-      <Text style={styles.applicationTitle}>Ambassador Applications Are Now Open!</Text>
+      {/* <Text style={styles.applicationTitle}>Ambassador Applications Are Now Open!</Text>
       <Image source={require('./images/ambassador_application.png')} style={styles.applicationImage}/>
       <Text style={styles.applicationText}>
         Applications can be found on the website under "Get Involved" or by pressing the button below.
@@ -166,39 +153,7 @@ const Home = ({route}) => {
           Alert.alert("Modal has been closed.");
           setModalVisible(!modalVisible);
         }}
-      >
-        {/* <View style={styles.centeredView}>
-          <View style={styles.modalView}>
-            <Text>Notification Center</Text>
-            <View style={styles.itemContainer}>
-                  <TextInput
-                  style={styles.inputTop}
-                  onChangeText={(text) => setTitle(text)}
-                  placeholder="Title"
-                  autoCapitalize="none"
-                  value={title}
-                />
-                    <TextInput
-                  style={styles.inputTop}
-                  onChangeText={(text) => setMessage(text)}
-                  placeholder="Message"
-                  autoCapitalize="none"
-                  value={message}
-                />
-                <Button
-                  title="Send Notification"
-                  onPress={() => confirmSend()}
-                  buttonStyle={styles.button} 
-                />
-            </View>
-            <Button
-              style={[styles.button, styles.buttonClose]}
-              onPress={() => setModalVisible(!modalVisible)}
-              title="Hide Tool"
-            />
-          </View>
-        </View> */}
-      </Modal>
+      /> */}
       <Modal
         animationType="slide"
         transparent={true}
@@ -206,8 +161,7 @@ const Home = ({route}) => {
         onRequestClose={() => {
           Alert.alert("Modal has been closed.");
           setNotificationModalVisible(!notificationModalVisible);
-        }}
-      >
+        }} >
         <View style={styles.centeredView}>
           <View style={styles.modalView}>
             <Text>Past Notifications</Text>
