@@ -1,4 +1,3 @@
-// Page1.js (similar structure for other pages)
 import React, { useState, useEffect } from 'react';
 import { View, Text, Image, Linking, StyleSheet, ScrollView, TouchableOpacity, Alert, TextInput, Modal } from 'react-native';
 import { Button, Icon } from 'react-native-elements';
@@ -18,6 +17,7 @@ const About = () => {
   const [accountModalVisable, setAccountModalVisable] = useState(false);
   const [isFocus, setIsFocus] = useState(false);
 
+  // Organization role options
   const roles = [
     { label: "Dancer", value: "Dancer" },
     { label: "ELP", value: "ELP" },
@@ -28,36 +28,38 @@ const About = () => {
     { label: "Manager", value: "Manager" },
   ];
 
+  // Open website in browser  
   const openWebsite = (url) => {
     Linking.openURL(url);
   }
 
+  // If given a response, use that response to determine to remove the user account  
   useEffect(() => {
     if (response) {
       removeFunctions();
     }
   }, [response]);
 
+  // Remove user account and sign out
   const removeFunctions = async () => {
     deleteUserAccount();
     handleSignOut();
   };
 
-  // Function to confirm deletion with the user
+  // Confirm account deletion with user
   const confirmDeletion = () => {
     Alert.alert(
       'Delete Account',
       'Are you sure you want to delete your account? This action cannot be undone.',
       [
-        // The "Yes" button
         { text: 'Yes', onPress: () => setResponse(true) },
-        // The "No" button
         { text: 'No', style: 'cancel' },
       ],
       { cancelable: false }
     );
   };
 
+  // Changes DonorDrive link
   const changeLink = async () => {
     const currentUID = auth.currentUser.uid;
     if (newLink !== '') {
@@ -66,12 +68,14 @@ const About = () => {
     toggleAccountModel();
   };
 
+  // Changes user role  
   const changeRole = () => {
     const currentUID = auth.currentUser.uid;
     updateRole(currentUID, newRole);
     toggleAccountModel();
   };
-
+  
+  // Toggles account modal visibility
   const toggleAccountModel = () => {
     setAccountModalVisable(!accountModalVisable);
   };
@@ -206,7 +210,7 @@ const About = () => {
             value={newRole}
             onChange={(item) => {
               setNewRole(item.value);
-              setIsFocus(false); // This ensures the dropdown loses focus after selection
+              setIsFocus(false);
             }}
           />
           <TouchableOpacity
