@@ -70,9 +70,6 @@
         "projectId": "c3f7692a-6282-4c71-9061-62a8cc0a464e"
       }
     },
-<<<<<<< HEAD
-    "plugins": ["@react-native-firebase/app"]
-=======
     "plugins": [
       [
         "expo-build-properties",
@@ -83,6 +80,5 @@
         }
       ]
     ]
->>>>>>> bb4139e07ff4c9a9bcdb4d81a7409aa4302531ad
   }
 }
