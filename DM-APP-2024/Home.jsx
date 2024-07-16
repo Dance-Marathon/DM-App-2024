@@ -14,12 +14,16 @@ import {
   FlatList,
   Alert,
   Linking,
+  SafeAreaView,
 } from "react-native";
 import UpcomingEventsScreen from "./UpcomingEvents";
 const INITIAL_DATE = new Date();
 import { auth, db } from './Firebase/AuthManager';
 import { doc, getDoc, collection, getDocs, setDoc, updateDoc, arrayUnion } from 'firebase/firestore';
 import { Icon } from 'react-native-elements';
+import { Agenda } from 'react-native-calendars';
+import { storage } from './Firebase/firebase';
+import { getStorage, ref, getDownloadURL } from 'firebase/storage';
 
 import { addUserExpoPushToken } from "./Firebase/AuthManager";
 
@@ -30,6 +34,7 @@ const Home = ({route}) => {
   const [role, setRole] = useState('');
   const [userIDState, setUserIDState] = useState('');
   const [allNotifications, setAllNotifications] = useState({});
+  const [items, setItems] = useState([]);
 
   const {expoPushToken} = route.params;
 
@@ -58,6 +63,65 @@ const Home = ({route}) => {
       setAllNotifications(fetchedNotifs); // Assuming setAllNotifications is a state setter
     } catch (error) {
       console.error("Error fetching notifications:", error);
+    }
+  };
+
+  const fetchDates = async () => {
+    try {
+      const eventsCollectionRef = collection(db, "Calendar2024");
+      const querySnapshot = await getDocs(eventsCollectionRef);
+      const fetchedItems = [];
+  
+      querySnapshot.forEach((doc) => {
+        const docData = doc.data();
+        Object.keys(docData).forEach((date) => {
+          const events = docData[date].events;
+          events.forEach((event) => {
+            let timeString = event.time || '12:00 AM'; // Default to 12:00 AM if no time is provided
+            const [time, period] = timeString.split(' ');
+            let [hours, minutes] = time.split(':').map(Number);
+  
+            if (period === 'PM' && hours !== 12) {
+              hours += 12;
+            } else if (period === 'AM' && hours === 12) {
+              hours = 0;
+            }
+  
+            const [year, month, day] = date.split('-').map(Number);
+  
+            // Create a valid Date object
+            if (year && month && day && !isNaN(hours) && !isNaN(minutes)) {
+              const eventDate = new Date(year, month - 1, day, hours, minutes);
+              if (!isNaN(eventDate)) {
+                fetchedItems.push({
+                  formattedDate: new Intl.DateTimeFormat('en-US', { month: 'long', day: 'numeric', year: 'numeric' }).format(eventDate),
+                  date,
+                  time: event.time || '', // Preserve original time or empty string if not provided
+                  title: event.title,
+                  description: event.description,
+                  datetime: eventDate,
+                  picture: event.picture,
+                });
+              }
+            }
+          });
+        });
+      });
+  
+      // Sort events by datetime
+      fetchedItems.sort((a, b) => a.datetime - b.datetime);
+  
+      // Set the next three events
+      setItems(fetchedItems.slice(0, 3));
+
+      fetchedItems.forEach(item => {
+        if (item.picture) {
+          fetchImageUrl(item.picture);
+        }
+      });
+    } catch (error) {
+      console.error("Error fetching events:", error);
+      setItems([]);
     }
   };
   
@@ -118,6 +182,26 @@ const Home = ({route}) => {
       Linking.openURL(url);
     }
 
+    useEffect(() => {
+      fetchDates();
+    }, []);
+
+    const [imageUrls, setImageUrls] = useState({});
+
+    const fetchImageUrl = async (imageName) => {
+      try {
+        const storage = getStorage();
+        const storageRef = ref(storage, imageName);
+        const url = await getDownloadURL(storageRef);
+        setImageUrls(prevUrls => ({
+          ...prevUrls,
+          [imageName]: url,
+        }));
+      } catch (error) {
+        console.error("Error getting image URL: ", error);
+      }
+    };
+
   return (
     <View
       style={{
@@ -136,24 +220,34 @@ const Home = ({route}) => {
           size={24}
         />
       </TouchableOpacity>
-      {/* <Text style={styles.applicationTitle}>Ambassador Applications Are Now Open!</Text>
-      <Image source={require('./images/ambassador_application.png')} style={styles.applicationImage}/>
-      <Text style={styles.applicationText}>
-        Applications can be found on the website under "Get Involved" or by pressing the button below.
-        Interview sign ups will be sent to you after you submit your application.
-      </Text>
-      <TouchableOpacity style={styles.applicationButton} onPress={() => openWebsite('https://ufl.qualtrics.com/jfe/form/SV_eG7brijBCrJ8mk6')}>
-        <Text style={styles.applicationButtonText}>Apply Here!</Text>
+      <TouchableOpacity
+        style={styles.applicationButton} >
+        <Text style={styles.applicationButtonText}>Fundraising Resources</Text>
       </TouchableOpacity>
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={modalVisible}
-        onRequestClose={() => {
-          Alert.alert("Modal has been closed.");
-          setModalVisible(!modalVisible);
-        }}
-      /> */}
+      <Text style={styles.applicationButtonText}>*Coming Soon</Text>
+      <Text style={styles.applicationTitle}>Upcoming Events</Text>
+        <ScrollView style={{width:'93%'}}>
+        {Array.isArray(items) && items.length > 0 ? (
+          items.map((item, index) => (
+            <View key={index} style={styles.itemContainer}>
+              {item.picture && imageUrls[item.picture] ? (
+                <Image source={{ uri: imageUrls[item.picture] }} style={styles.miniImage} />
+              ) : (
+                <Text style={styles.applicationTitle}>Image not available</Text>
+              )}
+              <Text style={styles.itemTitle}>{item.title}</Text>
+              {item.time ? (
+                <Text style={styles.itemTime}>{item.formattedDate} at {item.time}</Text>
+              ) : (
+                <Text style={styles.itemTime}>All Day</Text>
+              )}
+              <Text style={styles.description}>{item.description}</Text>
+            </View>
+          ))
+        ) : (
+          <Text>No upcoming events</Text>
+        )}
+        </ScrollView>
       <Modal
         animationType="slide"
         transparent={true}
@@ -283,7 +377,7 @@ const styles = StyleSheet.create({
     fontSize: 30,
     fontWeight: "bold",
     marginBottom: 10,
-    marginTop: 40,
+    marginTop: 20,
     width: "92%",
     color: "white",
     textAlign: "center",
@@ -303,12 +397,39 @@ const styles = StyleSheet.create({
     height: 45,
     width: '60%',
     borderRadius: 5,
-    marginBottom: 10, 
+    marginBottom: 10,
+    marginTop: 85,
   },
   applicationButtonText: {
     color: 'white',
     textAlign: 'center',
     fontWeight: 'bold',
     fontSize:18,
+  },
+  itemContainer: {
+    backgroundColor: 'white',
+    padding: 20,
+    marginTop: 10,
+    marginBottom: 10,
+    borderRadius: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  itemTime: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  itemTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginTop: 5,
+  },
+  miniImage: {
+    width: 100,
+    height: 100,
+    borderColor: "black",
+    borderWidth: 5,
   },
 });
