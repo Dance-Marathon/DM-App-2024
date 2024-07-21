@@ -21,6 +21,8 @@ import Profile from './Profile';
 import ForgotPassword from './ForgotPassword';
 import Admin from './Admin';
 import Blog from './Blog';
+import Blog1 from './Blog_BeyondThisMoment';
+import Blog2 from './Blog_BeyondOurselves';
 
 import { addUserExpoPushToken } from "./Firebase/AuthManager";
 
@@ -68,6 +70,17 @@ async function registerForPushNotificationsAsync() {
 
   return token.data;
 }
+
+const BlogStack = () => {
+  const Stack = createStackNavigator();
+  return (
+    <Stack.Navigator initialRouteName="Blog">
+      <Stack.Screen name="Blog" component={Blog} options={{ headerShown: false }} />
+      <Stack.Screen name="Beyond" component={Blog1} options={{ headerShown: false }} />
+      <Stack.Screen name="Ourselves" component={Blog2} options={{ headerShown: false }} />
+    </Stack.Navigator>
+  );
+};
 
 const App = () => {
   const [expoPushToken, setExpoPushToken] = useState('');
@@ -227,7 +240,7 @@ const App = () => {
           />
           <Tab.Screen
             name="Blog"
-            component={Blog}
+            component={BlogStack}
             options={{
               tabBarIcon: ({ color, size }) => (
                 <Icon

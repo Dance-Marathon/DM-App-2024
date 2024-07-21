@@ -222,9 +222,8 @@ const Home = ({route}) => {
       </TouchableOpacity>
       <TouchableOpacity
         style={styles.applicationButton} >
-        <Text style={styles.applicationButtonText}>Fundraising Resources</Text>
+        <Text style={styles.applicationButtonText} onPress={() => openWebsite('https://drive.google.com/drive/folders/18-F_GplwAlu4T-D43GjfzY0cu9cvq5o1?usp=drive_link')} >Fundraising Resources</Text>
       </TouchableOpacity>
-      <Text style={styles.applicationButtonText}>*Coming Soon</Text>
       <Text style={styles.applicationTitle}>Upcoming Events</Text>
         <ScrollView style={{width:'93%'}}>
         {Array.isArray(items) && items.length > 0 ? (
@@ -239,7 +238,7 @@ const Home = ({route}) => {
               {item.time ? (
                 <Text style={styles.itemTime}>{item.formattedDate} at {item.time}</Text>
               ) : (
-                <Text style={styles.itemTime}>All Day</Text>
+                <Text style={styles.itemTime}>{item.formattedDate}</Text>
               )}
               <Text style={styles.description}>{item.description}</Text>
             </View>
@@ -424,12 +423,11 @@ const styles = StyleSheet.create({
   itemTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    marginTop: 5,
+    marginTop: 20,
   },
   miniImage: {
-    width: 100,
-    height: 100,
-    borderColor: "black",
-    borderWidth: 5,
+    width: 325,
+    borderRadius: 5,
+    height: 325,
   },
 });
