@@ -232,15 +232,23 @@ const Home = ({route}) => {
               {item.picture && imageUrls[item.picture] ? (
                 <Image source={{ uri: imageUrls[item.picture] }} style={styles.miniImage} />
               ) : (
-                <Text style={styles.applicationTitle}>Image not available</Text>
+                null
               )}
-              <Text style={styles.itemTitle}>{item.title}</Text>
+              {item.picture && imageUrls[item.picture] ? (
+                <Text style={styles.itemTitle}>{item.title}</Text>
+              ) : (
+                <Text style={styles.itemTitleNoPicture}>{item.title}</Text>
+              )}
               {item.time ? (
                 <Text style={styles.itemTime}>{item.formattedDate} at {item.time}</Text>
               ) : (
                 <Text style={styles.itemTime}>{item.formattedDate}</Text>
               )}
-              <Text style={styles.description}>{item.description}</Text>
+              {item.description ? (
+                <Text style={styles.description}>{item.description}</Text>
+              ) : (
+                null
+              )}
             </View>
           ))
         ) : (
@@ -424,6 +432,11 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     marginTop: 20,
+  },
+  itemTitleNoPicture: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginTop: 0,
   },
   miniImage: {
     width: 325,
