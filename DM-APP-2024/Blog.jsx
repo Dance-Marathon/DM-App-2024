@@ -16,6 +16,18 @@ const Blog = () => {
   return (
     <View style={styles.container}>
       <ScrollView style={{width:'93%'}}>
+      <TouchableOpacity onPress={() => navigation.navigate('Summer')}>
+        <View style={styles.itemContainer}>
+        <View style={styles.column}>
+            <Image source={require('./images/MadilynGTTFB4-17.jpg')} style={{width: 100, height: 100, borderRadius: 10}}/>
+          <View style={styles.textView}>
+          <Text style={styles.postTitle}>Beyond This Summer</Text>
+          <Text style={styles.postText}>Written by Lainey Shapiro</Text>
+          <Text style={styles.postText}>Posted on July 22nd, 2024</Text>
+          </View>
+        </View>
+        </View>
+      </TouchableOpacity>
       <TouchableOpacity onPress={() => navigation.navigate('Ourselves')}>
         <View style={styles.itemContainer}>
         <View style={styles.column}>
