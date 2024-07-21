@@ -69,7 +69,11 @@ const Home = () => {
     return (
       <View style={styles.itemContainer}>
         <Text style={styles.title}>{item.title}</Text>
-        <Text style={styles.time}>{item.time}</Text>
+        {item.time ? (
+          <Text style={styles.time}>{item.time}</Text>  
+        ) : (
+          <Text style={styles.itemTime}>All Day</Text>
+        )}
         <Text style={styles.description}>{item.description}</Text>
       </View>
     );
