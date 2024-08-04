@@ -26,6 +26,7 @@ import { storage } from './Firebase/firebase';
 import { getStorage, ref, getDownloadURL } from 'firebase/storage';
 
 import { addUserExpoPushToken } from "./Firebase/AuthManager";
+import { getUserData } from "./Firebase/UserManager";
 
 const Home = ({route}) => {
 
@@ -59,8 +60,7 @@ const Home = ({route}) => {
         }
       });
   
-      console.log('Fetched notifications:', fetchedNotifs);
-      setAllNotifications(fetchedNotifs); // Assuming setAllNotifications is a state setter
+      setAllNotifications(fetchedNotifs.reverse()); // Assuming setAllNotifications is a state setter
     } catch (error) {
       console.error("Error fetching notifications:", error);
     }
@@ -125,24 +125,16 @@ const Home = ({route}) => {
     }
   };
   
-  const displayDocumentData = async () => {
-    try {
-      const currentUID = auth.currentUser.uid;
-      console.log(currentUID);
-      const docRef = doc(db, "Users", currentUID);
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        console.log(data);
-        setUserIDState(data.donorID);
-        setRole(data.role);
-      } else {
-        console.log("Document does not exist");
-      }
-    } catch (error) {
-      console.error("Error fetching document data:", error);
-    }
-  };
+  useEffect(() => {
+    getUserData().then((data) => {
+      setUserIDState(data.donorID);
+      setRole(data.role);
+    })
+    .catch((err) => {
+      console.error(err);
+      setError(err);
+    });
+  }, []);
 
   useEffect(() => {
     const getUserRole = async () => {

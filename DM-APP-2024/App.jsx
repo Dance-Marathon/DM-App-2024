@@ -11,13 +11,14 @@ import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
 
+import { getUserActivity } from './api/index';
+
 import Home from './Home';
 import CalendarPage from './CalendarPage';
 import Spirit from './Spirit';
 import Fundraiser from './Fundraiser';
 import About from './About';
 import Login from './Login';
-import Profile from './Profile';
 import ForgotPassword from './ForgotPassword';
 import Admin from './Admin';
 import Blog from './Blog';
@@ -92,20 +93,17 @@ const App = () => {
   const [role, setRole] = useState('');
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [userActivity, setUserActivity] = useState({});
 
   const displayDocumentData = async () => {
     try {
       const currentUID = auth.currentUser.uid;
-      console.log("Current UID:", currentUID);
       const docRef = doc(db, "Users", currentUID);
-      console.log("Doc Ref:", docRef);
       const docSnap = await getDoc(docRef);
       console.log("Doc Snap:", docSnap);
       if (docSnap.exists()) {
         const data = docSnap.data();
-        console.log("Document Data:", data);
-        console.log("User Role:", data.role);
-          setRole(data.role);
+        setRole(data.role);
       } else {
         console.log("Document does not exist");
       }
@@ -168,8 +166,6 @@ const App = () => {
   if (loading) {
     return null;
   }
-
-  console.log("Role:", role);
 
   return (
     <><NavigationContainer>

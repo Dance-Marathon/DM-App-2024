@@ -7,7 +7,7 @@ import { auth, db } from './Firebase/AuthManager';
 import { doc, getDoc } from 'firebase/firestore';
 import * as Progress from 'react-native-progress';
 
-const defaultUserID = 1066318;
+import { getUserData } from './Firebase/UserManager';
 
 const Fundraiser = () => {
   const [userIDState, setUserIDState] = useState('');
@@ -22,27 +22,15 @@ const Fundraiser = () => {
   const [allDonations, setAllDonations] = useState({});
   const [sortedDonations, setSortedDonations] = useState([allDonations]);
 
-  const displayDocumentData = async () => {
-    try {
-      const currentUID = auth.currentUser.uid;
-      console.log(currentUID);
-      const docRef = doc(db, "Users", currentUID);
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        console.log(data);
-        setUserIDState(data.donorID);
-        setRole(data.role);
-      } else {
-        console.log("Document does not exist");
-      }
-    } catch (error) {
-      console.error("Error fetching document data:", error);
-    }
-  };
-
   useEffect(() => {
-    displayDocumentData();
+    getUserData().then((data) => {
+      setUserIDState(data.donorID);
+      setRole(data.role);
+    })
+    .catch((err) => {
+      console.error(err);
+      setError(err);
+    });
   }, []);
 
   useEffect(() => {
@@ -83,7 +71,6 @@ const Fundraiser = () => {
       for (let i = 0; i < userInfo.numMilestones; i++) {
         const milestone = milestoneInfo.milestones[i];
         if (userInfo.sumDonations < milestone.amount) {
-          console.log('Reached milestone:', milestone.description);
           break;
         }
         setMilestoneIndex(i-1);
@@ -99,7 +86,6 @@ const Fundraiser = () => {
         allMilestones.push(milestone);
       }
       setAllMilestones(allMilestones);
-      console.log(allMilestones)
     }
   }, [userIDState, userInfo, milestoneInfo]);  
 
@@ -113,7 +99,6 @@ const Fundraiser = () => {
         }
       }
       setAllDonations(allDonations);
-      console.log(allDonations);
     }
   }, [userIDState, userInfo, donationInfo]);   
 
@@ -127,7 +112,6 @@ const Fundraiser = () => {
     });
     // Update the state with the sorted list of donations
     setSortedDonations(sorted);
-    console.log('Sorted:',sortedDonations);
   }, []);
 
   const copyToClipboard = () => {

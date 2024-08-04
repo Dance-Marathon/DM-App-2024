@@ -23,6 +23,7 @@ import { auth, db } from './Firebase/AuthManager';
 import { doc, getDoc, collection, getDocs, setDoc, updateDoc, arrayUnion } from 'firebase/firestore';
 
 import { addUserExpoPushToken } from "./Firebase/AuthManager";
+import { getUserData } from "./Firebase/UserManager";
 
 const fetchData = async () => {
   try {
@@ -48,13 +49,6 @@ const fetchData = async () => {
 async function sendPushNotificationsToAll(expoPushTokens, notification) {
   console.log('Sending notifications...');
   const messages = []
-/*   const messages = expoPushTokens.map(token => ({
-    to: token,
-    sound: 'default',
-    title: 'Original Title',
-    body: 'And here is the body!',
-    data: { someData: 'goes here' },
-  })); */
 
   for (const token of expoPushTokens) {
     messages.push({
@@ -191,31 +185,22 @@ const Home = ({route}) => {
         }
       });
   
-      console.log('Fetched notifications:', fetchedNotifs);
       setAllNotifications(fetchedNotifs); // Assuming setAllNotifications is a state setter
     } catch (error) {
       console.error("Error fetching notifications:", error);
     }
   };
   
-  const displayDocumentData = async () => {
-    try {
-      const currentUID = auth.currentUser.uid;
-      console.log(currentUID);
-      const docRef = doc(db, "Users", currentUID);
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        console.log(data);
-        setUserIDState(data.donorID);
-        setRole(data.role);
-      } else {
-        console.log("Document does not exist");
-      }
-    } catch (error) {
-      console.error("Error fetching document data:", error);
-    }
-  };
+  useEffect(() => {
+    getUserData().then((data) => {
+      setUserIDState(data.donorID);
+      setRole(data.role);
+    })
+    .catch((err) => {
+      console.error(err);
+      setError(err);
+    });
+  }, []);
 
   useEffect(() => {
     const getUserRole = async () => {
