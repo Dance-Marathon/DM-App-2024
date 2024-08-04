@@ -84,7 +84,6 @@ const Home = () => {
   }
 
   const renderEmptyDate = () => {
-    console.log("renderEmptyDate called");
     return (
       <View style={styles.emptyDateContainer}>
         <Text style={styles.emptyDateText}>Nothing</Text>

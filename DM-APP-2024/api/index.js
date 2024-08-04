@@ -21,7 +21,6 @@ export const getUserInfo = async (id) => {
                         getTeamInfo(userInfoJson.teamID, false)
                             .then((data) => {
                                 userInfoJson.teamURL = data.teamURL;
-                                console.log('User Info:', userInfoJson);
                                 resolve(userInfoJson);
                             }).catch((reason) => {
                                 reject(reason);
@@ -31,7 +30,6 @@ export const getUserInfo = async (id) => {
                         resolve(userInfoJson);
                     }
                 } catch (e) {
-                    console.log('User Info:', userInfoJson);
                     reject(e);
                 }
             })
@@ -54,7 +52,6 @@ export const getUserDonations = async (id, limit = 100, page = 1) => {
                     userDonationsJson.countPages = Math.ceil(userDonationsJson.countDonations / limit);
                     userDonationsJson.donations = await res.json();
                     resolve(userDonationsJson);
-                    console.log('Donations:', userDonationsJson);
                 } catch (e) {
                     reject(e);
                 }

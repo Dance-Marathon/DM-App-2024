@@ -15,7 +15,6 @@ const db = getFirestore(app);
 const deleteUserAccount = async () => {
   const user = auth.currentUser;
   console.log("Deleting user account...");
-  console.log(user);
   try{
     const userDoc = doc(db, "Users", user.uid);
     await deleteDoc(userDoc);
@@ -69,7 +68,6 @@ async function addUserExpoPushToken(userId, expoPushToken) {
   try {
     const currentUID = auth.currentUser.uid;
     const docRef = doc(db, "Users", currentUID);
-    console.log('Data:',docRef);
 
     // Update the user's document with the ExpoPushToken
     await setDoc(docRef, {
@@ -86,7 +84,6 @@ async function updateDDLink(userId, newLink) {
   try {
     const currentUID = auth.currentUser.uid;
     const docRef = doc(db, "Users", currentUID);
-    console.log('Data:',docRef);
 
     // Update the user's document with the ExpoPushToken
     await setDoc(docRef, {
@@ -104,7 +101,6 @@ async function updateRole(userId, newRole) {
   try {
     const currentUID = auth.currentUser.uid;
     const docRef = doc(db, "Users", currentUID);
-    console.log('Data:',docRef);
 
     // Update the user's document with the ExpoPushToken
     await setDoc(docRef, {
@@ -126,7 +122,6 @@ const handleSignUp = async (email, password, role, donorDriveLink, expopushtoken
       .then((userCredential) => {
         // Signed in
         const user = userCredential.user;
-        console.log(user);
         return setDoc(doc(db, "Users", user.uid), {
           email: email,
           password: password,
