@@ -15,7 +15,7 @@ import {
   Alert,
   Linking,
 } from "react-native";
-import { auth, db } from './Firebase/AuthManager';
+import { auth, db } from '../Firebase/AuthManager';
 import { doc, getDoc, collection, getDocs, setDoc, updateDoc, arrayUnion } from 'firebase/firestore';
 import { Icon } from 'react-native-elements';
 
@@ -43,14 +43,14 @@ const Blog1 = () => {
                 </Text>
             </View>
             <View style={styles.image1Container}>
-                <Image source={require('./images/IMG_3478.jpg')} style={{width: 125, height: 175, margin: 20, borderWidth: 2, borderColor: 'white'}}/>
+                <Image source={require('../images/IMG_3478.jpg')} style={{width: 125, height: 175, margin: 20, borderWidth: 2, borderColor: 'white'}}/>
             </View>
         </View>
         <Text style={styles.mainText}>
             By joining Dance Marathon, you become part of a community that can give you all of this and even more than you can imagine. It is a place where you can find your best friends and make memories that last a lifetime. Use or learn a new skill while working with friends to raise money to change children’s lives. Your efforts, no matter how small, contribute to our collective goal of helping as many families as possible. 
         </Text>
         <View style={styles.imageContainer}>
-        <Image source={require('./images/MW1-11.jpg')} style={{width: 300, height: 200, margin: 20, borderWidth: 2, borderColor: 'white'}}/>
+        <Image source={require('../images/MW1-11.jpg')} style={{width: 300, height: 200, margin: 20, borderWidth: 2, borderColor: 'white'}}/>
         </View>
         <Text style={styles.mainText}>
             Our Miracle Families continue their fight every single day. While we may take a break from school, pediatric illness doesn’t take vacations. We must think about them while we take our time off of school and know that in the Fall semester, our efforts go beyond, with big moments such as Transform Today. Our Miracle Families continue to inspire us as our ongoing efforts and triumphs make an impact #BeyondThisSummer. 

@@ -15,7 +15,7 @@ import {
   Alert,
   Linking,
 } from "react-native";
-import { auth, db } from './Firebase/AuthManager';
+import { auth, db } from '../Firebase/AuthManager';
 import { doc, getDoc, collection, getDocs, setDoc, updateDoc, arrayUnion } from 'firebase/firestore';
 import { Icon } from 'react-native-elements';
 
@@ -31,35 +31,46 @@ const Blog1 = () => {
       }}
     >
     <ScrollView style={styles.blogView}>
-      <Text style={styles.blogTitle}>Beyond Ourselves</Text>
+      <Text style={styles.blogTitle}>Beyond This Moment</Text>
+      {/* <Text style={styles.blogName}>By: Rylie Pryor</Text> */}
       <View style={styles.horizontalLine} />
       <View style={styles.column}>
         <View>
         <Text style={styles.mainText}>
-        The founding members of Dance Marathon at The University of Florida came together thirty-one years ago with a common purpose of fighting pediatric illness. Each of these students shared the same passion that our students share today. For thirty-one years, we have been looking #BeyondOurselves. We encouraged others to look beyond themselves, and we've broken barriers to continue this fight to end pediatric illness for over three decades.
+          Do you remember the moment when you first learned how to ride a bike?
+        </Text>
+        <Text style={styles.mainText}>
+          What about the moment when you met your best friend, got that job, got into college, or told someone that you loved them?
         </Text>
         </View>
         <View style={styles.image1Container}>
-          <Image source={require('./images/Gemme_Madilyn_ME_9239.jpg')} style={{width: 150, height: 200, margin: 20, borderWidth: 2, borderColor: 'white'}}/>
+          <Image source={require('../images/DeBoerL_Closing-44.jpg')} style={{width: 125, height: 175, margin: 20, borderWidth: 2, borderColor: 'white'}}/>
         </View>
       </View>
       <Text style={styles.mainText}>
-        There are countless reasons why we choose to make a difference; why we stand for 26.2 hours, why thousands of people receive texts, emails, and phone calls from us. We have many things in common with one another, with the most important reason being our purpose. Every student at Dance Marathon at UF joined this organization to experience these moments that support something #BeyondOurselves.        
-      </Text>
+          Maybe the moment when you first felt true inspiration and passion? The moment when you faced hardship and prevailed? The moment where you fell down and got back up?      
+        </Text>
+        <Text style={styles.mainText}>
+        Now, think of the moment, not so long ago, when our total reveal numbers were raised high - demonstrating how hard we fought all year. In those moments, passion and hope coursed through our organization, our campus and our Miracle Families.
+        </Text>
       <View style={styles.imageContainer}>
-        <Image source={require('./images/SydneyC_Closing-7.jpg')} style={{width: 300, height: 200, margin: 20, borderWidth: 2, borderColor: 'white'}}/>
+      <Image source={require('../images/GonzalezS-3.jpg')} style={{width: 300, height: 200, margin: 20, borderWidth: 2, borderColor: 'white'}}/>
       </View>
       <Text style={styles.mainText}>
-      Our team is wholeheartedly fueled by passion for our cause. Fighting beyond ourselves doesn’t just mean learning a 7 minute line dance or posting graphics on social media. Fighting beyond ourselves means more birthdays, more graduations, and more moments for children battling pediatric illness.
+        These are the moments that surround us every day. These are the moments that will stick with us forever and become parts of our stories. These are the moments that remind us why we fight. 
       </Text>
       <Text style={styles.mainText}>
-        We encouraged you to live #BeyondThisMoment during the summer. We now encourage you to reminisce for a second. Chances are, most of these moments involve your closest friends, your family, or other loved ones. The truth is that none of these moments would be possible without thinking #BeyondOurselves. We look beyond ourselves so more children have moments like the ones you recalled just now, the ones that you hold so close to your heart. 
+        This summer, as many college students are living “in the moment,” we encourage you to live #BeyondThisMoment. 
+      </Text>
+      <Text style={styles.mainText}>
+        Living beyond the moment has been a part of our story at Dance Marathon at the University of Florida for over thirty-one years, and we will not stop now. The growth that this organization has experienced over these years has allowed us to make millions of miracles for the children at UF Health Shands Children's Hospital, including a hospital renovation that just broke ground. This renovation means more moments of comfort and joy for children, some of whom we may never have the opportunity to meet. We fight for them so that they can have these moments that we hold so close to our hearts. 
       </Text>
       <View style={styles.imageContainer}>
-        <Image source={require('./images/AD_Buchholz-106.jpg')} style={{width: 300, height: 200, margin: 20, borderWidth: 2, borderColor: 'white'}}/>
+        <Image source={require('../images/Gemme_Madilyn_ME_6011.jpg')} style={{width: 300, height: 200, margin: 20, borderWidth: 2, borderColor: 'white'}}/>
       </View>
       <Text style={styles.mainText}>
-        This summer, we invite you to imagine the future generations. We urge you to think of someone you fight for. We welcome you to search beyond yourself, and join the family at Dance Marathon at the University of Florida. We look #BeyondOurselves, will you?      </Text>
+        We live beyond ourselves so that each child behind hospital walls has the opportunity to continue to grow #BeyondThisMoment. 
+      </Text>
       <Text style={styles.signature}>
         Rylie Pryor
       </Text>
@@ -114,7 +125,6 @@ const styles = StyleSheet.create({
     borderBottomWidth: 2,
     width: '100%',
     marginTop: 20,
-    marginBottom: 20,
   },
   imageContainer: {
     flex: 1,

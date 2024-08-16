@@ -22,10 +22,10 @@ import Login from './Login';
 import ForgotPassword from './ForgotPassword';
 import Admin from './Admin';
 import Blog from './Blog';
-import Blog1 from './Blog_BeyondThisMoment';
-import Blog2 from './Blog_BeyondOurselves';
-import Blog3 from './Blog_BeyondThisSummer';
-import Blog4 from './Blog_BeyondThisGeneration';
+import Blog1 from './blogs//Blog_BeyondThisMoment';
+import Blog2 from './blogs/Blog_BeyondOurselves';
+import Blog3 from './blogs/Blog_BeyondThisSummer';
+import Blog4 from './blogs/Blog_BeyondThisGeneration';
 
 import { addUserExpoPushToken } from "./Firebase/AuthManager";
 

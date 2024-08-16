@@ -15,7 +15,7 @@ import {
   Alert,
   Linking,
 } from "react-native";
-import { auth, db } from './Firebase/AuthManager';
+import { auth, db } from '../Firebase/AuthManager';
 import { doc, getDoc, collection, getDocs, setDoc, updateDoc, arrayUnion } from 'firebase/firestore';
 import { Icon } from 'react-native-elements';
 
@@ -40,7 +40,7 @@ const Blog1 = () => {
           As we begin Year 31, let's take a moment to look back at the generations that came before us. We will find ourselves appreciating the life-changing impacts that have been made by past members of DM at UF, who paved the way for us to be standing here right now fighting for this cause.        
         </Text>
         <View style={styles.imageContainer}>
-            <Image source={require('./images/IMG_0291.jpg')} style={{width: 300, height: 200, margin: 20, borderWidth: 2, borderColor: 'white'}}/>
+            <Image source={require('../images/IMG_0291.jpg')} style={{width: 300, height: 200, margin: 20, borderWidth: 2, borderColor: 'white'}}/>
         </View>
         <Text style={styles.mainText}>
             The beauty of our organization ultimately lies in being able to use the sum of our efforts for the greater good — that is, a life free from pediatric illness, where no child is forced to face a battle they did not choose to fight.
@@ -52,7 +52,7 @@ const Blog1 = () => {
                 </Text> 
             </View>
             <View style={styles.image1Container}>
-                <Image source={require('./images/DinowA.Opening-115.jpg')} style={{width: 150, height: 200, marginTop: 10, marginBottom: 20, marginLeft: 20, marginRight: 20, borderWidth: 2, borderColor: 'white'}}/>
+                <Image source={require('../images/DinowA.Opening-115.jpg')} style={{width: 150, height: 200, marginTop: 10, marginBottom: 20, marginLeft: 20, marginRight: 20, borderWidth: 2, borderColor: 'white'}}/>
             </View>
         </View>
         <Text style={styles.mainText}>
