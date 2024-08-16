@@ -25,6 +25,7 @@ import Blog from './Blog';
 import Blog1 from './Blog_BeyondThisMoment';
 import Blog2 from './Blog_BeyondOurselves';
 import Blog3 from './Blog_BeyondThisSummer';
+import Blog4 from './Blog_BeyondThisGeneration';
 
 import { addUserExpoPushToken } from "./Firebase/AuthManager";
 
@@ -81,6 +82,7 @@ const BlogStack = () => {
       <Stack.Screen name="Beyond" component={Blog1} options={{ headerShown: false }} />
       <Stack.Screen name="Ourselves" component={Blog2} options={{ headerShown: false }} />
       <Stack.Screen name="Summer" component={Blog3} options={{ headerShown: false }} />
+      <Stack.Screen name="Generation" component={Blog4} options={{ headerShown: false }} />
     </Stack.Navigator>
   );
 };

@@ -16,6 +16,18 @@ const Blog = () => {
   return (
     <View style={styles.container}>
       <ScrollView style={{width:'93%'}}>
+      <TouchableOpacity onPress={() => navigation.navigate('Generation')}>
+        <View style={styles.itemContainer}>
+        <View style={styles.column}>
+            <Image source={require('./images/Gemme_Madilyn_ME_0951.jpg')} style={{width: 100, height: 100, borderRadius: 10}}/>
+          <View style={styles.textView}>
+          <Text style={styles.generationPostTitle}>Beyond This Generation</Text>
+          <Text style={styles.postText}>Written by Anabella Fernandez</Text>
+          <Text style={styles.postText}>Posted on August 14th, 2024</Text>
+          </View>
+        </View>
+        </View>
+      </TouchableOpacity>
       <TouchableOpacity onPress={() => navigation.navigate('Summer')}>
         <View style={styles.itemContainer}>
         <View style={styles.column}>
@@ -78,6 +90,14 @@ const styles = StyleSheet.create({
   },
   postTitle: {
     fontSize: 22,
+    fontWeight: "bold",
+    marginBottom: 10,
+    color: "black",
+    textAlign: "left",
+    marginTop: 8,
+  },
+  generationPostTitle: {
+    fontSize: 20,
     fontWeight: "bold",
     marginBottom: 10,
     color: "black",
