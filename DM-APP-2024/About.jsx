@@ -42,8 +42,8 @@ const About = () => {
 
   // Remove user account and sign out
   const removeFunctions = async () => {
-    deleteUserAccount();
-    handleSignOut();
+    await deleteUserAccount();
+    await handleSignOut();
   };
 
   // Confirm account deletion with user

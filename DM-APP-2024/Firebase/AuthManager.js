@@ -6,7 +6,6 @@ import {
   deleteUser,
 } from "firebase/auth";
 import { app } from "./firebase";
-import { addUser } from "./UserManager";
 import { getFirestore, setDoc, doc, deleteDoc } from "firebase/firestore";
 
 const auth = getAuth(app);
@@ -15,15 +14,23 @@ const db = getFirestore(app);
 const deleteUserAccount = async () => {
   const user = auth.currentUser;
   console.log("Deleting user account...");
-  try{
+
+  try {
     const userDoc = doc(db, "Users", user.uid);
     await deleteDoc(userDoc);
-    await user.delete()
-    console.log("User account deleted!");
+    console.log('Doc deleted');
+  } catch (error) {
+    console.log('Error deleting doc:', error);
+  }  
+
+  try {
+    await user.delete();
+    console.log('Auth deleted');
+  } catch (error) {
+    console.log('Error deleting auth:', error);
   }
-  catch (error) {
-    console.error("Error deleting user account:", error.message);
-  }
+
+  console.log("User account deletion process complete!");
 };
 
 const handleLogin = async (email, password) => {
@@ -122,6 +129,7 @@ const handleSignUp = async (email, password, role, donorDriveLink, expopushtoken
       .then((userCredential) => {
         // Signed in
         const user = userCredential.user;
+        console.log("User signed up successfully!");
         return setDoc(doc(db, "Users", user.uid), {
           email: email,
           password: password,
