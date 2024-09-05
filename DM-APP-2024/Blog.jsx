@@ -16,6 +16,18 @@ const Blog = () => {
   return (
     <View style={styles.container}>
       <ScrollView style={{width:'93%'}}>
+      <TouchableOpacity onPress={() => navigation.navigate('Family')}>
+        <View style={styles.itemContainer}>
+        <View style={styles.column}>
+            <Image source={require('./images/IMG_4404.jpg')} style={{width: 100, height: 100, borderRadius: 10}}/>
+          <View style={styles.textView}>
+          <Text style={styles.generationPostTitle}>Finding Your DM Family</Text>
+          <Text style={styles.postText}>Written by Rylie Pryor</Text>
+          <Text style={styles.postText}>Posted on September 10th, 2024</Text>
+          </View>
+        </View>
+        </View>
+      </TouchableOpacity>
       <TouchableOpacity onPress={() => navigation.navigate('Generation')}>
         <View style={styles.itemContainer}>
         <View style={styles.column}>
