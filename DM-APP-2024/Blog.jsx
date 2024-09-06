@@ -23,7 +23,7 @@ const Blog = () => {
           <View style={styles.textView}>
           <Text style={styles.generationPostTitle}>Finding Your DM Family</Text>
           <Text style={styles.postText}>Written by Rylie Pryor</Text>
-          <Text style={styles.postText}>Posted on September 10th, 2024</Text>
+          <Text style={styles.postText}>Posted on September 6th, 2024</Text>
           </View>
         </View>
         </View>
