@@ -1,68 +1,145 @@
 import React, { useState, useEffect } from 'react';
-import { Text, View, StyleSheet, Button, Linking } from 'react-native';
-import { Camera } from 'expo-camera';
+import { View, StyleSheet, Button, Text } from 'react-native';
+import QRCode from 'react-native-qrcode-svg';
 
-const Spirit = () => {
-  const [hasPermission, setHasPermission] = useState(null);
-  const [type, setType] = useState(Camera.Constants.Type.back);
-  const [scanned, setScanned] = useState(false);
+import { getUserData } from './Firebase/UserManager';
+import { getUserInfo } from './api/index';
+import axios from 'axios';
+
+const GenerateQRCode = () => {
+  const [userIDState, setUserIDState] = useState('');
+  const [userInfo, setUserInfo] = useState({});
+  const [qrVisible, setQrVisible] = useState(false);
+  const [leaderboard, setLeaderboard] = useState([]);
+  const SPREADSHEET_ID = '1VTr6Jq_UbrJ1HEUTxCo0TlLvoLXc5PaPagufrzbAAxY';
+  const range = `Sheet1!A2:B100`;
+  const apiKey = 'AIzaSyDvksLIbk2gll7Me9846sFHG46ZcKZjAX8';
 
   useEffect(() => {
-    (async () => {
-      const { status } = await Camera.requestCameraPermissionsAsync();
-      setHasPermission(status === 'granted');
-    })();
+    getUserData()
+      .then((data) => {
+        setUserIDState(data.donorID);
+      })
+      .catch((err) => {
+        console.error(err);
+      });
   }, []);
 
-  const handleBarCodeScanned = ({ type, data }) => {
-    setScanned(true);
-    if (data.startsWith('http://') || data.startsWith('https://')) {
-      Linking.openURL(data).catch(err => console.error('An error occurred', err));
-    } else {
-      alert(`The scanned data is not a valid URL: ${data}`);
+  useEffect(() => {
+    if (userIDState) {
+      getUserInfo(userIDState)
+        .then((data) => {
+          setUserInfo(data);
+        })
+        .catch((err) => {
+          console.error(err);
+        });
+    }
+  }, [userIDState]);
+
+  const userTeamScore = leaderboard.find(team => team[0] === userInfo.teamName)?.[1] || 0;
+
+  const fetchLeaderboardData = async () => {
+    try {
+      const response = await axios.get(
+        `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${range}?key=${apiKey}`
+      );
+      const sortedData = response.data.values
+        .filter((row) => row[1])
+        .map((row) => [row[0], parseInt(row[1], 10)])
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5);
+      setLeaderboard(sortedData);
+    } catch (error) {
+      console.error('Error fetching leaderboard data', error);
     }
   };
 
-  if (hasPermission === null) {
-    return <Text>Requesting for camera permission</Text>;
-  }
-  if (hasPermission === false) {
-    return <Text>No access to camera</Text>;
-  }
+  useEffect(() => {
+    fetchLeaderboardData();
+  }, []);
+
+  const qrData = `name: ${userInfo.displayName}, team: ${userInfo.teamName}`;
 
   return (
     <View style={styles.container}>
-      <Camera
-        style={styles.camera}
-        type={type}
-        onBarCodeScanned={scanned ? undefined : handleBarCodeScanned}>
-      </Camera>
-      <View style={styles.buttonContainer}>
-          <Button
-            title={scanned ? 'Tap to Scan Again' : 'Start Scanning'}
-            onPress={() => setScanned(!scanned)}
-          />
+      <View style={styles.leaderboardContainer}>
+        <Text style={styles.title}>Top 5 Teams</Text>
+          {leaderboard.map((team, index) => (
+            <View key={index} style={styles.leaderboardItem}>
+              <Text style={styles.leaderboardText}>
+                {index + 1}. {team[0]} - {team[1]} points
+              </Text>
+            </View>
+          ))}
+      </View>
+
+      <View style={styles.teamScoreContainer}>
+        <Text style={styles.teamScoreText}>
+          {userInfo.teamName}'s Points: {userTeamScore}
+        </Text>
+      </View>
+
+      <Button
+        title={qrVisible ? 'Hide QR Code' : 'Show QR Code'}
+        onPress={() => setQrVisible(!qrVisible)}
+      />
+
+      {qrVisible && (
+        <View style={styles.qrContainer}>
+          <QRCode value={qrData} size={300} />
         </View>
+      )}
     </View>
   );
-}
-
-export default Spirit;
+};
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     alignItems: 'center',
+    backgroundColor: '#233563',
+    padding: 20,
   },
-  camera: {
-    width: '75%', 
-    height: '75%',
-    marginTop: 40,
+  leaderboardContainer: {
+    width: '100%',
+    marginBottom: 20,
+    padding: 10,
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    marginTop: 80,
   },
-  buttonContainer: {
-    flex: 1,
-    backgroundColor: 'transparent',
-    marginTop: 10,
+  title: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 10,
+  },
+  leaderboardItem: {
+    padding: 5,
+    borderWidth:1,
+    borderColor:'#ddd'
+  },
+  leaderboardText: {
+    fontSize: 16,
+    textAlign: 'center',
+  },
+  qrContainer: {
+    marginTop: 20,
+    borderWidth: 10,
+    borderColor: 'white',
+    borderRadius: 10,
+  },
+  teamScoreContainer: {
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  teamScoreText: {
+    fontSize: 18,
+    color: '#fff',
+    fontWeight: 'bold',
   },
 });
+
+export default GenerateQRCode;

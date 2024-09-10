@@ -27,6 +27,7 @@ import Blog2 from './blogs/Blog_BeyondOurselves';
 import Blog3 from './blogs/Blog_BeyondThisSummer';
 import Blog4 from './blogs/Blog_BeyondThisGeneration';
 import Blog5 from './blogs/Blog_FindingYourDMFamily';
+import Scanner from './Scanner';
 
 import { addUserExpoPushToken } from "./Firebase/AuthManager";
 
@@ -221,6 +222,34 @@ const App = () => {
               tabBarIcon: ({ color, size }) => (
                 <Icon
                   name="calendar"
+                  type="font-awesome"
+                  color={color}
+                />
+              ),
+            }}
+          />
+          <Tab.Screen
+            name="Spirit"
+            component={Spirit}
+            options={{
+              headerShown: false,
+              tabBarIcon: ({ color, size }) => (
+                <Icon
+                  name="check"
+                  type="font-awesome"
+                  color={color}
+                />
+              ),
+            }}
+          />
+          <Tab.Screen
+            name="Scanner"
+            component={Scanner}
+            options={{
+              headerShown: false,
+              tabBarIcon: ({ color, size }) => (
+                <Icon
+                  name="check"
                   type="font-awesome"
                   color={color}
                 />
