@@ -3,6 +3,8 @@ import { View, Text, Button, StyleSheet, Modal, TouchableOpacity } from 'react-n
 import { BarCodeScanner } from 'expo-barcode-scanner';
 import axios from 'axios';
 import getAccessToken from './api/googleAuth';
+import { getUserData } from './Firebase/UserManager';
+import { getUserInfo } from './api/index';
 
 const Scanner = () => {
     const [hasPermission, setHasPermission] = useState(null);
@@ -16,6 +18,30 @@ const Scanner = () => {
 
     const [data, setData] = useState([]);
     const [individualData, setIndividualData] = useState([]);
+
+    const [userIDState, setUserIDState] = useState('');
+    const [userInfo, setUserInfo] = useState({});
+
+    useEffect(() => {
+        getUserData().then((data) => {
+          setUserIDState(data.donorID);
+        })
+        .catch((err) => {
+          console.error(err);
+          setError(err);
+        });
+      }, []);
+    
+      useEffect(() => {
+        getUserInfo(userIDState)
+          .then((data) => {
+            setUserInfo(data);
+          })
+          .catch((err) => {
+            console.error(err);
+            setError(err);
+          });
+      }, [userIDState]);
 
     const fetchData = async () => {
         try {
@@ -46,7 +72,7 @@ const Scanner = () => {
         fetchIndividualData(); 
     }, []);
 
-    const updateTeamScore = async (teamName) => {
+    const updateTeamScore = async (token, teamName) => {
         console.log('SCANNED TEAM:', teamName);
         const fetchedData = await fetchData();
         console.log('Original Data: ', data);
@@ -54,8 +80,6 @@ const Scanner = () => {
         console.log('Team Row Index:', teamRowIndex);
         const newIndex = teamRowIndex + 1;
         console.log('Team Row Index NEW:', newIndex);
-
-        const ACCESS_TOKEN = await getAccessToken();
 
         if (teamRowIndex !== -1) {
             const currentScore = parseInt(fetchedData[teamRowIndex][1], 10) || 0;
@@ -74,7 +98,7 @@ const Scanner = () => {
 
                   const config = {
                     headers: {
-                      Authorization: `Bearer ${ACCESS_TOKEN}`,
+                      Authorization: `Bearer ${token}`,
                       'Content-Type': 'application/json',
                     },
                   };
@@ -92,13 +116,11 @@ const Scanner = () => {
         }
     };
 
-    const updateIndividualScore = async (personName) => {
+    const updateIndividualScore = async (token, personName) => {
         const individualRowData = await fetchIndividualData();  
         console.log('Original Individual Data:', individualData);
         const individualRowIndex = individualData.findIndex(row => row[0] === personName);
         console.log('Individual Row Index:', individualRowIndex);
-
-        const ACCESS_TOKEN = await getAccessToken();
 
         if (individualRowIndex !== -1) {
             const individualScore = parseInt(individualData[individualRowIndex][1], 10) || 0;
@@ -117,7 +139,7 @@ const Scanner = () => {
 
                   const config = {
                     headers: {
-                      Authorization: `Bearer ${ACCESS_TOKEN}`,
+                      Authorization: `Bearer ${token}`,
                       'Content-Type': 'application/json',
                     },
                   };
@@ -135,6 +157,56 @@ const Scanner = () => {
         }
     };
 
+    const postRowToSheet = async (token, recipient, team, reason, date, time, giver) => {
+        const SPREADSHEET_ID = '1VTr6Jq_UbrJ1HEUTxCo0TlLvoLXc5PaPagufrzbAAxY';
+        console.log("Posting to sheet");
+    
+        try {
+            const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/Sheet3:append?valueInputOption=RAW`;
+    
+            const rowData = [recipient, team, reason, date, time, giver];
+    
+            const postData = {
+                values: [rowData],
+            };
+    
+            const config = {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+            };
+    
+            const response = await axios.post(url, postData, config);
+    
+            console.log('Row added successfully:', response.data);
+            console.log('Response data:', JSON.stringify(response.data, null, 2));
+            console.log('Response status:', response.status);
+        } catch (error) {
+            console.error('Error adding row to sheet:', error.response ? error.response.data : error.message);
+        }
+    };
+
+    const getCurrentDate = () => {
+        const currentDate = new Date();
+      
+        const year = currentDate.getFullYear();
+        const month = String(currentDate.getMonth() + 1).padStart(2, '0'); // Months are zero-based
+        const day = String(currentDate.getDate()).padStart(2, '0');
+      
+        return `${year}-${month}-${day}`;
+      };
+      
+      const getCurrentTime = () => {
+        const currentDate = new Date();
+      
+        const hours = String(currentDate.getHours()).padStart(2, '0');
+        const minutes = String(currentDate.getMinutes()).padStart(2, '0');
+        const seconds = String(currentDate.getSeconds()).padStart(2, '0');
+      
+        return `${hours}:${minutes}:${seconds}`;
+      };
+
     useEffect(() => {
         (async () => {
             const { status } = await BarCodeScanner.requestPermissionsAsync();
@@ -146,11 +218,18 @@ const Scanner = () => {
         setScanned(true);
         const extractedData = parseQRCodeData(data);
         if (extractedData) {
+            const ACCESS_TOKEN = await getAccessToken();
             setUserData(extractedData);
-            await updateTeamScore(extractedData.team.toString());
+            await updateTeamScore(ACCESS_TOKEN, extractedData.team.toString());
             console.log('Team Score Updated');
-            await updateIndividualScore(extractedData.name.toString());
+            await updateIndividualScore(ACCESS_TOKEN, extractedData.name.toString());
             console.log('Individual Score Updated');
+
+            const date = getCurrentDate();
+            const time = getCurrentTime();
+
+            postRowToSheet(ACCESS_TOKEN, extractedData.name.toString(), extractedData.team.toString(), 'Scanned QR Code', date, time, userInfo.displayName);
+            console.log("Row Added to Sheet");
         } else {
             setUserData({ name: 'Invalid QR code', team: '' });
         }
