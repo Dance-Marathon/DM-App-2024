@@ -67,7 +67,7 @@ const Login = ({route}) => {
   };
 
   const roles = [
-    { label: "Dancer", value: "Dancer" },
+    { label: "Miracle Maker", value: "Miracle Maker" },
     { label: "ELP", value: "ELP" },
     { label: "Ambassador", value: "Ambassador" },
     { label: "Captain", value: "Captain" },

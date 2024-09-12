@@ -36,7 +36,7 @@ const Blog5 = () => {
       <View style={styles.column}>
         <View>
         <Text style={styles.mainText}>
-            Each individual who gets involved in Dance Marathon at UF has their own skills, their own inspiration, and their own story. As DM recruitment week begins, we encourage you to explore what is important to you. Whether this is your first time hearing about our cause, or you first got involved as a Dancer, Captain, Emerging Leader, or Ambassador, you have found a home in Dance Marathon.        </Text>
+            Each individual who gets involved in Dance Marathon at UF has their own skills, their own inspiration, and their own story. As DM recruitment week begins, we encourage you to explore what is important to you. Whether this is your first time hearing about our cause, or you first got involved as a Miracle Maker, Captain, Emerging Leader, or Ambassador, you have found a home in Dance Marathon.        </Text>
         </View>
         <View style={styles.image1Container}>
           <Image source={require('../images/IMG_4400.jpg')} style={{width: 150, height: 200, margin: 20, borderWidth: 2, borderColor: 'white'}}/>
