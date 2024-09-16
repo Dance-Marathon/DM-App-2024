@@ -242,20 +242,25 @@ const App = () => {
               ),
             }}
           />
-          <Tab.Screen
-            name="Scanner"
-            component={Scanner}
-            options={{
-              headerShown: false,
-              tabBarIcon: ({ color, size }) => (
-                <Icon
-                  name="check"
-                  type="font-awesome"
-                  color={color}
-                />
-              ),
-            }}
-          />
+          {(role === "Admin" || 
+            role === "Manager" || 
+            role === "Overall"
+            ) ? (
+              <Tab.Screen
+                name="Scanner"
+                component={Scanner}
+                options={{
+                  headerShown: false,
+                  tabBarIcon: ({ color, size }) => (
+                    <Icon
+                      name="check"
+                      type="font-awesome"
+                      color={color}
+                    />
+                  ),
+                }}
+              />
+          ) : (<></>)}
           <Tab.Screen
             name="Fundraiser"
             component={Fundraiser}

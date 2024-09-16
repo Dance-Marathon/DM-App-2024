@@ -52,9 +52,9 @@
       [
         "react-native-vision-camera",
         {
-          "cameraPermissionText": "$(PRODUCT_NAME) needs access to your Camera.",
-          "enableMicrophonePermission": true,
-          "microphonePermissionText": "$(PRODUCT_NAME) needs access to your Microphone.",
+          "cameraPermissionText": "$(PRODUCT_NAME) needs access to your Camera to allow for scanning of spirit points.",
+          "enableMicrophonePermission": false,
+          "microphonePermissionText": "$(PRODUCT_NAME) needs access to your Microphone to allow for scanning of spirit points.",
           "enableCodeScanner": true
         }
       ],

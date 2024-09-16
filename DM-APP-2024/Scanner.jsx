@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, Button, StyleSheet, Modal, TouchableOpacity } from 'react-native';
+import CheckBox from 'expo-checkbox'; // Updated import
 import { BarCodeScanner } from 'expo-barcode-scanner';
 import axios from 'axios';
 import getAccessToken from './api/googleAuth';
@@ -22,13 +23,20 @@ const Scanner = () => {
     const [userIDState, setUserIDState] = useState('');
     const [userInfo, setUserInfo] = useState({});
 
+    const [requestStatus, setRequestStatus] = useState('');
+    
+    // Checkbox state
+    const [option1Checked, setOption1Checked] = useState(false);
+    const [option2Checked, setOption2Checked] = useState(false);
+    const [option3Checked, setOption3Checked] = useState(false);
+    const [option4Checked, setOption4Checked] = useState(false);
+
     useEffect(() => {
         getUserData().then((data) => {
           setUserIDState(data.donorID);
         })
         .catch((err) => {
           console.error(err);
-          setError(err);
         });
       }, []);
     
@@ -39,7 +47,6 @@ const Scanner = () => {
           })
           .catch((err) => {
             console.error(err);
-            setError(err);
           });
       }, [userIDState]);
 
@@ -72,118 +79,108 @@ const Scanner = () => {
         fetchIndividualData(); 
     }, []);
 
-    const updateTeamScore = async (token, teamName) => {
-        console.log('SCANNED TEAM:', teamName);
-        const fetchedData = await fetchData();
-        console.log('Original Data: ', data);
-        const teamRowIndex = fetchedData.findIndex(row => row[0] === teamName);
-        console.log('Team Row Index:', teamRowIndex);
-        const newIndex = teamRowIndex + 1;
-        console.log('Team Row Index NEW:', newIndex);
+    const updateScore = async (token, name, teamName, points) => {
+        if (points > 0) {
+            await updateTeamScore(token, teamName, points);
+            await updateIndividualScore(token, name, points);
+        }
+    };
 
+    const updateTeamScore = async (token, teamName, points) => {
+        const fetchedData = await fetchData();
+        const teamRowIndex = fetchedData.findIndex(row => row[0] === teamName);
         if (teamRowIndex !== -1) {
             const currentScore = parseInt(fetchedData[teamRowIndex][1], 10) || 0;
-            console.log('Current Score:', currentScore);
-            const updatedScore = currentScore + 1;
-            console.log('Updated Score:', updatedScore);
+            const updatedScore = currentScore + points;
             const cellRange = `Sheet1!B${teamRowIndex + 1}`;
 
-            // Post the updated score to Google Sheets
             try {
                 const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${cellRange}?valueInputOption=RAW`;
 
                 const updateData = {
                     values: [[updatedScore]],
-                  };
+                };
 
-                  const config = {
+                const config = {
                     headers: {
                       Authorization: `Bearer ${token}`,
                       'Content-Type': 'application/json',
                     },
-                  };
+                };
 
-                const putResponse = await axios.put(url, updateData, config);
+                await axios.put(url, updateData, config);
 
-                console.log(putResponse.status);
-
-                console.log('Cell updated successfully:', putResponse.data);
+                setRequestStatus('Team score updated successfully!');
             } catch (error) {
-                console.error('Error incrementing cell value:', error.response ? error.response.data : error.message);
+                console.error('Error incrementing team score:', error.response ? error.response.data : error.message);
+                setRequestStatus('Failed to update team score.');
             }
-        } else {
-            console.log('Team not found in the sheet');
+        }
+        else {
+            setRequestStatus('Team not found.');
         }
     };
 
-    const updateIndividualScore = async (token, personName) => {
+    const updateIndividualScore = async (token, personName, points) => {
         const individualRowData = await fetchIndividualData();  
-        console.log('Original Individual Data:', individualData);
-        const individualRowIndex = individualData.findIndex(row => row[0] === personName);
-        console.log('Individual Row Index:', individualRowIndex);
-
+        const individualRowIndex = individualRowData.findIndex(row => row[0] === personName);
         if (individualRowIndex !== -1) {
-            const individualScore = parseInt(individualData[individualRowIndex][1], 10) || 0;
-            console.log('Current Individual Score:', individualScore);
-            const newScore = individualScore + 1;
-            console.log('Updated Score:', newScore);
+            const individualScore = parseInt(individualRowData[individualRowIndex][1], 10) || 0;
+            const newScore = individualScore + points;
             const newRange = `Sheet2!B${individualRowIndex + 1}`;
 
-            // Post the updated score to Google Sheets
             try {
                 const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${newRange}?valueInputOption=RAW`;
 
                 const updateData = {
                     values: [[newScore]],
-                  };
+                };
 
-                  const config = {
+                const config = {
                     headers: {
                       Authorization: `Bearer ${token}`,
                       'Content-Type': 'application/json',
                     },
-                  };
+                };
 
-                const putResponse = await axios.put(url, updateData, config);
+                await axios.put(url, updateData, config);
 
-                console.log(putResponse.status);
-
-                console.log('Cell updated successfully:', putResponse.data);
+                setRequestStatus('Individual score updated successfully!');
             } catch (error) {
-                console.error('Error incrementing cell value:', error.response ? error.response.data : error.message);
+                console.error('Error incrementing individual score:', error.response ? error.response.data : error.message);
+                setRequestStatus('Failed to update individual score.');
             }
-        } else {
-            console.log('Individua; not found in the sheet');
+        }
+        else {
+            setRequestStatus('Individual not found.');
         }
     };
 
     const postRowToSheet = async (token, recipient, team, reason, date, time, giver) => {
         const SPREADSHEET_ID = '1VTr6Jq_UbrJ1HEUTxCo0TlLvoLXc5PaPagufrzbAAxY';
-        console.log("Posting to sheet");
     
         try {
             const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/Sheet3:append?valueInputOption=RAW`;
-    
+
             const rowData = [recipient, team, reason, date, time, giver];
-    
+
             const postData = {
                 values: [rowData],
             };
-    
+
             const config = {
                 headers: {
                     Authorization: `Bearer ${token}`,
                     'Content-Type': 'application/json',
                 },
             };
-    
-            const response = await axios.post(url, postData, config);
-    
-            console.log('Row added successfully:', response.data);
-            console.log('Response data:', JSON.stringify(response.data, null, 2));
-            console.log('Response status:', response.status);
+
+            await axios.post(url, postData, config);
+
+            setRequestStatus('Row added to sheet successfully!');
         } catch (error) {
             console.error('Error adding row to sheet:', error.response ? error.response.data : error.message);
+            setRequestStatus('Failed to add row to sheet.');
         }
     };
 
@@ -195,9 +192,9 @@ const Scanner = () => {
         const day = String(currentDate.getDate()).padStart(2, '0');
       
         return `${year}-${month}-${day}`;
-      };
+    };
       
-      const getCurrentTime = () => {
+    const getCurrentTime = () => {
         const currentDate = new Date();
       
         const hours = String(currentDate.getHours()).padStart(2, '0');
@@ -205,7 +202,7 @@ const Scanner = () => {
         const seconds = String(currentDate.getSeconds()).padStart(2, '0');
       
         return `${hours}:${minutes}:${seconds}`;
-      };
+    };
 
     useEffect(() => {
         (async () => {
@@ -220,21 +217,31 @@ const Scanner = () => {
         if (extractedData) {
             const ACCESS_TOKEN = await getAccessToken();
             setUserData(extractedData);
-            await updateTeamScore(ACCESS_TOKEN, extractedData.team.toString());
-            console.log('Team Score Updated');
-            await updateIndividualScore(ACCESS_TOKEN, extractedData.name.toString());
-            console.log('Individual Score Updated');
 
-            const date = getCurrentDate();
-            const time = getCurrentTime();
+            const points = [option1Checked, option2Checked, option3Checked, option4Checked].filter(Boolean).length;
+            const reasons = ['Checked-In', 'Wore DM Shirt to Check-In', 'Brought A Friend to Check-In', 'Attended All-Member'].filter((_, index) => [option1Checked, option2Checked, option3Checked, option4Checked][index]);
 
-            postRowToSheet(ACCESS_TOKEN, extractedData.name.toString(), extractedData.team.toString(), 'Scanned QR Code', date, time, userInfo.displayName);
-            console.log("Row Added to Sheet");
+            if (points > 0) {
+                const date = getCurrentDate();
+                const time = getCurrentTime();
+                const giver = userInfo.displayName;
+
+                for (const reason of reasons) {
+                    await postRowToSheet(ACCESS_TOKEN, extractedData.name, extractedData.team, reason, date, time, giver);
+                }
+
+                await updateScore(ACCESS_TOKEN, extractedData.name, extractedData.team, points);
+            }
+
         } else {
             setUserData({ name: 'Invalid QR code', team: '' });
         }
         setModalVisible(false);
         setScanned(false);
+        setOption1Checked(false);
+        setOption2Checked(false);
+        setOption3Checked(false);
+        setOption4Checked(false);
     };
 
     // Function to parse the QR code data
@@ -254,6 +261,26 @@ const Scanner = () => {
 
     return (
         <View style={styles.container}>
+            {/* Checkboxes for options */}
+            <Text>Select the reasons for points:</Text>
+            <Text> </Text>
+            <View style={styles.checkboxContainer}>
+                <CheckBox value={option1Checked} onValueChange={setOption1Checked} />
+                <Text>  Checked-In</Text>
+            </View>
+            <View style={styles.checkboxContainer}>
+                <CheckBox value={option2Checked} onValueChange={setOption2Checked} />
+                <Text>  Wore DM Shirt to Check-In</Text>
+            </View>
+            <View style={styles.checkboxContainer}>
+                <CheckBox value={option3Checked} onValueChange={setOption3Checked} />
+                <Text>  Brought A Friend to Check-In</Text>
+            </View>
+            <View style={styles.checkboxContainer}>
+                <CheckBox value={option4Checked} onValueChange={setOption4Checked} />
+                <Text>  Attended All-Member</Text>
+            </View>
+
             <Button title="Open Scanner" onPress={() => setModalVisible(true)} />
 
             {/* Modal for Scanner */}
@@ -269,7 +296,7 @@ const Scanner = () => {
                         style={StyleSheet.absoluteFillObject}
                     />
                     <View style={styles.infoContainer}>
-                        <Text style={styles.topText}>THE PROCCESS FINISHES WHEN THE CAMERA CLOSES AUTOMATICALLY</Text>
+                        <Text style={styles.topText}>THE PROCESS FINISHES WHEN THE CAMERA CLOSES AUTOMATICALLY</Text>
                     </View>
                     {scanned ? (
                         <View style={styles.scannedContainer}>
@@ -287,6 +314,7 @@ const Scanner = () => {
             <View style={styles.resultText}>
                 <Text style={styles.infoText}>User Name: {userData.name}</Text>
                 <Text style={styles.infoText}>User Team: {userData.team}</Text>
+                {requestStatus ? <Text style={styles.statusText}>{requestStatus}</Text> : null}
             </View>
         </View>
     );
@@ -297,6 +325,11 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         padding: 16,
+    },
+    checkboxContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 10,
     },
     modalContainer: {
         flex: 1,
@@ -315,13 +348,6 @@ const styles = StyleSheet.create({
         position: 'absolute',
         bottom: 50,
         backgroundColor: '#ff5c5c',
-        padding: 10,
-        borderRadius: 5,
-    },
-    scanAgainButton: {
-        position: 'absolute',
-        bottom: 50,
-        backgroundColor: 'blue',
         padding: 10,
         borderRadius: 5,
     },
@@ -356,6 +382,12 @@ const styles = StyleSheet.create({
         justifyContent: 'flex-end',
         alignItems: 'center',
         marginBottom: 100,
+    },
+    statusText: {
+        marginTop: 20,
+        fontSize: 16,
+        color: 'black',
+        textAlign: 'center',
     },
 });
 
