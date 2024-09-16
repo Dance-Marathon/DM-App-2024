@@ -10,6 +10,8 @@ const INITIAL_DATE = new Date();
 import { deleteUserAccount, updateDDLink, updateRole } from './Firebase/AuthManager';
 import { Dropdown } from "react-native-element-dropdown";
 
+import { clearUserDataCache } from './Firebase/UserManager';
+
 const About = () => {
   const [response, setResponse] = useState(false);
   const [newLink, setNewLink] = useState('');
@@ -42,6 +44,7 @@ const About = () => {
 
   // Remove user account and sign out
   const removeFunctions = async () => {
+    await clearUserDataCache();
     await deleteUserAccount();
     await handleSignOut();
   };
