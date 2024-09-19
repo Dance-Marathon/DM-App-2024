@@ -1,5 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, Button, Text } from 'react-native';
+import {
+  View,
+  StyleSheet,
+  Button,
+  Text,
+  Modal,
+  TouchableOpacity,
+} from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 
 import { getUserData } from './Firebase/UserManager';
@@ -65,13 +72,13 @@ const GenerateQRCode = () => {
     <View style={styles.container}>
       <View style={styles.leaderboardContainer}>
         <Text style={styles.title}>Top 5 Teams</Text>
-          {leaderboard.map((team, index) => (
-            <View key={index} style={styles.leaderboardItem}>
-              <Text style={styles.leaderboardText}>
-                {index + 1}. {team[0]} - {team[1]} points
-              </Text>
-            </View>
-          ))}
+        {leaderboard.map((team, index) => (
+          <View key={index} style={styles.leaderboardItem}>
+            <Text style={styles.leaderboardText}>
+              {index + 1}. {team[0]} - {team[1]} points
+            </Text>
+          </View>
+        ))}
       </View>
 
       <View style={styles.teamScoreContainer}>
@@ -85,11 +92,27 @@ const GenerateQRCode = () => {
         onPress={() => setQrVisible(!qrVisible)}
       />
 
-      {qrVisible && (
-        <View style={styles.qrContainer}>
-          <QRCode value={qrData} size={300} />
+      {/* Modal for QR Code */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={qrVisible}
+        onRequestClose={() => {
+          setQrVisible(!qrVisible);
+        }}
+      >
+        <View style={styles.modalBackground}>
+          <View style={styles.modalContainer}>
+            <QRCode value={qrData} size={300} />
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={() => setQrVisible(false)}
+            >
+              <Text style={styles.closeButtonText}>Close</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      )}
+      </Modal>
     </View>
   );
 };
@@ -97,10 +120,9 @@ const GenerateQRCode = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'flex-start',
-    alignItems: 'center',
     backgroundColor: '#233563',
     padding: 20,
+    paddingTop: 80,
   },
   leaderboardContainer: {
     width: '100%',
@@ -108,7 +130,6 @@ const styles = StyleSheet.create({
     padding: 10,
     backgroundColor: '#fff',
     borderRadius: 10,
-    marginTop: 80,
   },
   title: {
     fontSize: 20,
@@ -118,18 +139,12 @@ const styles = StyleSheet.create({
   },
   leaderboardItem: {
     padding: 5,
-    borderWidth:1,
-    borderColor:'#ddd'
+    borderWidth: 1,
+    borderColor: '#ddd',
   },
   leaderboardText: {
     fontSize: 16,
     textAlign: 'center',
-  },
-  qrContainer: {
-    marginTop: 20,
-    borderWidth: 10,
-    borderColor: 'white',
-    borderRadius: 10,
   },
   teamScoreContainer: {
     alignItems: 'center',
@@ -139,6 +154,30 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: '#fff',
     fontWeight: 'bold',
+  },
+  /* Styles for the modal */
+  modalBackground: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)', // Semi-transparent background
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContainer: {
+    backgroundColor: '#fff',
+    padding: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  closeButton: {
+    marginTop: 15,
+    backgroundColor: '#233563',
+    paddingVertical: 10,
+    paddingHorizontal: 25,
+    borderRadius: 5,
+  },
+  closeButtonText: {
+    color: '#fff',
+    fontSize: 16,
   },
 });
 
