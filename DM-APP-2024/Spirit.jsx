@@ -13,6 +13,8 @@ import { getUserData } from './Firebase/UserManager';
 import { getUserInfo } from './api/index';
 import axios from 'axios';
 
+import { sheetsAPIKey } from './api/apiKeys';
+
 const GenerateQRCode = () => {
   const [userIDState, setUserIDState] = useState('');
   const [userInfo, setUserInfo] = useState({});
@@ -20,7 +22,7 @@ const GenerateQRCode = () => {
   const [leaderboard, setLeaderboard] = useState([]);
   const SPREADSHEET_ID = '1VTr6Jq_UbrJ1HEUTxCo0TlLvoLXc5PaPagufrzbAAxY';
   const range = `Sheet1!A2:B100`;
-  const apiKey = 'AIzaSyDvksLIbk2gll7Me9846sFHG46ZcKZjAX8';
+  const apiKey = sheetsAPIKey;
 
   useEffect(() => {
     getUserData()
