@@ -25,7 +25,6 @@ const Scanner = () => {
 
     const [requestStatus, setRequestStatus] = useState('');
     
-    // Checkbox state
     const [option1Checked, setOption1Checked] = useState(false);
     const [option2Checked, setOption2Checked] = useState(false);
     const [option3Checked, setOption3Checked] = useState(false);
@@ -78,83 +77,6 @@ const Scanner = () => {
         fetchData();
         fetchIndividualData(); 
     }, []);
-
-    const updateScore = async (token, name, teamName, points) => {
-        if (points > 0) {
-            await updateTeamScore(token, teamName, points);
-            await updateIndividualScore(token, name, points);
-        }
-    };
-
-    const updateTeamScore = async (token, teamName, points) => {
-        const fetchedData = await fetchData();
-        const teamRowIndex = fetchedData.findIndex(row => row[0] === teamName);
-        if (teamRowIndex !== -1) {
-            const currentScore = parseInt(fetchedData[teamRowIndex][1], 10) || 0;
-            const updatedScore = currentScore + points;
-            const cellRange = `Sheet1!B${teamRowIndex + 1}`;
-
-            try {
-                const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${cellRange}?valueInputOption=RAW`;
-
-                const updateData = {
-                    values: [[updatedScore]],
-                };
-
-                const config = {
-                    headers: {
-                      Authorization: `Bearer ${token}`,
-                      'Content-Type': 'application/json',
-                    },
-                };
-
-                await axios.put(url, updateData, config);
-
-                setRequestStatus('Team score updated successfully!');
-            } catch (error) {
-                console.error('Error incrementing team score:', error.response ? error.response.data : error.message);
-                setRequestStatus('Failed to update team score.');
-            }
-        }
-        else {
-            setRequestStatus('Team not found.');
-        }
-    };
-
-    const updateIndividualScore = async (token, personName, points) => {
-        const individualRowData = await fetchIndividualData();  
-        const individualRowIndex = individualRowData.findIndex(row => row[0] === personName);
-        if (individualRowIndex !== -1) {
-            const individualScore = parseInt(individualRowData[individualRowIndex][1], 10) || 0;
-            const newScore = individualScore + points;
-            const newRange = `Sheet2!B${individualRowIndex + 1}`;
-
-            try {
-                const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${newRange}?valueInputOption=RAW`;
-
-                const updateData = {
-                    values: [[newScore]],
-                };
-
-                const config = {
-                    headers: {
-                      Authorization: `Bearer ${token}`,
-                      'Content-Type': 'application/json',
-                    },
-                };
-
-                await axios.put(url, updateData, config);
-
-                setRequestStatus('Individual score updated successfully!');
-            } catch (error) {
-                console.error('Error incrementing individual score:', error.response ? error.response.data : error.message);
-                setRequestStatus('Failed to update individual score.');
-            }
-        }
-        else {
-            setRequestStatus('Individual not found.');
-        }
-    };
 
     const postRowToSheet = async (token, recipient, team, reason, date, time, giver) => {
         const SPREADSHEET_ID = '1VTr6Jq_UbrJ1HEUTxCo0TlLvoLXc5PaPagufrzbAAxY';
@@ -229,8 +151,6 @@ const Scanner = () => {
                 for (const reason of reasons) {
                     await postRowToSheet(ACCESS_TOKEN, extractedData.name, extractedData.team, reason, date, time, giver);
                 }
-
-                await updateScore(ACCESS_TOKEN, extractedData.name, extractedData.team, points);
             }
 
         } else {
