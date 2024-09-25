@@ -31,6 +31,8 @@ import Scanner from './Scanner';
 
 import { addUserExpoPushToken } from "./Firebase/AuthManager";
 
+import { getUserInfo } from './api/index';
+
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
 
@@ -99,6 +101,8 @@ const App = () => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [userActivity, setUserActivity] = useState({});
+  const [userIDState, setUserIDState] = useState('');
+  const [userInfo, setUserInfo] = useState({});
 
   const displayDocumentData = async () => {
     try {
@@ -108,6 +112,7 @@ const App = () => {
       console.log("Doc Snap:", docSnap);
       if (docSnap.exists()) {
         const data = docSnap.data();
+        setUserIDState(data.donorID);
         setRole(data.role);
       } else {
         console.log("Document does not exist");
@@ -131,6 +136,17 @@ const App = () => {
       unsubscribe();
     };
   }, []);
+
+  useEffect(() => {
+    getUserInfo(userIDState)
+      .then((data) => {
+        setUserInfo(data);
+      })
+      .catch((err) => {
+        console.error(err);
+        setError(err);
+      });
+  }, [userIDState]);
 
   async function handleToken() {
     const currentUID = auth.currentUser.uid;
@@ -244,7 +260,8 @@ const App = () => {
           />
           {(role === "Admin" || 
             role === "Manager" || 
-            role === "Overall"
+            role === "Overall" ||
+            (role === "Assistant Director" && userInfo.teamName === "Dancer Engagement")
             ) ? (
               <Tab.Screen
                 name="Scanner"
