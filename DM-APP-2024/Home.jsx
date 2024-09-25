@@ -213,8 +213,8 @@ const Home = ({route}) => {
         />
       </TouchableOpacity>
       <TouchableOpacity
-        style={styles.applicationButton} >
-        <Text style={styles.applicationButtonText} onPress={() => openWebsite('https://drive.google.com/drive/folders/18-F_GplwAlu4T-D43GjfzY0cu9cvq5o1?usp=drive_link')} >Fundraising Resources</Text>
+        style={styles.applicationButton} onPress={() => openWebsite('https://linktr.ee/dmatuf')} >
+        <Text style={styles.applicationButtonText} >Resources</Text>
       </TouchableOpacity>
       <Text style={styles.applicationTitle}>Upcoming Events</Text>
         <ScrollView style={{width:'93%'}}>
@@ -394,7 +394,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#E2883C",
     padding: 10,
     height: 45,
-    width: '60%',
+    width: '45%',
     borderRadius: 5,
     marginBottom: 10,
     marginTop: 85,
