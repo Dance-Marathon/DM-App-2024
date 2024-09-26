@@ -99,6 +99,15 @@ const Scanner = () => {
 
             await axios.post(url, postData, config);
 
+            // Send a POST request to trigger spirit sheets update in Flask
+            axios.post('http://127.0.0.1:5000/update-spirit-sheets')
+            .then(response => {
+            console.log('Success updating spirit sheets:', response.data);
+            })
+            .catch(error => {
+            console.error('Error updating spirit sheets:', error);
+            });
+
             setRequestStatus('Row added to sheet successfully!');
         } catch (error) {
             console.error('Error adding row to sheet:', error.response ? error.response.data : error.message);
