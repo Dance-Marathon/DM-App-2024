@@ -16,6 +16,19 @@ const Blog = () => {
   return (
     <View style={styles.container}>
       <ScrollView style={{width:'93%'}}>
+      <TouchableOpacity onPress={() => navigation.navigate('CampusClash')}>
+        <View style={styles.itemContainer}>
+        <View style={styles.column}>
+            <Image source={require('./images/CampusClashSmallPic.jpeg')} style={{width: 100, height: 100, borderRadius: 10}}/>
+          <View style={styles.textView}>
+          <Text style={styles.campusPostTitle}>As Our Campuses Clash,</Text>
+          <Text style={styles.titleBottomText}>Our Causes Unite</Text>
+          <Text style={styles.postText}>Written by Rylie Pryor</Text>
+          <Text style={styles.postText}>Posted on October 4th, 2024</Text>
+          </View>
+        </View>
+        </View>
+      </TouchableOpacity>
       <TouchableOpacity onPress={() => navigation.navigate('Family')}>
         <View style={styles.itemContainer}>
         <View style={styles.column}>
@@ -115,6 +128,22 @@ const styles = StyleSheet.create({
     color: "black",
     textAlign: "left",
     marginTop: 8,
+  },
+  campusPostTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    marginBottom: 0,
+    color: "black",
+    textAlign: "left",
+    marginTop: 2,
+  },
+  titleBottomText: {
+    fontSize: 20,
+    fontWeight: "bold",
+    marginBottom: 10,
+    color: "black",
+    textAlign: "left",
+    marginTop: 0,
   },
   postText: {
     fontSize: 14,
