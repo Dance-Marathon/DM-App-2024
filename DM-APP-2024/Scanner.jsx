@@ -29,6 +29,7 @@ const Scanner = () => {
     const [option2Checked, setOption2Checked] = useState(false);
     const [option3Checked, setOption3Checked] = useState(false);
     const [option4Checked, setOption4Checked] = useState(false);
+    const [option5Checked, setOption5Checked] = useState(false);
 
     useEffect(() => {
         getUserData().then((data) => {
@@ -140,8 +141,8 @@ const Scanner = () => {
             const ACCESS_TOKEN = await getAccessToken();
             setUserData(extractedData);
 
-            const points = [option1Checked, option2Checked, option3Checked, option4Checked].filter(Boolean).length;
-            const reasons = ['Checked-In', 'Wore DM Shirt to Check-In', 'Brought A Friend to Check-In', 'Attended All-Member'].filter((_, index) => [option1Checked, option2Checked, option3Checked, option4Checked][index]);
+            const points = [option1Checked, option2Checked, option3Checked, option4Checked, option5Checked].filter(Boolean).length;
+            const reasons = ['Checked-In', 'Wore DM Shirt to Check-In', 'Brought A Friend to Check-In', 'Attended All-Member', 'Attended Spirit Night'].filter((_, index) => [option1Checked, option2Checked, option3Checked, option4Checked, option5Checked][index]);
 
             if (points > 0) {
                 const date = getCurrentDate();
@@ -162,6 +163,7 @@ const Scanner = () => {
         setOption2Checked(false);
         setOption3Checked(false);
         setOption4Checked(false);
+        setOption5Checked(false);
     };
 
     // Function to parse the QR code data
@@ -199,6 +201,10 @@ const Scanner = () => {
             <View style={styles.checkboxContainer}>
                 <CheckBox value={option4Checked} onValueChange={setOption4Checked} />
                 <Text>  Attended All-Member</Text>
+            </View>
+            <View style={styles.checkboxContainer}>
+                <CheckBox value={option5Checked} onValueChange={setOption5Checked} />
+                <Text>  Attended Spirit Night</Text>
             </View>
 
             <Button title="Open Scanner" onPress={() => setModalVisible(true)} />
