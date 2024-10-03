@@ -261,7 +261,9 @@ const App = () => {
           {(role === "Admin" || 
             role === "Manager" || 
             role === "Overall" ||
-            (role === "Assistant Director" && userInfo.teamName === "Dancer Engagement")
+            (role === "Assistant Director" && userInfo.teamName === "Dancer Engagement") ||
+            (role === "Assistant Director" && userInfo.teamName === "Recruitment") ||
+            (role === "Assistant Director" && userInfo.teamName === "Partnerships")
             ) ? (
               <Tab.Screen
                 name="Scanner"
