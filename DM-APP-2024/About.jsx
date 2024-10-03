@@ -10,7 +10,7 @@ const INITIAL_DATE = new Date();
 import { deleteUserAccount, updateDDLink, updateRole } from './Firebase/AuthManager';
 import { Dropdown } from "react-native-element-dropdown";
 
-import { clearUserDataCache } from './Firebase/UserManager';
+import { clearUserDataCache, updateUserData } from './Firebase/UserManager';
 
 const About = () => {
   const [response, setResponse] = useState(false);
@@ -66,15 +66,17 @@ const About = () => {
   const changeLink = async () => {
     const currentUID = auth.currentUser.uid;
     if (newLink !== '') {
-      updateDDLink(currentUID, newLink);
+      await updateDDLink(currentUID, newLink);
     }
+    await updateUserData();
     toggleAccountModel();
   };
 
   // Changes user role  
-  const changeRole = () => {
+  const changeRole = async () => {
     const currentUID = auth.currentUser.uid;
-    updateRole(currentUID, newRole);
+    await updateRole(currentUID, newRole);
+    await updateUserData();
     toggleAccountModel();
   };
   

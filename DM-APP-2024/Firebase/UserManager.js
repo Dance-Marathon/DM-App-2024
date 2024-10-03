@@ -49,4 +49,30 @@ const clearUserDataCache = async () => {
   }
 };
 
-export { getUserData, clearUserDataCache };
+const updateUserData = async () => {
+  try {
+    const currentUID = auth.currentUser.uid;
+    
+    // Fetch the latest user data from Firestore
+    const docRef = doc(db, 'Users', currentUID);
+    const docSnap = await getDoc(docRef);
+
+    if (docSnap.exists()) {
+      const updatedData = docSnap.data();
+
+      // Update the AsyncStorage cache with the latest data
+      await AsyncStorage.setItem(`${USER_DATA_KEY}_${currentUID}`, JSON.stringify(updatedData));
+      console.log("User data cache updated with latest data");
+
+      return updatedData;
+    } else {
+      console.log('Document does not exist');
+      return null;
+    }
+  } catch (error) {
+    console.error('Error updating user data cache:', error);
+    throw error;
+  }
+};
+
+export { getUserData, clearUserDataCache, updateUserData };
