@@ -16,6 +16,32 @@ const Blog = () => {
   return (
     <View style={styles.container}>
       <ScrollView style={{width:'93%'}}>
+      <TouchableOpacity onPress={() => navigation.navigate('MiracleMaker')}>
+        <View style={styles.itemContainer}>
+        <View style={styles.column}>
+            <Image source={require('./images/01HDC709VZ4B4VP1VXGMKV2PDH-low-res-branded-.jpeg')} style={{width: 100, height: 100, borderRadius: 10}}/>
+          <View style={styles.textView}>
+          <Text style={styles.campusPostTitle}>What It Means To Be</Text>
+          <Text style={styles.titleBottomText}>A Miracle Maker</Text>
+          <Text style={styles.postText}>Written by Sofia Amoroso</Text>
+          <Text style={styles.postText}>Posted on October 16th, 2024</Text>
+          </View>
+        </View>
+        </View>
+      </TouchableOpacity>
+      <TouchableOpacity onPress={() => navigation.navigate('ChildHealthDay')}>
+        <View style={styles.itemContainer}>
+        <View style={styles.column}>
+            <Image source={require('./images/09C69520-7583-433B-894D-5D86EC5453FB.jpeg')} style={{width: 100, height: 100, borderRadius: 10}}/>
+          <View style={styles.textView}>
+          <Text style={styles.campusPostTitle}>#TheFirstChapters</Text>
+          <Text style={styles.titleBottomText}>of Childhood</Text>
+          <Text style={styles.postText}>Written by Sarah Abisror</Text>
+          <Text style={styles.postText}>Posted on October 11th, 2024</Text>
+          </View>
+        </View>
+        </View>
+      </TouchableOpacity>
       <TouchableOpacity onPress={() => navigation.navigate('CampusClash')}>
         <View style={styles.itemContainer}>
         <View style={styles.column}>
@@ -130,7 +156,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   campusPostTitle: {
-    fontSize: 20,
+    fontSize: 19,
     fontWeight: "bold",
     marginBottom: 0,
     color: "black",
@@ -138,7 +164,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   titleBottomText: {
-    fontSize: 20,
+    fontSize: 19,
     fontWeight: "bold",
     marginBottom: 10,
     color: "black",
