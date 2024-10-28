@@ -2,13 +2,13 @@
   "expo": {
     "name": "DM at UF",
     "slug": "DM-APP-2024",
-    "version": "2.1.2",
+    "version": "2.1.4",
     "sdkVersion": "51.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon_yellowonyellow.png",
+    "icon": "./assets/icon_image.png",
     "userInterfaceStyle": "light",
     "splash": {
-      "image": "./assets/splash_yellowonyellow.png",
+      "image": "./assets/splash_image.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },

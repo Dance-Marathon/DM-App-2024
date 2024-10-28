@@ -31,6 +31,7 @@ import Blog6 from './blogs/Blog_CampusClash';
 import Blog7 from './blogs/Blog_ChildHealthDay';
 import Blog8 from './blogs/Blog_MiracleMaker';
 import Scanner from './Scanner';
+import TTHome from './HomeTT';
 
 import { addUserExpoPushToken } from "./Firebase/AuthManager";
 
@@ -81,22 +82,22 @@ async function registerForPushNotificationsAsync() {
   return token.data;
 }
 
-const BlogStack = () => {
-  const Stack = createStackNavigator();
-  return (
-    <Stack.Navigator initialRouteName="Blog">
-      <Stack.Screen name="Blog" component={Blog} options={{ headerShown: false }} />
-      <Stack.Screen name="Beyond" component={Blog1} options={{ headerShown: false }} />
-      <Stack.Screen name="Ourselves" component={Blog2} options={{ headerShown: false }} />
-      <Stack.Screen name="Summer" component={Blog3} options={{ headerShown: false }} />
-      <Stack.Screen name="Generation" component={Blog4} options={{ headerShown: false }} />
-      <Stack.Screen name="Family" component={Blog5} options={{ headerShown: false }} />
-      <Stack.Screen name="CampusClash" component={Blog6} options={{ headerShown: false }} />
-      <Stack.Screen name="ChildHealthDay" component={Blog7} options={{ headerShown: false }} />
-      <Stack.Screen name="MiracleMaker" component={Blog8} options={{ headerShown: false }} />
-    </Stack.Navigator>
-  );
-};
+// const BlogStack = () => {
+//   const Stack = createStackNavigator();
+//   return (
+//     <Stack.Navigator initialRouteName="Blog">
+//       <Stack.Screen name="Blog" component={Blog} options={{ headerShown: false }} />
+//       <Stack.Screen name="Beyond" component={Blog1} options={{ headerShown: false }} />
+//       <Stack.Screen name="Ourselves" component={Blog2} options={{ headerShown: false }} />
+//       <Stack.Screen name="Summer" component={Blog3} options={{ headerShown: false }} />
+//       <Stack.Screen name="Generation" component={Blog4} options={{ headerShown: false }} />
+//       <Stack.Screen name="Family" component={Blog5} options={{ headerShown: false }} />
+//       <Stack.Screen name="CampusClash" component={Blog6} options={{ headerShown: false }} />
+//       <Stack.Screen name="ChildHealthDay" component={Blog7} options={{ headerShown: false }} />
+//       <Stack.Screen name="MiracleMaker" component={Blog8} options={{ headerShown: false }} />
+//     </Stack.Navigator>
+//   );
+// };
 
 const App = () => {
   const [expoPushToken, setExpoPushToken] = useState('');
@@ -224,7 +225,7 @@ const App = () => {
           ) : (<></>)}
           <Tab.Screen
             name="Home"
-            component={Home}
+            component={TTHome}
             initialParams={{ expoPushToken: expoPushToken }}
             options={{
               headerShown: false,
@@ -299,7 +300,7 @@ const App = () => {
               ),
             }}
           />
-          <Tab.Screen
+          {/* <Tab.Screen
             name="Blog"
             component={BlogStack}
             options={{
@@ -311,7 +312,7 @@ const App = () => {
                 />
               ),
             }}
-          />
+          /> */}
           <Tab.Screen
             name="About"
             component={About}
