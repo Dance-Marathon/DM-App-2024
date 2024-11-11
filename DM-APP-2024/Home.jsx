@@ -266,7 +266,7 @@ const Home = ({route}) => {
             <Button
               style={[styles.button, styles.buttonClose]}
               onPress={() => setNotificationModalVisible(!notificationModalVisible)}
-              title="Hide Tool"
+              title="Hide Notifications"
             />
           </View>
         </View>

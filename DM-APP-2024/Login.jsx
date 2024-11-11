@@ -10,6 +10,8 @@ import {
   Image,
   KeyboardAvoidingView,
   Platform,
+  Modal,
+  Button
 } from "react-native";
 import { handleLogin, handleSignUp } from "./Firebase/AuthManager.js";
 import { useNavigation } from "@react-navigation/native";
@@ -27,6 +29,7 @@ const Login = ({route}) => {
   const navigation = useNavigation();
   const [isFocus, setIsFocus] = useState(false);
   const [passwordVisible, setPasswordVisible] = useState(false);
+  const [ddModalVisable, setDDModalVisable] = useState(false);
 
   const {expoPushToken} = route.params;
 
@@ -37,6 +40,14 @@ const Login = ({route}) => {
   const handleForgotPassword = () => {
     navigation.navigate("ForgotPassword");
   };
+
+  const openDDModal = () => {
+      setDDModalVisable(true);
+  };
+
+  const closeDDModal = () => {
+    setDDModalVisable(false);
+};
 
   const handleLoginPress = async () => {
     const loginResult = await handleLogin(email, password);
@@ -105,6 +116,26 @@ const Login = ({route}) => {
           {signUpField && (
             <Text style={styles.errorMessage}>Error Signing Up</Text>
           )}
+
+        <Modal
+          animationType="slide"
+          transparent={true}
+          visible={ddModalVisable}
+          onRequestClose={closeDDModal}
+        >
+          <View style={styles.centeredView}>
+            <View style={styles.modalView}>
+              <Text style={styles.modalHeader}>How to Find Your DonorDrive Link</Text>
+              <Text style={styles.modalText}>1. Navigate to floridadm.org</Text>
+              <Text style={styles.modalText}>2. Click 'Donate'</Text>
+              <Text style={styles.modalText}>3. Enter your name in the search</Text>
+              <Text style={styles.modalText}>4. Under the resulting fundraisers, click on your name</Text>
+              <Text style={styles.modalText}>5. Copy the URL of the page you are currently on</Text>
+              <Text style={styles.modalText}>6. Paste that link in the app</Text>
+              <Button title="Close" onPress={closeDDModal} />
+            </View>
+          </View>
+        </Modal>
 
           <View style={styles.loginbox}>
             <View style={styles.inputContainer}>
@@ -214,8 +245,12 @@ const Login = ({route}) => {
               </Text>
             )}
             {!create && (
+              <View>
+                <TouchableOpacity onPress={openDDModal}>
+                  <Text style={styles.DDlink}>Where do I find my DonorDrive Link?</Text>
+                </TouchableOpacity>
               <Text style={styles.signUp}>
-                Old User?
+                Already A User?
                 <TouchableOpacity
                   style={{ marginBottom: -3 }}
                   onPress={() => {
@@ -225,6 +260,7 @@ const Login = ({route}) => {
                   <Text style={{ color: "#61A0DA" }}> Log In!</Text>
                 </TouchableOpacity>
               </Text>
+              </View>
             )}
           </View>
         </View>
@@ -317,7 +353,12 @@ const styles = StyleSheet.create({
   },
   forgotPassword: {
     color: "#61A0DA",
+    textAlign: "center"
+  },
+  DDlink: {
+    color: "#61A0DA",
     textAlign: "center",
+    marginBottom: 2,
   },
   signUp: {
     color: "black",
@@ -366,6 +407,39 @@ const styles = StyleSheet.create({
   inputSearchStyle: {
     height: 40,
     fontSize: 16,
+  },
+  modalView: {
+    margin: 20,
+    backgroundColor: 'white',
+    borderRadius: 20,
+    padding: 35,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  centeredView: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 22,
+  },
+  modalHeader: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  modalText: {
+    fontSize: 14,
+    textAlign: 'left',
+    alignSelf: 'stretch',
+    marginBottom: 5,
   },
 });
 
