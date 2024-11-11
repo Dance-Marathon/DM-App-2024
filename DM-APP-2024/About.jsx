@@ -158,8 +158,8 @@ const About = () => {
           />
           <Button
             icon={<Icon name="exclamation" type="font-awesome" color="white"/>} 
-            title="  Issues with the app"
-            onPress={() => openWebsite('https://forms.gle/x5oAfEKs4UZLHj3w9')}
+            title="  Issues with the App?"
+            onPress={() => openWebsite('https://forms.gle/8a3CQhh64xYtGu9K9')}
             buttonStyle={styles.exclamationButton} 
           />
         </View>
