@@ -136,7 +136,7 @@ const Scanner = () => {
 
     const handleBarCodeScanned = async ({ type, data }) => {
         setScanned(true);
-        const extractedData = parseQRCodeData(data);
+        const extractedData = await parseQRCodeData(data);
         if (extractedData) {
             const ACCESS_TOKEN = await getAccessToken();
             setUserData(extractedData);
@@ -167,7 +167,7 @@ const Scanner = () => {
     };
 
     // Function to parse the QR code data
-    const parseQRCodeData = (data) => {
+    const parseQRCodeData = async (data) => {
         try {
             const parts = data.split(', ');
             const namePart = parts[0].split('name: ')[1];
