@@ -225,7 +225,7 @@ const App = () => {
           ) : (<></>)}
           <Tab.Screen
             name="Home"
-            component={TTHome}
+            component={Home}
             initialParams={{ expoPushToken: expoPushToken }}
             options={{
               headerShown: false,
