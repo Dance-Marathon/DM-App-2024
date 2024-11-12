@@ -32,6 +32,7 @@ import Blog7 from './blogs/Blog_ChildHealthDay';
 import Blog8 from './blogs/Blog_MiracleMaker';
 import Scanner from './Scanner';
 import TTHome from './HomeTT';
+import { checkForUpdate } from './AppUpdateCheck';
 
 import { addUserExpoPushToken } from "./Firebase/AuthManager";
 
@@ -154,6 +155,10 @@ const App = () => {
         setError(err);
       });
   }, [userIDState]);
+
+  useEffect(() => {
+    checkForUpdate();
+  }, []);
 
   async function handleToken() {
     const currentUID = auth.currentUser.uid;
