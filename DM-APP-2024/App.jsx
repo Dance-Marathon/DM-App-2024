@@ -32,7 +32,7 @@ import Blog7 from './blogs/Blog_ChildHealthDay';
 import Blog8 from './blogs/Blog_MiracleMaker';
 import Scanner from './Scanner';
 import TTHome from './HomeTT';
-import { checkForUpdate } from './AppUpdateCheck';
+import checkForUpdate from './AppUpdateCheck';
 
 import { addUserExpoPushToken } from "./Firebase/AuthManager";
 
