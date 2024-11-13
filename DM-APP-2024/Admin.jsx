@@ -35,7 +35,6 @@ const fetchData = async () => {
       const docData = doc.data();
         //console.log(docData);
         fetchedItems.push(docData.notificationToken);
-
     });
 
     //console.log('Item:',fetchedItems);
@@ -225,7 +224,7 @@ const Home = ({route}) => {
 
   let handleClick = async () => {
     fetchItems = await fetchData();
-    sendPushNotificationsToAll(fetchItems, {
+    await sendPushNotificationsToAll(fetchItems, {
       date: getCurrentDate(),
       message: message,
       time: getCurrentTime(),
@@ -241,7 +240,7 @@ const Home = ({route}) => {
       time: getCurrentTime(),
       title: title
     }); */
-    addNotification({
+    await addNotification({
       date: getCurrentDate(),
       message: message,
       time: getCurrentTime(),
