@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, Button, StyleSheet, Modal, TouchableOpacity } from 'react-native';
 import CheckBox from 'expo-checkbox'; // Updated import
-import { BarCodeScanner } from 'expo-barcode-scanner';
+// import { BarCodeScanner } from 'expo-barcode-scanner';
+import { CameraView, Camera } from "expo-camera";
 import axios from 'axios';
 import getAccessToken from './api/googleAuth';
 import { getUserData } from './Firebase/UserManager';
@@ -29,7 +30,6 @@ const Scanner = () => {
     const [option2Checked, setOption2Checked] = useState(false);
     const [option3Checked, setOption3Checked] = useState(false);
     const [option4Checked, setOption4Checked] = useState(false);
-    const [option5Checked, setOption5Checked] = useState(false);
 
     useEffect(() => {
         getUserData().then((data) => {
@@ -100,6 +100,15 @@ const Scanner = () => {
 
             await axios.post(url, postData, config);
 
+            // Send a POST request to trigger spirit sheets update in Flask
+            axios.post('http://127.0.0.1:5000/update-spirit-sheets')
+            .then(response => {
+            console.log('Success updating spirit sheets:', response.data);
+            })
+            .catch(error => {
+            console.error('Error updating spirit sheets:', error);
+            });
+
             setRequestStatus('Row added to sheet successfully!');
         } catch (error) {
             console.error('Error adding row to sheet:', error.response ? error.response.data : error.message);
@@ -129,20 +138,20 @@ const Scanner = () => {
 
     useEffect(() => {
         (async () => {
-            const { status } = await BarCodeScanner.requestPermissionsAsync();
+            const { status } = await Camera.requestPermissionsAsync();
             setHasPermission(status === 'granted');
         })();
     }, []);
 
     const handleBarCodeScanned = async ({ type, data }) => {
         setScanned(true);
-        const extractedData = await parseQRCodeData(data);
+        const extractedData = parseQRCodeData(data);
         if (extractedData) {
             const ACCESS_TOKEN = await getAccessToken();
             setUserData(extractedData);
 
-            const points = [option1Checked, option2Checked, option3Checked, option4Checked, option5Checked].filter(Boolean).length;
-            const reasons = ['Checked-In', 'Wore DM Shirt to Check-In', 'Brought A Friend to Check-In', 'Attended All-Member', 'Attended Spirit Night'].filter((_, index) => [option1Checked, option2Checked, option3Checked, option4Checked, option5Checked][index]);
+            const points = [option1Checked, option2Checked, option3Checked, option4Checked].filter(Boolean).length;
+            const reasons = ['Checked-In', 'Wore DM Shirt to Check-In', 'Brought A Friend to Check-In', 'Attended All-Member'].filter((_, index) => [option1Checked, option2Checked, option3Checked, option4Checked][index]);
 
             if (points > 0) {
                 const date = getCurrentDate();
@@ -163,11 +172,10 @@ const Scanner = () => {
         setOption2Checked(false);
         setOption3Checked(false);
         setOption4Checked(false);
-        setOption5Checked(false);
     };
 
     // Function to parse the QR code data
-    const parseQRCodeData = async (data) => {
+    const parseQRCodeData = (data) => {
         try {
             const parts = data.split(', ');
             const namePart = parts[0].split('name: ')[1];
@@ -202,10 +210,6 @@ const Scanner = () => {
                 <CheckBox value={option4Checked} onValueChange={setOption4Checked} />
                 <Text>  Attended All-Member</Text>
             </View>
-            <View style={styles.checkboxContainer}>
-                <CheckBox value={option5Checked} onValueChange={setOption5Checked} />
-                <Text>  Attended Spirit Night</Text>
-            </View>
 
             <Button title="Open Scanner" onPress={() => setModalVisible(true)} />
 
@@ -217,8 +221,11 @@ const Scanner = () => {
                 onRequestClose={() => setModalVisible(false)} // Close the modal if back button is pressed
             >
                 <View style={styles.modalContainer}>
-                    <BarCodeScanner
+                    <CameraView
                         onBarCodeScanned={scanned ? undefined : handleBarCodeScanned}
+                        barcodeScannerSettings={{
+                            barcodeTypes: ["qr", "pdf417"],
+                          }}
                         style={StyleSheet.absoluteFillObject}
                     />
                     <View style={styles.infoContainer}>
