@@ -270,11 +270,10 @@ const Home = ({route}) => {
                 />
             </TouchableOpacity>
             <FlatList
-              contentContainerStyle={styles.flatListContainer}
               data={allNotifications}
               renderItem={renderNotif} // Your renderItem function to display the notification
               keyExtractor={item => item.id} // Unique key for each notification
-              // showsVerticalScrollIndicator={false} // Hide the vertical scrollbar
+              showsVerticalScrollIndicator={false} // Hide the vertical scrollbar
             />
           </View>
         </View>
