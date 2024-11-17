@@ -164,7 +164,8 @@ const Home = ({route}) => {
     const renderNotif = ({ item }) => {
       return (
         <View style={styles.notificationContainer}>
-          <Text style={styles.notificationTitle}>{item.title} - {item.date} at {item.time}</Text>
+          <Text style={styles.notificationTitle}>{item.title}</Text>
+          <Text style={styles.notificationDate}>{item.date} at {item.time}</Text>
           <Text style={styles.notificationMessage}>{item.message}</Text>
         </View>
       );
@@ -257,16 +258,23 @@ const Home = ({route}) => {
         }} >
         <View style={styles.centeredView}>
           <View style={styles.modalView}>
-            <Text>Past Notifications</Text>
+            <Text style={styles.notificationHeader}>Notifications</Text>
+            <TouchableOpacity
+              style={styles.button}
+              onPress={() => setNotificationModalVisible(!notificationModalVisible)} >
+                <Icon
+                  name="close"
+                  type="font-awesome"
+                  color="black"
+                  size={30}
+                />
+            </TouchableOpacity>
             <FlatList
+              contentContainerStyle={styles.flatListContainer}
               data={allNotifications}
               renderItem={renderNotif} // Your renderItem function to display the notification
               keyExtractor={item => item.id} // Unique key for each notification
-            />
-            <Button
-              style={[styles.button, styles.buttonClose]}
-              onPress={() => setNotificationModalVisible(!notificationModalVisible)}
-              title="Hide Notifications"
+              // showsVerticalScrollIndicator={false} // Hide the vertical scrollbar
             />
           </View>
         </View>
@@ -294,11 +302,13 @@ const styles = StyleSheet.create({
     marginTop: 22,
   },
   modalView: {
+    marginTop: 70,
+    marginBottom: 70,
     margin: 20,
+    position: "relative",
     backgroundColor: "white",
     borderRadius: 20,
-    padding: 35,
-    alignItems: "center",
+    padding: 20,
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
@@ -307,6 +317,16 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 4,
     elevation: 5,
+  },
+  flatListContainer: {
+    overflow: 'hidden',
+  },
+  notificationHeader: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "black",
+    textAlign: "left",
+    marginBottom: 20,
   },
   header: {
     fontSize: 24,
@@ -317,14 +337,12 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   button: {
-    backgroundColor: '#233D72',
     margin: 2,
-    justifyContent: 'flex-start',
-    paddingLeft: 15,
-    borderRadius: 5,
-    borderWidth: 0,
-    borderBottomWidth: 2,
-    borderColor: '#2B457A',
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    fontSize: 20,
+    color: 'black',
     },
   inputTop: {
     height: 40,
@@ -343,14 +361,29 @@ const styles = StyleSheet.create({
   },
   notificationContainer: {
     backgroundColor: 'white',
-    padding: 20,
-    marginRight: 10,
-    marginTop: 17,
+    padding: 10,
+    // marginTop: 17,
+    marginBottom: 10,
     borderRadius: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    borderWidth: 3,
+    borderColor: '#231F7C',
+    // shadowColor: '#000',
+    // shadowOffset: { width: 0, height: 2 },
+    // shadowOpacity: 0.1,
+    // shadowRadius: 4,
+  },
+  notificationTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  notificationDate: {
+    fontSize: 12,
+    color: 'gray',
+    fontWeight: 'bold',
+  },
+  notificationMessage: {
+    fontSize: 14,
+    marginTop: 5,
   },
   showNotificationButton: {
     backgroundColor: '#E2883C',
