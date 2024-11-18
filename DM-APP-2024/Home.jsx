@@ -18,56 +18,48 @@ import {
 } from "react-native";
 import UpcomingEventsScreen from "./UpcomingEvents";
 const INITIAL_DATE = new Date();
-import { auth, db } from "./Firebase/AuthManager";
-import {
-  doc,
-  getDoc,
-  collection,
-  getDocs,
-  setDoc,
-  updateDoc,
-  arrayUnion,
-} from "firebase/firestore";
-import { Icon } from "react-native-elements";
-import { Agenda } from "react-native-calendars";
-import { storage } from "./Firebase/firebase";
-import { getStorage, ref, getDownloadURL } from "firebase/storage";
+import { auth, db } from './Firebase/AuthManager';
+import { doc, getDoc, collection, getDocs, setDoc, updateDoc, arrayUnion } from 'firebase/firestore';
+import { Icon } from 'react-native-elements';
+import { Agenda } from 'react-native-calendars';
+import { storage } from './Firebase/firebase';
+import { getStorage, ref, getDownloadURL } from 'firebase/storage';
 
 import { addUserExpoPushToken } from "./Firebase/AuthManager";
 import { getUserData } from "./Firebase/UserManager";
 
-const Home = ({ route }) => {
+const Home = ({route}) => {
+
   const [modalVisible, setModalVisible] = useState(false);
-  const [notificationModalVisible, setNotificationModalVisible] =
-    useState(false);
-  const [role, setRole] = useState("");
-  const [userIDState, setUserIDState] = useState("");
+  const [notificationModalVisible, setNotificationModalVisible] = useState(false);
+  const [role, setRole] = useState('');
+  const [userIDState, setUserIDState] = useState('');
   const [allNotifications, setAllNotifications] = useState({});
   const [items, setItems] = useState([]);
 
-  const { expoPushToken } = route.params;
+  const {expoPushToken} = route.params;
 
   const fetchAllNotifications = async () => {
     try {
-      console.log("Starting to fetch notifications...");
+      console.log('Starting to fetch notifications...');
       const notificationsRef = collection(db, "Notifications");
       const querySnapshot = await getDocs(notificationsRef);
       const fetchedNotifs = [];
-
+  
       querySnapshot.forEach((docSnapshot) => {
         const docData = docSnapshot.data();
         const eventsArray = docData.events; // This is an array based on your Firestore structure
-
+  
         if (Array.isArray(eventsArray)) {
-          eventsArray.forEach((event) => {
+          eventsArray.forEach(event => {
             fetchedNotifs.push({
               ...event, // Spread operator to get all properties of the event
-              id: `${docSnapshot.id}_${event.time}`, // Construct a unique id for the keyExtractor later
+              id: `${docSnapshot.id}_${event.time}` // Construct a unique id for the keyExtractor later
             });
           });
         }
       });
-
+  
       setAllNotifications(fetchedNotifs.reverse()); // Assuming setAllNotifications is a state setter
     } catch (error) {
       console.error("Error fetching notifications:", error);
@@ -149,17 +141,16 @@ const Home = ({ route }) => {
       setItems([]);
     }
   };
-
+  
   useEffect(() => {
-    getUserData()
-      .then((data) => {
-        setUserIDState(data.donorID);
-        setRole(data.role);
-      })
-      .catch((err) => {
-        console.error(err);
-        setError(err);
-      });
+    getUserData().then((data) => {
+      setUserIDState(data.donorID);
+      setRole(data.role);
+    })
+    .catch((err) => {
+      console.error(err);
+      setError(err);
+    });
   }, []);
 
   useEffect(() => {
@@ -173,55 +164,53 @@ const Home = ({ route }) => {
           const data = docSnap.data();
           if (!data.notificationToken) {
             await addUserExpoPushToken(auth.currentUser.uid, expoPushToken);
-          } else {
-            console.log("Token exists");
-          }
-        }
+        } else {
+          console.log("Token exists");
+        }}
       } else {
-        console.log("auth.currentUser is null, waiting for authentication.");
+        console.log('auth.currentUser is null, waiting for authentication.');
       }
     };
     getUserRole();
   }, [auth.currentUser]);
 
-  useEffect(() => {
-    fetchAllNotifications();
-  }, []);
+    useEffect(() => {
+      fetchAllNotifications();
+    }, []);
 
-  const renderNotif = ({ item }) => {
-    return (
-      <View style={styles.notificationContainer}>
-        <Text style={styles.notificationTitle}>
-          {item.title} - {item.date} at {item.time}
-        </Text>
-        <Text style={styles.notificationMessage}>{item.message}</Text>
-      </View>
-    );
-  };
+    const renderNotif = ({ item }) => {
+      return (
+        <View style={styles.notificationContainer}>
+          <Text style={styles.notificationTitle}>{item.title}</Text>
+          <Text style={styles.notificationDate}>{item.date} at {item.time}</Text>
+          <Text style={styles.notificationMessage}>{item.message}</Text>
+        </View>
+      );
+    };
 
-  const openWebsite = (url) => {
-    Linking.openURL(url);
-  };
-
-  useEffect(() => {
-    fetchDates();
-  }, []);
-
-  const [imageUrls, setImageUrls] = useState({});
-
-  const fetchImageUrl = async (imageName) => {
-    try {
-      const storage = getStorage();
-      const storageRef = ref(storage, imageName);
-      const url = await getDownloadURL(storageRef);
-      setImageUrls((prevUrls) => ({
-        ...prevUrls,
-        [imageName]: url,
-      }));
-    } catch (error) {
-      console.error("Error getting image URL: ", error);
+    const openWebsite = (url) => {
+      Linking.openURL(url);
     }
-  };
+
+    useEffect(() => {
+      fetchDates();
+    }, []);
+
+    const [imageUrls, setImageUrls] = useState({});
+
+    const fetchImageUrl = async (imageName) => {
+      try {
+        const storage = getStorage();
+        const storageRef = ref(storage, imageName);
+        const url = await getDownloadURL(storageRef);
+        setImageUrls(prevUrls => ({
+          ...prevUrls,
+          [imageName]: url,
+        }));
+      } catch (error) {
+        console.error("Error getting image URL: ", error);
+      }
+    };
 
   return (
     <View
@@ -230,52 +219,52 @@ const Home = ({ route }) => {
         justifyContent: "center",
         alignItems: "center",
         backgroundColor: "#233563",
-      }}
-    >
+      }}>
       <TouchableOpacity
-        style={styles.bellIconContainer}
-        onPress={() => setNotificationModalVisible(true)}
-      >
-        <Icon name="bell" type="font-awesome" color="white" size={24} />
+      style={styles.bellIconContainer}
+      onPress={() => setNotificationModalVisible(true)} >
+        <Icon
+          name="bell"
+          type="font-awesome"
+          color="white"
+          size={24}
+        />
       </TouchableOpacity>
       <TouchableOpacity
-        style={styles.applicationButton}
-        onPress={() => openWebsite("https://linktr.ee/dmatuf")}
-      >
-        <Text style={styles.applicationButtonText}>Resources</Text>
+        style={styles.applicationButton} onPress={() => openWebsite('https://linktr.ee/dmatuf')} >
+        <Text style={styles.applicationButtonText} >Resources</Text>
       </TouchableOpacity>
       <Text style={styles.applicationTitle}>Upcoming Events</Text>
-      <ScrollView style={{ width: "93%" }}>
+        <ScrollView style={{width:'93%'}}>
         {Array.isArray(items) && items.length > 0 ? (
           items.map((item, index) => (
             <View key={index} style={styles.itemContainer}>
               {item.picture && imageUrls[item.picture] ? (
-                <Image
-                  source={{ uri: imageUrls[item.picture] }}
-                  style={styles.miniImage}
-                />
-              ) : null}
+                <Image source={{ uri: imageUrls[item.picture] }} style={styles.miniImage} />
+              ) : (
+                null
+              )}
               {item.picture && imageUrls[item.picture] ? (
                 <Text style={styles.itemTitle}>{item.title}</Text>
               ) : (
                 <Text style={styles.itemTitleNoPicture}>{item.title}</Text>
               )}
               {item.time ? (
-                <Text style={styles.itemTime}>
-                  {item.formattedDate} at {item.time}
-                </Text>
+                <Text style={styles.itemTime}>{item.formattedDate} at {item.time}</Text>
               ) : (
                 <Text style={styles.itemTime}>{item.formattedDate}</Text>
               )}
               {item.description ? (
                 <Text style={styles.description}>{item.description}</Text>
-              ) : null}
+              ) : (
+                null
+              )}
             </View>
           ))
         ) : (
           <Text>No upcoming events</Text>
         )}
-      </ScrollView>
+        </ScrollView>
       <Modal
         animationType="slide"
         transparent={true}
@@ -283,20 +272,25 @@ const Home = ({ route }) => {
         onRequestClose={() => {
           Alert.alert("Modal has been closed.");
           setNotificationModalVisible(!notificationModalVisible);
-        }}
-      >
+        }} >
         <View style={styles.centeredView}>
           <View style={styles.modalView}>
-            <Text>Past Notifications</Text>
+            <Text style={styles.notificationHeader}>Notifications</Text>
+            <TouchableOpacity
+              style={styles.button}
+              onPress={() => setNotificationModalVisible(!notificationModalVisible)} >
+                <Icon
+                  name="close"
+                  type="font-awesome"
+                  color="black"
+                  size={30}
+                />
+            </TouchableOpacity>
             <FlatList
               data={allNotifications}
               renderItem={renderNotif} // Your renderItem function to display the notification
-              keyExtractor={(item) => item.id} // Unique key for each notification
-            />
-            <Button
-              style={[styles.button, styles.buttonClose]}
-              onPress={() => setNotificationModalVisible(!notificationModalVisible)}
-              title="Hide Notifications"
+              keyExtractor={item => item.id} // Unique key for each notification
+              showsVerticalScrollIndicator={false} // Hide the vertical scrollbar
             />
           </View>
         </View>
@@ -324,11 +318,13 @@ const styles = StyleSheet.create({
     marginTop: 22,
   },
   modalView: {
+    marginTop: 70,
+    marginBottom: 70,
     margin: 20,
+    position: "relative",
     backgroundColor: "white",
     borderRadius: 20,
-    padding: 35,
-    alignItems: "center",
+    padding: 20,
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
@@ -337,6 +333,16 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 4,
     elevation: 5,
+  },
+  flatListContainer: {
+    overflow: 'hidden',
+  },
+  notificationHeader: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "black",
+    textAlign: "left",
+    marginBottom: 20,
   },
   header: {
     fontSize: 24,
@@ -347,15 +353,13 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   button: {
-    backgroundColor: "#233D72",
     margin: 2,
-    justifyContent: "flex-start",
-    paddingLeft: 15,
-    borderRadius: 5,
-    borderWidth: 0,
-    borderBottomWidth: 2,
-    borderColor: "#2B457A",
-  },
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    fontSize: 20,
+    color: 'black',
+    },
   inputTop: {
     height: 40,
     borderColor: "black",
@@ -366,24 +370,39 @@ const styles = StyleSheet.create({
     backgroundColor: "#D9D9D9",
   },
   topText: {
-    color: "white",
+    color: 'white',
     fontSize: 12,
-    textAlign: "center",
+    textAlign: 'center',
     margin: 10,
   },
   notificationContainer: {
-    backgroundColor: "white",
-    padding: 20,
-    marginRight: 10,
-    marginTop: 17,
+    backgroundColor: 'white',
+    padding: 10,
+    // marginTop: 17,
+    marginBottom: 10,
     borderRadius: 5,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    borderWidth: 3,
+    borderColor: '#231F7C',
+    // shadowColor: '#000',
+    // shadowOffset: { width: 0, height: 2 },
+    // shadowOpacity: 0.1,
+    // shadowRadius: 4,
+  },
+  notificationTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  notificationDate: {
+    fontSize: 12,
+    color: 'gray',
+    fontWeight: 'bold',
+  },
+  notificationMessage: {
+    fontSize: 14,
+    marginTop: 5,
   },
   showNotificationButton: {
-    backgroundColor: "#E2883C",
+    backgroundColor: '#E2883C',
     padding: 15,
     borderRadius: 5,
     marginTop: 15,
@@ -391,7 +410,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   bellIconContainer: {
-    position: "absolute",
+    position: 'absolute',
     top: 50,
     right: 20,
     zIndex: 1, // Ensure it's above other elements
@@ -424,40 +443,40 @@ const styles = StyleSheet.create({
     backgroundColor: "#E2883C",
     padding: 10,
     height: 45,
-    width: "45%",
+    width: '45%',
     borderRadius: 5,
     marginBottom: 10,
     marginTop: 85,
   },
   applicationButtonText: {
-    color: "white",
-    textAlign: "center",
-    fontWeight: "bold",
-    fontSize: 18,
+    color: 'white',
+    textAlign: 'center',
+    fontWeight: 'bold',
+    fontSize:18,
   },
   itemContainer: {
-    backgroundColor: "white",
+    backgroundColor: 'white',
     padding: 20,
     marginTop: 10,
     marginBottom: 10,
     borderRadius: 5,
-    shadowColor: "#000",
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
   },
   itemTime: {
     fontSize: 16,
-    fontWeight: "bold",
+    fontWeight: 'bold',
   },
   itemTitle: {
     fontSize: 18,
-    fontWeight: "bold",
+    fontWeight: 'bold',
     marginTop: 20,
   },
   itemTitleNoPicture: {
     fontSize: 18,
-    fontWeight: "bold",
+    fontWeight: 'bold',
     marginTop: 0,
   },
   miniImage: {
