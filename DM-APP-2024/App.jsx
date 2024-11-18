@@ -277,7 +277,7 @@ const App = () => {
               ),
             }}
           />
-          <Tab.Screen
+          {/* <Tab.Screen
             name="Calendar"
             component={CalendarPage}
             options={{
@@ -289,7 +289,7 @@ const App = () => {
                 />
               ),
             }}
-          />
+          /> */}
           <Tab.Screen
             name="Spirit"
             component={Spirit}
