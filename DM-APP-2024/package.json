@@ -41,6 +41,8 @@
     "expo-web-browser": "~14.0.1",
     "express": "^4.19.2",
     "firebase": "^10.9.0",
+    "firebase-admin": "^13.0.1",
+    "firebase-functions": "^6.1.2",
     "google-auth-library": "^9.14.1",
     "googleapis": "^105.0.0",
     "jsrsasign": "^11.1.0",
