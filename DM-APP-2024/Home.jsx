@@ -28,6 +28,9 @@ import { getStorage, ref, getDownloadURL } from 'firebase/storage';
 import { addUserExpoPushToken } from "./Firebase/AuthManager";
 import { getUserData } from "./Firebase/UserManager";
 
+import axios from 'axios';
+import { sheetsAPIKey } from './api/apiKeys';
+
 const Home = ({route}) => {
 
   const [modalVisible, setModalVisible] = useState(false);
@@ -36,6 +39,10 @@ const Home = ({route}) => {
   const [userIDState, setUserIDState] = useState('');
   const [allNotifications, setAllNotifications] = useState({});
   const [items, setItems] = useState([]);
+
+  const SPREADSHEET_ID = '15kkihl7I0p4A_jyT-a-ozXQA9kvi_as-ry_6J0PfPis';
+  const range = 'Sheet1!A5:F100';
+  const apiKey = sheetsAPIKey;
 
   const {expoPushToken} = route.params;
 
@@ -68,79 +75,122 @@ const Home = ({route}) => {
 
   const fetchDates = async () => {
     try {
-      const eventsCollectionRef = collection(db, "Calendar2024");
-      const querySnapshot = await getDocs(eventsCollectionRef);
-      const fetchedItems = [];
-
-      querySnapshot.forEach((doc) => {
-        const docData = doc.data();
-        Object.keys(docData).forEach((date) => {
-          const events = docData[date].events;
-          events.forEach((event) => {
-            let timeString = event.time || "12:00 AM"; // Default to 12:00 AM if no time is provided
-            const [time, period] = timeString.split(" ");
-            let [hours, minutes] = time.split(":").map(Number);
-
-            if (period === "PM" && hours !== 12) {
-              hours += 12;
-            } else if (period === "AM" && hours === 12) {
-              hours = 0;
-            }
-
-            const [year, month, day] = date.split("-").map(Number);
-
-            // Create a valid Date object
-            if (year && month && day && !isNaN(hours) && !isNaN(minutes)) {
-              const eventDate = new Date(year, month - 1, day, hours, minutes);
-              if (!isNaN(eventDate)) {
-                fetchedItems.push({
-                  formattedDate: new Intl.DateTimeFormat("en-US", {
-                    month: "long",
-                    day: "numeric",
-                    year: "numeric",
-                  }).format(eventDate),
-                  date,
-                  time: event.time || "", // Preserve original time or empty string if not provided
-                  title: event.title,
-                  description: event.description,
-                  datetime: eventDate,
-                  picture: event.picture,
-                });
-              }
-            }
-          });
-        });
-      });
-
-      const currentDate = new Date(INITIAL_DATE).getTime();
-
-      let filteredItems = [];
-
-      if (fetchedItems.length === 0) {
+      const response = await axios.get(
+        `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${range}?key=${apiKey}`
+      );
+  
+      const rows = response.data.values;
+  
+      if (!rows || rows.length === 0) {
+        console.log("No data found.");
         setItems([]);
         return;
-      } else {
-        filteredItems = fetchedItems.filter(
-          (item) => item.datetime.getTime() >= currentDate
-        );
       }
+  
+      console.log("Raw rows from Google Sheets:", rows);
+  
+      // Skip the header row and map rows to events
+      const fetchedItems = rows.slice(0).map((row, index) => {
+        const [title, date, time, location, description, pictureName] = row;
+  
+        if (!date || !time) {
+          console.warn(`Skipping row ${index + 1}: Missing date or time`, row);
+          return null; // Skip invalid rows
+        }
+  
+        // Parse date and time
+        const [year, month, day] = date.split("-").map(Number);
+        
+        // Parse 12-hour time format (e.g., "10:00 AM")
+        let hours = 0,
+        minutes = 0;
+        const timeMatch = time.match(/^(\d+):(\d+)\s?(AM|PM)$/i);
+        if (timeMatch) {
+          hours = parseInt(timeMatch[1], 10);
+          minutes = parseInt(timeMatch[2], 10);
+          const period = timeMatch[3].toUpperCase();
 
-      // Sort events by datetime
+          if (period === "PM" && hours !== 12) {
+            hours += 12;
+          } else if (period === "AM" && hours === 12) {
+            hours = 0;
+          }
+        } else {
+          console.warn(`Skipping row ${index + 1}: Invalid time format`, row);
+          return null; // Skip invalid time formats
+        }
+
+        if (
+          isNaN(year) ||
+          isNaN(month) ||
+          isNaN(day) ||
+          isNaN(hours) ||
+          isNaN(minutes)
+        ) {
+          console.warn(`Skipping row ${index + 1}: Invalid date or time format`, row);
+          return null; // Skip invalid rows
+        }
+  
+        const eventDate = new Date(year, month - 1, day, hours, minutes);
+        if (isNaN(eventDate.getTime())) {
+          console.warn(`Skipping row ${index + 1}: Invalid event date`, row);
+          return null; // Skip invalid dates
+        }
+
+        console.log(`Processed event ${index + 1}:`, {
+          title,
+          date,
+          time,
+          location,
+          description,
+          pictureName,
+          eventDate,
+        });
+  
+        return {
+          formattedDate: new Intl.DateTimeFormat("en-US", {
+            month: "long",
+            day: "numeric",
+            year: "numeric",
+          }).format(eventDate),
+          date,
+          time: time,
+          title: title,
+          description: description,
+          location: location,
+          datetime: eventDate,
+          picture: pictureName,
+        };
+      });
+  
+      // Filter and sort valid items
+      const currentDate = new Date(INITIAL_DATE).getTime();
+  
+      const validItems = fetchedItems.filter((item) => item !== null);
+      console.log("Valid items after parsing:", validItems);
+
+      const filteredItems = validItems.filter(
+        (item) => item.datetime.getTime() >= currentDate
+      );
+
+      console.log("Filtered items:", filteredItems);
+  
       filteredItems.sort((a, b) => a.datetime - b.datetime);
-
-      // Set the next three events
-      setItems(filteredItems.slice(0, 3));
-
+  
+      // Fetch images for events with pictures
       filteredItems.forEach((item) => {
         if (item.picture) {
           fetchImageUrl(item.picture);
         }
       });
+  
+      // Update state with the next three events
+      setItems(filteredItems.slice(0, 3));
     } catch (error) {
       console.error("Error fetching events:", error);
       setItems([]);
     }
-  };
+  };  
   
   useEffect(() => {
     getUserData().then((data) => {
@@ -253,6 +303,11 @@ const Home = ({route}) => {
                 <Text style={styles.itemTime}>{item.formattedDate} at {item.time}</Text>
               ) : (
                 <Text style={styles.itemTime}>{item.formattedDate}</Text>
+              )}
+              {item.location ? (
+                <Text style={styles.itemTime}>{item.location}</Text>
+              ) : (
+                null
               )}
               {item.description ? (
                 <Text style={styles.description}>{item.description}</Text>
