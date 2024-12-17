@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, Image, StyleSheet, Button, Linking, Modal, ScrollView, TouchableOpacity } from 'react-native';
-import { getUserInfo, getUserMilestones, getUserDonations } from './api/index';
+import { getUserInfo, getUserMilestones, getUserDonations, getUserBadges } from './api/index';
 import * as Clipboard from 'expo-clipboard';
 // import { auth, db } from './Firebase/AuthManager';
 // import { doc, getDoc } from 'firebase/firestore';
@@ -20,12 +20,14 @@ const Fundraiser = () => {
   const [donationInfo, setDonationInfo] = useState({});
   const [allDonations, setAllDonations] = useState({});
   const [sortedDonations, setSortedDonations] = useState([allDonations]);
+  const [badgeInfo, setBadgeInfo] = useState({ badges: [] });
+  const [badgeModalVisible, setBadgeModalVisible] = useState(false);
+  const [selectedBadge, setSelectedBadge] = useState(null);
 
   const [isLoadingUserInfo, setIsLoadingUserInfo] = useState(true);
   const [isLoadingMilestones, setIsLoadingMilestones] = useState(true);
   const [isLoadingDonations, setIsLoadingDonations] = useState(true);
   const isAllDataLoaded = !isLoadingUserInfo && !isLoadingMilestones && !isLoadingDonations;
-
 
   useEffect(() => {
     getUserData().then((data) => {
@@ -74,8 +76,18 @@ const Fundraiser = () => {
         setIsLoadingDonations(false);
       });
   }, [userIDState]);
-  
 
+  useEffect(() => {
+    getUserBadges(userIDState)
+      .then((data) => {
+        setBadgeInfo(data);
+        console.log("Fetched Badges:", data);
+      })
+      .catch((err) => {
+        console.error("Error fetching badges:", err);
+      });
+  }, [userIDState]);
+  
   useEffect(() => {
     if (userIDState && userInfo.numMilestones) {
       for (let i = 0; i < userInfo.numMilestones; i++) {
@@ -142,7 +154,17 @@ const Fundraiser = () => {
     console.log("donationInfo:", donationInfo);
   }, [userIDState, userInfo, milestoneInfo, donationInfo]);
 
-  const isProgressDataValid = typeof userInfo.sumDonations === "number" && typeof userInfo.fundraisingGoal === "number" && userInfo.fundraisingGoal > 0;
+  //const isProgressDataValid = typeof userInfo.sumDonations === "number" && typeof userInfo.fundraisingGoal === "number" && userInfo.fundraisingGoal > 0;
+
+  const openBadgeModal = (badge) => {
+    setSelectedBadge(badge);
+    setBadgeModalVisible(true);
+  };
+
+  const closeBadgeModal = () => {
+    setBadgeModalVisible(false);
+    setSelectedBadge(null);
+  };
 
   return (
     <View style={styles.container}>
@@ -192,7 +214,7 @@ const Fundraiser = () => {
             </View>
           </Modal>
   
-          {userInfo && userInfo.displayName && (
+          {userInfo && (
             <View style={styles.info}>
               <View style={styles.profileContainer}>
                 <Image
@@ -223,6 +245,43 @@ const Fundraiser = () => {
                 height={20}
                 borderRadius={10}
               />
+
+              <ScrollView horizontal style={{ marginTop: 10, marginBottom: 10, maxHeight: 70, maxWidth: "90%", padding: 10 }}>
+                {badgeInfo.badges && badgeInfo.badges.length > 0 ? (
+                  badgeInfo.badges.map((badge, index) => (
+                    <TouchableOpacity key={index} onPress={() => openBadgeModal(badge)}>
+                      <Image source={{ uri: badge.badgeImageURL }} style={styles.image} />
+                    </TouchableOpacity>
+                  ))
+                ) : (
+                  <Text style={{ color: 'white' }}>No badges to display</Text>
+                )}
+              </ScrollView>
+
+              {selectedBadge && (
+                <Modal
+                  animationType="slide"
+                  transparent={true}
+                  visible={badgeModalVisible}
+                  onRequestClose={closeBadgeModal}
+                >
+                  <View style={styles.modalContainer}>
+                    <View style={styles.modalContent}>
+                      <Text style={styles.modalTitle}>{selectedBadge.title}</Text>
+                      <Text style={styles.modalDescription}>
+                        {selectedBadge.description}
+                      </Text>
+                      <Image
+                        source={{ uri: selectedBadge.badgeImageURL }}
+                        style={styles.modalImage}
+                      />
+                      <TouchableOpacity onPress={closeBadgeModal} style={styles.closeButton}>
+                        <Text style={styles.closeButtonText}>Close</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                </Modal>
+              )}
   
               <View style={styles.rectangleView}>
                 <Text
@@ -239,10 +298,10 @@ const Fundraiser = () => {
                   <ScrollView>
                     {Array.isArray(allDonations) && allDonations.length > 0 ? (
                       allDonations.map((donation, index) => {
-                        displayName = donation.displayName
+                        donatorName = donation.displayName
                           ? donation.displayName
                           : "Anonymous";
-                        displayName = displayName
+                          donatorName = donatorName
                           .replace("Dance Marathon at UF", "")
                           .trim();
                         return (
@@ -250,7 +309,7 @@ const Fundraiser = () => {
                             style={{ fontSize: 16, color: "white" }}
                             key={index}
                           >
-                            • {displayName} - ${donation.amount}
+                            • {donatorName} - ${donation.amount}
                           </Text>
                         );
                       })
@@ -370,7 +429,7 @@ const styles = StyleSheet.create({
   avatar: {
     width: 80,
     height: 80,
-    borderRadius: 40, // Make sure it is half of height/width
+    borderRadius: 40,
     marginRight: 10,
   },
   textContainer: {
@@ -427,6 +486,51 @@ const styles = StyleSheet.create({
       flexDirection: 'row',
       justifyContent: 'space-between',
       width: 350,
+    },
+    image: {
+      width: 50,
+      height: 50,
+      marginRight: 10,
+      borderRadius: 10,
+    },
+    modalContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    },
+    modalContent: {
+      backgroundColor: '#fff',
+      padding: 20,
+      borderRadius: 10,
+      alignItems: 'center',
+      width: '80%',
+    },
+    modalTitle: {
+      fontSize: 20,
+      fontWeight: 'bold',
+      marginBottom: 10,
+    },
+    modalDescription: {
+      fontSize: 16,
+      textAlign: 'center',
+      marginBottom: 10,
+    },
+    modalImage: {
+      width: 150,
+      height: 150,
+      marginVertical: 10,
+    },
+    closeButton: {
+      marginTop: 10,
+      backgroundColor: '#007AFF',
+      paddingVertical: 10,
+      paddingHorizontal: 20,
+      borderRadius: 5,
+    },
+    closeButtonText: {
+      color: '#fff',
+      fontWeight: 'bold',
     }
 });
 
