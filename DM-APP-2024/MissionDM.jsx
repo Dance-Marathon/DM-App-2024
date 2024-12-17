@@ -56,7 +56,6 @@ const MissionDM = () => {
                 name: userInfo.displayName,
                 isEliminated: false,
                 gameId: "test",
-                joinedTime: new Date().toISOString(),
                 code: "test",
                 eliminations: {},
                 id: "1",
@@ -72,24 +71,71 @@ const MissionDM = () => {
           Alert.alert("Error", "Failed to enroll. Please try again.");
         }
     };
+    const targetDate = new Date("2024-12-31T00:00:00").getTime();
 
-  return (
-    <View
-      style={{
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-        backgroundColor: "#233563",
-      }}>
-        {inGame ? (
-        <Text style={{ fontSize: 18, color: "green" }}>You are enrolled! The game starts in:</Text>
-      ) : (
-        <TouchableOpacity style={styles.enrollButton} onPress={enrollUser} >
-                <Text style={styles.enrollButtonText} >Enroll In MissionDM</Text>
-        </TouchableOpacity>
-      )}
-    </View>
-  );
+        const [timeLeft, setTimeLeft] = useState(calculateTimeLeft());
+
+   function calculateTimeLeft() {
+        const now = new Date().getTime();
+        const difference = targetDate - now;
+    
+        if (difference <= 0) {
+            return { days: 0, hours: 0, minutes: 0, seconds: 0 };
+        }
+    
+        return {
+            days: Math.floor(difference / (1000 * 60 * 60 * 24)),
+            hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
+            minutes: Math.floor((difference / (1000 * 60)) % 60),
+            seconds: Math.floor((difference / 1000) % 60),
+        };
+    };
+
+    useEffect(() => {
+        const timer = setInterval(() => {
+            setTimeLeft(calculateTimeLeft());
+        }, 1000);
+
+        return () => clearInterval(timer);
+    }, []);
+
+    return (
+        <View
+        style={{
+            flex: 1,
+            justifyContent: "center",
+            alignItems: "center",
+            backgroundColor: "#233563",
+        }}>
+            {inGame ? (
+            <View style={styles.otherContainer}>
+                <Text style={{ fontSize: 18, color: "green", marginBottom: 8 }}>You are enrolled! The game starts in:</Text>
+                <View style={styles.timeContainer}>
+                    <View style={styles.timeBox}>
+                        <Text style={styles.timeValue}>{timeLeft.days}</Text>
+                        <Text style={styles.timeLabel}>Days</Text>
+                    </View>
+                    <View style={styles.timeBox}>
+                        <Text style={styles.timeValue}>{String(timeLeft.hours).padStart(2, "0")}</Text>
+                        <Text style={styles.timeLabel}>Hours</Text>
+                    </View>
+                    <View style={styles.timeBox}>
+                        <Text style={styles.timeValue}>{String(timeLeft.minutes).padStart(2, "0")}</Text>
+                        <Text style={styles.timeLabel}>Minutes</Text>
+                    </View>
+                    <View style={styles.timeBox}>
+                        <Text style={styles.timeValue}>{String(timeLeft.seconds).padStart(2, "0")}</Text>
+                        <Text style={styles.timeLabel}>Seconds</Text>
+                    </View>
+                </View>
+            </View>
+        ) : (
+            <TouchableOpacity style={styles.enrollButton} onPress={enrollUser} >
+                    <Text style={styles.enrollButtonText} >Enroll In MissionDM</Text>
+            </TouchableOpacity>
+        )}
+        </View>
+    );
 };
 
 export default MissionDM;
@@ -203,6 +249,33 @@ const styles = StyleSheet.create({
       width: 325,
       borderRadius: 5,
       height: 325,
+    },
+    timeContainer: {
+        flexDirection: "row",
+        justifyContent: "center",
+    },
+    otherContainer: {
+        flexDirection: "column",
+        justifyContent: "center",
+        alignItems: "center"
+    },
+    timeBox: {
+        alignItems: "center",
+        marginHorizontal: 6,
+        padding: 10,
+        backgroundColor: "#333333",
+        borderRadius: 10,
+        width: 80,
+    },
+    timeValue: {
+        fontSize: 36,
+        fontWeight: "bold",
+        color: "#00FF00",
+    },
+    timeLabel: {
+        fontSize: 14,
+        color: "#FFFFFF",
+        marginTop: 5,
     },
   });
   
