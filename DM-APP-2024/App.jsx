@@ -33,6 +33,7 @@ import Blog8 from './blogs/Blog_MiracleMaker';
 import Scanner from './Scanner';
 import TTHome from './HomeTT';
 import checkForUpdate from './AppUpdateCheck';
+import MissionDM from './MissionDM';
 
 import { addUserExpoPushToken } from "./Firebase/AuthManager";
 
@@ -298,6 +299,20 @@ const App = () => {
               tabBarIcon: ({ color, size }) => (
                 <Icon
                   name="check"
+                  type="font-awesome"
+                  color={color}
+                />
+              ),
+            }}
+          />
+          <Tab.Screen
+            name="MissionDM"
+            component={MissionDM}
+            options={{
+              headerShown: false,
+              tabBarIcon: ({ color, size }) => (
+                <Icon
+                  name="rocket"
                   type="font-awesome"
                   color={color}
                 />
