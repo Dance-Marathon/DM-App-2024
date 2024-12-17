@@ -86,22 +86,16 @@ const Home = ({route}) => {
         setItems([]);
         return;
       }
-  
-      console.log("Raw rows from Google Sheets:", rows);
-  
-      // Skip the header row and map rows to events
+    
       const fetchedItems = rows.slice(0).map((row, index) => {
         const [title, date, time, location, description, pictureName] = row;
   
         if (!date || !time) {
-          console.warn(`Skipping row ${index + 1}: Missing date or time`, row);
-          return null; // Skip invalid rows
+          return null;
         }
   
-        // Parse date and time
         const [year, month, day] = date.split("-").map(Number);
         
-        // Parse 12-hour time format (e.g., "10:00 AM")
         let hours = 0,
         minutes = 0;
         const timeMatch = time.match(/^(\d+):(\d+)\s?(AM|PM)$/i);
@@ -116,8 +110,7 @@ const Home = ({route}) => {
             hours = 0;
           }
         } else {
-          console.warn(`Skipping row ${index + 1}: Invalid time format`, row);
-          return null; // Skip invalid time formats
+          return null;
         }
 
         if (
@@ -127,25 +120,13 @@ const Home = ({route}) => {
           isNaN(hours) ||
           isNaN(minutes)
         ) {
-          console.warn(`Skipping row ${index + 1}: Invalid date or time format`, row);
-          return null; // Skip invalid rows
+          return null;
         }
   
         const eventDate = new Date(year, month - 1, day, hours, minutes);
         if (isNaN(eventDate.getTime())) {
-          console.warn(`Skipping row ${index + 1}: Invalid event date`, row);
-          return null; // Skip invalid dates
+          return null;
         }
-
-        console.log(`Processed event ${index + 1}:`, {
-          title,
-          date,
-          time,
-          location,
-          description,
-          pictureName,
-          eventDate,
-        });
   
         return {
           formattedDate: new Intl.DateTimeFormat("en-US", {
@@ -163,28 +144,22 @@ const Home = ({route}) => {
         };
       });
   
-      // Filter and sort valid items
       const currentDate = new Date(INITIAL_DATE).getTime();
   
       const validItems = fetchedItems.filter((item) => item !== null);
-      console.log("Valid items after parsing:", validItems);
 
       const filteredItems = validItems.filter(
         (item) => item.datetime.getTime() >= currentDate
       );
-
-      console.log("Filtered items:", filteredItems);
   
       filteredItems.sort((a, b) => a.datetime - b.datetime);
   
-      // Fetch images for events with pictures
       filteredItems.forEach((item) => {
         if (item.picture) {
           fetchImageUrl(item.picture);
         }
       });
   
-      // Update state with the next three events
       setItems(filteredItems.slice(0, 3));
     } catch (error) {
       console.error("Error fetching events:", error);
