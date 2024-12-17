@@ -1,34 +1,17 @@
 import React, { useEffect, useState } from "react";
-import {
-  View,
-  Text,
-  Platform,
-  Image,
-  Modal,
-  StyleSheet,
-  TouchableOpacity,
-  Dimensions,
-  ScrollView,
-  Button,
-  TextInput,
-  FlatList,
-  Alert,
-  Linking,
-  SafeAreaView,
-} from "react-native";
-const INITIAL_DATE = new Date();
+import { View, Text, StyleSheet, TouchableOpacity, Alert } from "react-native";
 import { auth, db } from './Firebase/AuthManager';
-import { doc, setDoc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { doc, setDoc, updateDoc, deleteDoc, collection, getDocs } from 'firebase/firestore';
 import { getUserInfo } from './api/index';
 import { getUserData, updateUserData } from "./Firebase/UserManager";
 
 const MissionDM = () => {
-    const targetDate = new Date("2024-12-31T00:00:00").getTime();
-
     const [timeLeft, setTimeLeft] = useState(calculateTimeLeft());
     const [inGame, setInGame] = useState(false);
     const [userIDState, setUserIDState] = useState('');
     const [userInfo, setUserInfo] = useState({});
+    const [rounds, setRounds] = useState({});
+    const [targetDate, setTargetDate] = useState(null);
 
     useEffect(() => {
         getUserData().then((data) => {
@@ -54,6 +37,41 @@ const MissionDM = () => {
           });
     }, [userIDState]);
 
+    const getRoundInfo = async () => {
+        const col = collection(db, "MissionDMGames");
+        const snap = await getDocs(col);
+
+        const rounds = [];
+
+        snap.forEach((doc) => {
+            const docData = doc.data();
+            console.log("Doc Data:", docData);
+            const start = new Date(docData.start.seconds * 1000 + docData.start.nanoseconds / 1e6);
+            const end = new Date(docData.end.seconds * 1000 + docData.end.nanoseconds / 1e6);
+
+            rounds.push({
+                round: docData.round,
+                start: formatToLocalDateTime(start),
+                end: formatToLocalDateTime(end),
+            });
+        });
+        
+        console.log("Rounds:", rounds);
+        setRounds(rounds);
+    };
+
+    function generateRandomCode() {
+        const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+        let code = '';
+      
+        for (let i = 0; i < 5; i++) {
+          const randomIndex = Math.floor(Math.random() * characters.length);
+          code += characters[randomIndex];
+        }
+      
+        return code;
+    }
+
     const enrollUser = async () => {
         try {
             const currentUID = auth.currentUser.uid;
@@ -61,8 +79,7 @@ const MissionDM = () => {
             setDoc(doc(db, "MissionDMPlayers", currentUID), {
                 name: userInfo.displayName,
                 isEliminated: false,
-                gameId: "test",
-                code: "test",
+                code: generateRandomCode(),
                 eliminations: {},
                 id: "1",
                 targetId: "2",
@@ -128,7 +145,29 @@ const MissionDM = () => {
         }, 1000);
 
         return () => clearInterval(timer);
+    }, [targetDate]);
+
+    useEffect(() => {
+        getRoundInfo();
     }, []);
+
+    useEffect(() => {
+        if (rounds.length > 0) {
+            const tempDate = new Date(rounds[0].start).getTime();
+            setTargetDate(tempDate);
+        }
+    }, [rounds]);
+
+    function formatToLocalDateTime(date) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, "0");
+        const day = String(date.getDate()).padStart(2, "0");
+        const hours = String(date.getHours()).padStart(2, "0");
+        const minutes = String(date.getMinutes()).padStart(2, "0");
+        const seconds = String(date.getSeconds()).padStart(2, "0");
+      
+        return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
+    }
 
     return (
         <View
@@ -138,7 +177,7 @@ const MissionDM = () => {
             alignItems: "center",
             backgroundColor: "#233563",
         }}>
-            {inGame ? (
+            {inGame && targetDate ? (
             <View style={styles.otherContainer}>
                 <Text style={{ fontSize: 18, color: "green", marginBottom: 8 }}>You are enrolled! The game starts in:</Text>
                 <View style={styles.timeContainer}>
@@ -175,39 +214,6 @@ const MissionDM = () => {
 export default MissionDM;
 
 const styles = StyleSheet.create({
-    centeredView: {
-      flex: 1,
-      justifyContent: "center",
-      alignItems: "center",
-      marginTop: 22,
-    },
-    modalView: {
-      marginTop: 70,
-      marginBottom: 70,
-      margin: 20,
-      position: "relative",
-      backgroundColor: "white",
-      borderRadius: 20,
-      padding: 20,
-      shadowColor: "#000",
-      shadowOffset: {
-        width: 0,
-        height: 2,
-      },
-      shadowOpacity: 0.25,
-      shadowRadius: 4,
-      elevation: 5,
-    },
-    flatListContainer: {
-      overflow: 'hidden',
-    },
-    notificationHeader: {
-      fontSize: 24,
-      fontWeight: "bold",
-      color: "black",
-      textAlign: "left",
-      marginBottom: 20,
-    },
     header: {
       fontSize: 24,
       fontWeight: "bold",
@@ -223,21 +229,6 @@ const styles = StyleSheet.create({
       right: 10,
       fontSize: 20,
       color: 'black',
-      },
-    inputTop: {
-      height: 40,
-      borderColor: "black",
-      borderWidth: 1,
-      marginBottom: 15,
-      paddingHorizontal: 10,
-      borderRadius: 5,
-      backgroundColor: "#D9D9D9",
-    },
-    topText: {
-      color: 'white',
-      fontSize: 12,
-      textAlign: 'center',
-      margin: 10,
     },
     enrollButton: {
       backgroundColor: "#E2883C",
@@ -253,36 +244,6 @@ const styles = StyleSheet.create({
       textAlign: 'center',
       fontWeight: 'bold',
       fontSize:18,
-    },
-    itemContainer: {
-      backgroundColor: 'white',
-      padding: 20,
-      marginTop: 10,
-      marginBottom: 10,
-      borderRadius: 5,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 4,
-    },
-    itemTime: {
-      fontSize: 16,
-      fontWeight: 'bold',
-    },
-    itemTitle: {
-      fontSize: 18,
-      fontWeight: 'bold',
-      marginTop: 20,
-    },
-    itemTitleNoPicture: {
-      fontSize: 18,
-      fontWeight: 'bold',
-      marginTop: 0,
-    },
-    miniImage: {
-      width: 325,
-      borderRadius: 5,
-      height: 325,
     },
     timeContainer: {
         flexDirection: "row",
