@@ -18,11 +18,14 @@ import {
 } from "react-native";
 const INITIAL_DATE = new Date();
 import { auth, db } from './Firebase/AuthManager';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { getUserInfo } from './api/index';
-import { getUserData } from "./Firebase/UserManager";
+import { getUserData, updateUserData } from "./Firebase/UserManager";
 
 const MissionDM = () => {
+    const targetDate = new Date("2024-12-31T00:00:00").getTime();
+
+    const [timeLeft, setTimeLeft] = useState(calculateTimeLeft());
     const [inGame, setInGame] = useState(false);
     const [userIDState, setUserIDState] = useState('');
     const [userInfo, setUserInfo] = useState({});
@@ -31,6 +34,9 @@ const MissionDM = () => {
         getUserData().then((data) => {
           console.log("Fetched User Data:", data);
           setUserIDState(data.donorID);
+          if (data.inMissionDM) {
+            setInGame(true);
+          }
         })
         .catch((err) => {
           console.error(err);
@@ -63,19 +69,44 @@ const MissionDM = () => {
               },
               { merge: true }
             );
+
+            const docRef = doc(db, "Users", currentUID);
+            await updateDoc(docRef, {
+                inMissionDM: true,
+            });
+
+            await updateUserData();
     
-          Alert.alert("Success", "You have been enrolled in the game!");
-          setInGame(true);
+            Alert.alert("Success", "You have been enrolled in the game!");
+            setInGame(true);
         } catch (error) {
-          console.error("Error enrolling user:", error);
-          Alert.alert("Error", "Failed to enroll. Please try again.");
+            console.error("Error enrolling user:", error);
+            Alert.alert("Error", "Failed to enroll. Please try again.");
         }
     };
-    const targetDate = new Date("2024-12-31T00:00:00").getTime();
 
-        const [timeLeft, setTimeLeft] = useState(calculateTimeLeft());
+    const unenrollUser = async () => {
+        try {
+            const currentUID = auth.currentUser.uid;
+            const userDoc = doc(db, "MissionDMPlayers", currentUID);
+            await deleteDoc(userDoc);
 
-   function calculateTimeLeft() {
+            const docRef = doc(db, "Users", currentUID);
+            await updateDoc(docRef, {
+                inMissionDM: false,
+            });
+
+            await updateUserData();
+    
+            Alert.alert("Success", "You have been unenrolled from the game!");
+            setInGame(false);
+        } catch (error) {
+            console.error("Error unenrolling user:", error);
+            Alert.alert("Error", "Failed to unenroll. Please try again.");
+        }
+    };
+
+    function calculateTimeLeft() {
         const now = new Date().getTime();
         const difference = targetDate - now;
     
@@ -128,6 +159,9 @@ const MissionDM = () => {
                         <Text style={styles.timeLabel}>Seconds</Text>
                     </View>
                 </View>
+                <TouchableOpacity style={styles.enrollButton} onPress={unenrollUser} >
+                    <Text style={styles.enrollButtonText} >Leave Game</Text>
+                </TouchableOpacity>
             </View>
         ) : (
             <TouchableOpacity style={styles.enrollButton} onPress={enrollUser} >
