@@ -11,8 +11,6 @@ import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
 
-import { getUserActivity } from './api/index';
-
 import Home from './Home';
 import CalendarPage from './CalendarPage';
 import Spirit from './Spirit';
@@ -36,7 +34,7 @@ import checkForUpdate from './AppUpdateCheck';
 
 import { addUserExpoPushToken } from "./Firebase/AuthManager";
 
-import { getUserInfo } from './api/index';
+import { getUserInfo, getUserActivity } from './api/index';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -111,6 +109,7 @@ const App = () => {
   const [userActivity, setUserActivity] = useState({});
   const [userIDState, setUserIDState] = useState('');
   const [userInfo, setUserInfo] = useState({});
+  //const previousActivityRef = useRef(null);
 
   const [scannerPermissions, setScannerPermissions] = useState({
     allowedRoles: [],
@@ -135,6 +134,38 @@ const App = () => {
       console.error("Error fetching document data:", error);
     }
   };
+
+  // useEffect(() => {
+  //   let intervalId;
+
+  //   const fetchUserActivity = async () => {
+  //     try {
+  //       const newActivityData = await getUserActivity(userIDState);
+  //       console.log('Fetched Activity: ', newActivityData);
+
+  //       //const hasChanged = JSON.stringify(newActivityData) !== JSON.stringify(previousActivityRef.current);  
+
+  //       // if (hasChanged) {
+  //       //   console.log('Changed Activity: ', userActivity[0]);
+  //       //   //Send notification if type is donation
+  //       // } else {
+  //       //   console.log('No changes detected');
+  //       // }
+
+  //       previousActivityRef.current = newActivityData;
+  //       setUserActivity(newActivityData);
+
+  //       console.log('Most Recent: ', userActivity[0]);
+  //     } catch (err) {
+  //       console.error('Error fetching user activity:', err);
+  //     }
+  //   };
+
+  //   fetchUserActivity();
+  //   intervalId = setInterval(fetchUserActivity, 5000);
+
+  //   return () => clearInterval(intervalId);
+  // }, [userIDState]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
