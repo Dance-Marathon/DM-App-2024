@@ -6,12 +6,14 @@ import { getUserInfo } from './api/index';
 import { getUserData, updateUserData } from "./Firebase/UserManager";
 
 const MissionDM = () => {
-    const [timeLeft, setTimeLeft] = useState(calculateTimeLeft());
+    const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
     const [inGame, setInGame] = useState(false);
     const [userIDState, setUserIDState] = useState('');
     const [userInfo, setUserInfo] = useState({});
     const [rounds, setRounds] = useState({});
-    const [targetDate, setTargetDate] = useState(null);
+    const [startDate, setStartDate] = useState(null);
+    const [endDate, setEndDate] = useState(null);
+    const [gameActive, setGameActive] = useState(false);
 
     useEffect(() => {
         getUserData().then((data) => {
@@ -37,6 +39,17 @@ const MissionDM = () => {
           });
     }, [userIDState]);
 
+    function formatToLocalDateTime(date) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, "0");
+        const day = String(date.getDate()).padStart(2, "0");
+        const hours = String(date.getHours()).padStart(2, "0");
+        const minutes = String(date.getMinutes()).padStart(2, "0");
+        const seconds = String(date.getSeconds()).padStart(2, "0");
+      
+        return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
+    }
+
     const getRoundInfo = async () => {
         const col = collection(db, "MissionDMGames");
         const snap = await getDocs(col);
@@ -60,17 +73,18 @@ const MissionDM = () => {
         setRounds(rounds);
     };
 
-    function generateRandomCode() {
-        const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-        let code = '';
-      
-        for (let i = 0; i < 5; i++) {
-          const randomIndex = Math.floor(Math.random() * characters.length);
-          code += characters[randomIndex];
+    useEffect(() => {
+        getRoundInfo();
+    }, []);
+
+    useEffect(() => {
+        if (rounds.length > 0) {
+            const tempDate = new Date(rounds[0].start).getTime();
+            const tempEnd = new Date(rounds[0].end).getTime();
+            setStartDate(tempDate);
+            setEndDate(tempEnd);
         }
-      
-        return code;
-    }
+    }, [rounds]);
 
     const enrollUser = async () => {
         try {
@@ -123,50 +137,65 @@ const MissionDM = () => {
         }
     };
 
-    function calculateTimeLeft() {
-        const now = new Date().getTime();
-        const difference = targetDate - now;
-    
-        if (difference <= 0) {
-            return { days: 0, hours: 0, minutes: 0, seconds: 0 };
+    function generateRandomCode() {
+        const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+        let code = '';
+      
+        for (let i = 0; i < 5; i++) {
+          const randomIndex = Math.floor(Math.random() * characters.length);
+          code += characters[randomIndex];
         }
-    
-        return {
-            days: Math.floor(difference / (1000 * 60 * 60 * 24)),
-            hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
-            minutes: Math.floor((difference / (1000 * 60)) % 60),
-            seconds: Math.floor((difference / 1000) % 60),
-        };
+      
+        return code;
+    }
+
+    const calculateTimeLeft = () => {
+        const now = Date.now();
+
+        if (now < startDate) {
+            return { 
+                active: false,
+                timeLeft: startDate - now
+            };
+        } else if (now >= startDate && now < endDate) {
+            return { 
+                active: true,
+                timeLeft: endDate - now
+            };
+        } else {
+            return { 
+                active: false,
+                timeLeft: 0
+            };
+        }
     };
 
     useEffect(() => {
         const timer = setInterval(() => {
-            setTimeLeft(calculateTimeLeft());
+            const { active, timeLeft } = calculateTimeLeft();
+            setGameActive(active);
+
+            if (timeLeft > 0) {
+                setTimeLeft({
+                    days: Math.floor(timeLeft / (1000 * 60 * 60 * 24)),
+                    hours: Math.floor((timeLeft / (1000 * 60 * 60)) % 24),
+                    minutes: Math.floor((timeLeft / (1000 * 60)) % 60),
+                    seconds: Math.floor((timeLeft / 1000) % 60),
+                });
+            } else {
+                setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+            }
         }, 1000);
 
         return () => clearInterval(timer);
-    }, [targetDate]);
+    }, [startDate, endDate]);
 
-    useEffect(() => {
-        getRoundInfo();
-    }, []);
-
-    useEffect(() => {
-        if (rounds.length > 0) {
-            const tempDate = new Date(rounds[0].start).getTime();
-            setTargetDate(tempDate);
-        }
-    }, [rounds]);
-
-    function formatToLocalDateTime(date) {
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, "0");
-        const day = String(date.getDate()).padStart(2, "0");
-        const hours = String(date.getHours()).padStart(2, "0");
-        const minutes = String(date.getMinutes()).padStart(2, "0");
-        const seconds = String(date.getSeconds()).padStart(2, "0");
-      
-        return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
+    if (gameActive) {
+        return (
+            <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#233563", }}>
+                    <Text>The game is happening</Text>
+            </View>
+        );
     }
 
     return (
@@ -177,7 +206,7 @@ const MissionDM = () => {
             alignItems: "center",
             backgroundColor: "#233563",
         }}>
-            {inGame && targetDate ? (
+            {inGame && startDate ? (
             <View style={styles.otherContainer}>
                 <Text style={{ fontSize: 18, color: "green", marginBottom: 8 }}>You are enrolled! The game starts in:</Text>
                 <View style={styles.timeContainer}>
