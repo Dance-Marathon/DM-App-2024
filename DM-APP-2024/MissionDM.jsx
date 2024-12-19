@@ -79,19 +79,27 @@ const MissionDM = () => {
     snap.forEach((doc) => {
       const docData = doc.data();
       console.log("Doc Data:", docData);
-      const start = new Date(
-        docData.start.seconds * 1000 + docData.start.nanoseconds / 1e6
-      );
-      const end = new Date(
-        docData.end.seconds * 1000 + docData.end.nanoseconds / 1e6
-      );
-
-      rounds.push({
-        round: docData.round,
-        start: formatToLocalDateTime(start),
-        end: formatToLocalDateTime(end),
-      });
+      if (docData.round !== 0) {
+        const start = new Date(
+          docData.start.seconds * 1000 + docData.start.nanoseconds / 1e6
+        );
+        const end = new Date(
+          docData.end.seconds * 1000 + docData.end.nanoseconds / 1e6
+        );
+        rounds.push({
+          round: docData.round,
+          start: formatToLocalDateTime(start),
+          end: formatToLocalDateTime(end),
+        });
+      } else {
+        rounds.push({
+          round: docData.round,
+          currentRound: docData.currentRound,
+        });
+      }
     });
+
+    rounds.sort((a, b) => a.round - b.round);
 
     console.log("Rounds:", rounds);
     setRounds(rounds);
@@ -103,8 +111,8 @@ const MissionDM = () => {
 
   useEffect(() => {
     if (rounds.length > 0) {
-      const tempDate = new Date(rounds[0].start).getTime();
-      const tempEnd = new Date(rounds[0].end).getTime();
+      const tempDate = new Date(rounds[rounds[0].currentRound].start).getTime();
+      const tempEnd = new Date(rounds[rounds[0].currentRound].end).getTime();
       setStartDate(tempDate);
       setEndDate(tempEnd);
     }
@@ -189,6 +197,7 @@ const MissionDM = () => {
         timeLeft: endDate - now,
       };
     } else {
+      roundOver();
       return {
         active: false,
         timeLeft: 0,
@@ -215,6 +224,20 @@ const MissionDM = () => {
 
     return () => clearInterval(timer);
   }, [startDate, endDate]);
+
+  const roundOver = async () => {
+    try {
+      const gameDocRef = doc(db, "MissionDMGames", "gameStats");
+
+      await updateDoc(gameDocRef, {
+        currentRound: increment(1),
+      });
+
+      console.log("Round successfully incremented");
+    } catch (error) {
+      console.error("Error incrementing round:", error);
+    }
+  };
 
   if (gameActive) {
     return (
