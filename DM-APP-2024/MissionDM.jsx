@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   Alert,
   Image,
+  Modal,
 } from "react-native";
 import { auth, db } from "./Firebase/AuthManager";
 import {
@@ -15,6 +16,9 @@ import {
   deleteDoc,
   collection,
   getDocs,
+  query,
+  where,
+  getDoc,
 } from "firebase/firestore";
 import { getUserInfo } from "./api/index";
 import { getUserData, updateUserData } from "./Firebase/UserManager";
@@ -33,6 +37,14 @@ const MissionDM = () => {
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
   const [gameActive, setGameActive] = useState(false);
+  const [hasFetchedTarget, setHasFetchedTarget] = useState(false);
+  const [currentRound, setCurrentRound] = useState(1);
+
+  const [isTargetModalVisible, setIsTargetModalVisible] = useState(false);
+  const [isStatsModalVisible, setIsStatsModalVisible] = useState(false);
+
+  const [targetName, setTargetName] = useState("");
+  const [targetImageURL, setTargetImageURL] = useState("");
 
   useEffect(() => {
     getUserData()
@@ -110,27 +122,55 @@ const MissionDM = () => {
   }, []);
 
   useEffect(() => {
-    if (rounds.length > 0) {
-      const tempDate = new Date(rounds[rounds[0].currentRound].start).getTime();
-      const tempEnd = new Date(rounds[rounds[0].currentRound].end).getTime();
-      setStartDate(tempDate);
-      setEndDate(tempEnd);
+    if (rounds.length > 0 && rounds[0].currentRound !== undefined) {
+      const currentRoundData = rounds.find(
+        (round) => round.round === rounds[0].currentRound
+      );
+      if (currentRoundData) {
+        const tempDate = new Date(currentRoundData.start).getTime();
+        const tempEnd = new Date(currentRoundData.end).getTime();
+
+        if (tempDate !== startDate || tempEnd !== endDate) {
+          setStartDate(tempDate);
+          setEndDate(tempEnd);
+          console.log("Updated Start and End Times:", {
+            start: tempDate,
+            end: tempEnd,
+          });
+        }
+      }
     }
-  }, [rounds]);
+  }, [rounds, rounds[0]?.currentRound]);
 
   const enrollUser = async () => {
     try {
       const currentUID = auth.currentUser.uid;
 
-      setDoc(
+      const colRef = collection(db, "MissionDMPlayers");
+      const snapshot = await getDocs(colRef);
+      const players = snapshot.docs.map((doc) => ({
+        id: doc.data().id,
+        uid: doc.id,
+      }));
+      const count = players.length + 1;
+      const userid = count.toString();
+
+      let target = "1";
+      if (players.length > 0) {
+        const lastPlayer = players[players.length - 1];
+        target = lastPlayer.id;
+      }
+
+      await setDoc(
         doc(db, "MissionDMPlayers", currentUID),
         {
           name: userInfo.displayName,
           isEliminated: false,
           code: generateRandomCode(),
           eliminations: {},
-          id: "1",
-          targetId: "2",
+          id: userid,
+          targetId: target,
+          imageURL: userInfo.avatarImageURL,
         },
         { merge: true }
       );
@@ -197,7 +237,6 @@ const MissionDM = () => {
         timeLeft: endDate - now,
       };
     } else {
-      roundOver();
       return {
         active: false,
         timeLeft: 0,
@@ -206,7 +245,9 @@ const MissionDM = () => {
   };
 
   useEffect(() => {
-    const timer = setInterval(() => {
+    let roundProcessed = false;
+
+    const timer = setInterval(async () => {
       const { active, timeLeft } = calculateTimeLeft();
       setGameActive(active);
 
@@ -219,6 +260,12 @@ const MissionDM = () => {
         });
       } else {
         setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+
+        // Ensure `roundOver` is called only once
+        if (!roundProcessed) {
+          roundProcessed = true;
+          await roundOver();
+        }
       }
     }, 1000);
 
@@ -228,18 +275,62 @@ const MissionDM = () => {
   const roundOver = async () => {
     try {
       const gameDocRef = doc(db, "MissionDMGames", "gameStats");
+      const gameDoc = await getDoc(gameDocRef);
 
-      await updateDoc(gameDocRef, {
-        currentRound: increment(1),
-      });
+      if (gameDoc.exists()) {
+        const currentRound = gameDoc.data().currentRound;
 
-      console.log("Round successfully incremented");
+        await updateDoc(gameDocRef, {
+          currentRound: currentRound + 1,
+        });
+
+        console.log(`Round successfully incremented to: ${currentRound + 1}`);
+      } else {
+        console.error("Game document does not exist.");
+      }
     } catch (error) {
       console.error("Error incrementing round:", error);
     }
   };
 
-  if (gameActive) {
+  useEffect(() => {
+    if (!hasFetchedTarget) {
+      getTargetUserInfo();
+      setHasFetchedTarget(true);
+    }
+  }, [hasFetchedTarget]);
+
+  const getTargetUserInfo = async () => {
+    try {
+      const currentUID = auth.currentUser.uid;
+
+      const userDocRef = doc(db, "MissionDMPlayers", currentUID);
+      const userDoc = await getDoc(userDocRef);
+      const targetID = userDoc.data().targetId;
+
+      const usersRef = collection(db, "MissionDMPlayers");
+      const q = query(usersRef, where("id", "==", targetID));
+      const querySnapshot = await getDocs(q);
+
+      if (querySnapshot.empty) {
+        console.log("No user found with the specified targetId.");
+        return null;
+      }
+
+      const targetUserDoc = querySnapshot.docs[0];
+      const targetUserName = targetUserDoc.data().name;
+      const targetImageURL = targetUserDoc.data().imageURL;
+
+      console.log(`Target user name: ${targetUserName}`);
+      console.log(`Target image url: ${targetImageURL}`);
+      setTargetName(targetUserName);
+      setTargetImageURL(targetImageURL);
+    } catch (error) {
+      console.error("Error fetching target user:", error);
+    }
+  };
+
+  if (inGame && gameActive) {
     return (
       <View
         style={{
@@ -259,18 +350,62 @@ const MissionDM = () => {
           <View style={styles.buttonBox}>
             <TouchableOpacity
               style={styles.orangeButton}
-              onPress={() => alert("Box 1 Pressed")}
+              onPress={() => setIsTargetModalVisible(true)}
             >
               <Text style={styles.orangeButtonText}>Target Info</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.orangeButton}
-              onPress={() => alert("Box 2 Pressed")}
+              onPress={() => setIsStatsModalVisible(true)}
             >
               <Text style={styles.orangeButtonText}>Game Stats</Text>
             </TouchableOpacity>
           </View>
         </View>
+        <Modal
+          animationType="slide"
+          transparent={true}
+          visible={isTargetModalVisible}
+          onRequestClose={() => setIsTargetModalVisible(false)}
+        >
+          <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Target Information</Text>
+              <Text style={styles.modalText}>{targetName}</Text>
+              <Image
+                style={styles.profileImage}
+                resizeMode="contain"
+                source={{ uri: targetImageURL }}
+              />
+              <TouchableOpacity
+                style={styles.closeButton}
+                onPress={() => setIsTargetModalVisible(false)}
+              >
+                <Text style={styles.closeButtonText}>Close</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+
+        <Modal
+          animationType="slide"
+          transparent={true}
+          visible={isStatsModalVisible}
+          onRequestClose={() => setIsStatsModalVisible(false)}
+        >
+          <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Game Stats</Text>
+              <Text style={styles.modalText}>Here are your game stats!</Text>
+              <TouchableOpacity
+                style={styles.closeButton}
+                onPress={() => setIsStatsModalVisible(false)}
+              >
+                <Text style={styles.closeButtonText}>Close</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
       </View>
     );
   }
@@ -461,5 +596,44 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 16,
     fontWeight: "bold",
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+  },
+  modalContent: {
+    backgroundColor: "white",
+    padding: 20,
+    borderRadius: 10,
+    width: "80%",
+    alignItems: "center",
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    marginBottom: 10,
+  },
+  modalText: {
+    fontSize: 16,
+    marginBottom: 10,
+  },
+  closeButton: {
+    backgroundColor: "#E2883C",
+    padding: 10,
+    borderRadius: 5,
+    width: "50%",
+    alignItems: "center",
+  },
+  closeButtonText: {
+    color: "white",
+    fontWeight: "bold",
+  },
+  profileImage: {
+    width: 100,
+    height: 100,
+    borderRadius: 10,
+    marginBottom: 10,
   },
 });
