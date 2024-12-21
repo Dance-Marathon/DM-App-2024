@@ -40,6 +40,7 @@ import Scanner from "./Scanner";
 import TTHome from "./HomeTT";
 import checkForUpdate from "./AppUpdateCheck";
 import EventDetails from "./EventDetails";
+import AllNotifications from "./AllNotifications";
 
 import { addUserExpoPushToken } from "./Firebase/AuthManager";
 
@@ -298,6 +299,20 @@ const App = () => {
         component={EventDetails}
         options={{
           title: "Upcoming Events",
+          headerStyle: {
+            backgroundColor: "#1f1f1f",
+            borderBottomWidth: 0,
+          },
+          headerTintColor: "white",
+          headerShadowVisible: false,
+          headerBackTitleVisible: false,
+        }}
+      />
+      <HomeStack.Screen
+        name="AllNotifications"
+        component={AllNotifications}
+        options={{
+          title: "Notifications",
           headerStyle: {
             backgroundColor: "#1f1f1f",
             borderBottomWidth: 0,

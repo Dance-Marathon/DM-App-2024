@@ -33,7 +33,7 @@ const EventDetails = ({ route }) => {
 
 const styles = StyleSheet.create({
   detailsBox: {
-    top: 180,
+    top: 160,
     borderRadius: 9,
     backgroundColor: "#233d72",
     width: 340,
@@ -65,7 +65,7 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 4,
     shadowOpacity: 1,
-    top: 65,
+    top: 45,
   },
   eventImage: {
     width: "100%",

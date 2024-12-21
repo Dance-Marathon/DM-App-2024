@@ -226,7 +226,13 @@ const Home = ({ route }) => {
         <View style={styles.header}>
           <View style={styles.smallCircle} />
           <Text style={styles.headerText}>NOTIFICATIONS</Text>
-          <TouchableOpacity>
+          <TouchableOpacity
+            onPress={() =>
+              navigation.navigate("AllNotifications", {
+                notifications: allNotifications,
+              })
+            }
+          >
             <Text style={styles.showAll}>Show All</Text>
           </TouchableOpacity>
         </View>
