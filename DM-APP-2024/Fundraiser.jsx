@@ -23,6 +23,7 @@ const Fundraiser = () => {
   const [badgeInfo, setBadgeInfo] = useState({ badges: [] });
   const [badgeModalVisible, setBadgeModalVisible] = useState(false);
   const [selectedBadge, setSelectedBadge] = useState(null);
+  const [progress, setProgress] = useState(0);
 
   const [isLoadingUserInfo, setIsLoadingUserInfo] = useState(true);
   const [isLoadingMilestones, setIsLoadingMilestones] = useState(true);
@@ -143,17 +144,6 @@ const Fundraiser = () => {
     .catch((err) => console.error("Error copying to clipboard:", err));
   };
 
-  console.log("Progress calculation:", userInfo.sumDonations, userInfo.fundraisingGoal);
-  console.log("All Milestones:", allMilestones);
-  console.log("Milestone Info for modal:", milestoneInfo);
-
-  useEffect(() => {
-    console.log("userIDState:", userIDState);
-    console.log("userInfo:", userInfo);
-    console.log("milestoneInfo:", milestoneInfo);
-    console.log("donationInfo:", donationInfo);
-  }, [userIDState, userInfo, milestoneInfo, donationInfo]);
-
   //const isProgressDataValid = typeof userInfo.sumDonations === "number" && typeof userInfo.fundraisingGoal === "number" && userInfo.fundraisingGoal > 0;
 
   const openBadgeModal = (badge) => {
@@ -165,6 +155,13 @@ const Fundraiser = () => {
     setBadgeModalVisible(false);
     setSelectedBadge(null);
   };
+
+  useEffect(() => {
+    if (userInfo && userInfo.sumDonations && userInfo.fundraisingGoal) {
+      setProgress(userInfo.sumDonations / userInfo.fundraisingGoal);
+    }
+    console.log("Progress:", progress);
+  }, [userInfo]);
 
   return (
     <View style={styles.container}>
@@ -238,7 +235,7 @@ const Fundraiser = () => {
               </View>
   
               <Progress.Bar
-                progress={userInfo.sumDonations / userInfo.fundraisingGoal}
+                progress={progress}
                 width={250}
                 borderColor="white"
                 color="white"
