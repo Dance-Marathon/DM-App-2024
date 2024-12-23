@@ -361,6 +361,30 @@ const MissionDM = () => {
               <Text style={styles.orangeButtonText}>Game Stats</Text>
             </TouchableOpacity>
           </View>
+          <View style={styles.inGameTimeContainer}>
+            <View style={styles.inGameTimeBox}>
+              <Text style={styles.inGameTimeValue}>{timeLeft.days}</Text>
+              <Text style={styles.timeLabel}>Days</Text>
+            </View>
+            <View style={styles.inGameTimeBox}>
+              <Text style={styles.inGameTimeValue}>
+                {String(timeLeft.hours).padStart(2, "0")}
+              </Text>
+              <Text style={styles.timeLabel}>Hours</Text>
+            </View>
+            <View style={styles.inGameTimeBox}>
+              <Text style={styles.inGameTimeValue}>
+                {String(timeLeft.minutes).padStart(2, "0")}
+              </Text>
+              <Text style={styles.timeLabel}>Minutes</Text>
+            </View>
+            <View style={styles.inGameTimeBox}>
+              <Text style={styles.inGameTimeValue}>
+                {String(timeLeft.seconds).padStart(2, "0")}
+              </Text>
+              <Text style={styles.timeLabel}>Seconds</Text>
+            </View>
+          </View>
         </View>
         <Modal
           animationType="slide"
@@ -499,6 +523,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "center",
   },
+  inGameTimeContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    top: 400,
+  },
   otherContainer: {
     flexDirection: "column",
     justifyContent: "center",
@@ -512,10 +541,24 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     width: 80,
   },
+  inGameTimeBox: {
+    alignItems: "center",
+    marginHorizontal: 2,
+    padding: 5,
+    backgroundColor: "#333333",
+    borderRadius: 10,
+    width: 70,
+    height: 70,
+  },
   timeValue: {
     fontSize: 36,
     fontWeight: "bold",
-    color: "#00FF00",
+    color: "#f18221",
+  },
+  inGameTimeValue: {
+    fontSize: 30,
+    fontWeight: "bold",
+    color: "#f18221",
   },
   timeLabel: {
     fontSize: 14,
