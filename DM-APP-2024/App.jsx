@@ -323,6 +323,41 @@ const App = () => {
     </SpiritStack.Navigator>
   );
 
+  const AboutStack = createStackNavigator();
+
+  const AboutScreenStack = (props) => (
+    <AboutStack.Navigator>
+      <AboutStack.Screen
+        name="About"
+        component={About}
+        options={{
+          headerStyle: {
+            backgroundColor: "#1f1f1f",
+            borderBottomWidth: 0,
+          },
+          headerShadowVisible: false,
+          headerTintColor: "white",
+        }}
+        initialParams={props.route.params}
+      />
+      <AboutStack.Screen
+        name="Admin"
+        component={Admin}
+        initialParams={{ expoPushToken: expoPushToken }}
+        options={{
+          title: "Admin",
+          headerStyle: {
+            backgroundColor: "#1f1f1f",
+            borderBottomWidth: 0,
+          },
+          headerTintColor: "white",
+          headerShadowVisible: false,
+          headerBackTitleVisible: false,
+        }}
+      />
+    </AboutStack.Navigator>
+  );
+
   return (
     <>
       <UserProvider>
@@ -413,8 +448,9 @@ const App = () => {
           /> */}
               <Tab.Screen
                 name="About"
-                component={About}
+                component={AboutScreenStack}
                 options={{
+                  headerShown: false,
                   tabBarIcon: ({ color, size }) => (
                     <Icon
                       name="address-card"
