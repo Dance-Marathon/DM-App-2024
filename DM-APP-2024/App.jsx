@@ -46,6 +46,8 @@ import { addUserExpoPushToken } from "./Firebase/AuthManager";
 
 import { getUserInfo, getUserActivity } from "./api/index";
 
+import { UserProvider } from "./api/calls";
+
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
 const HomeStack = createStackNavigator();
@@ -327,60 +329,50 @@ const App = () => {
 
   return (
     <>
-      <NavigationContainer>
-        {user ? (
-          <Tab.Navigator
-            screenOptions={{
-              tabBarStyle: { backgroundColor: "#233563" },
-              headerStyle: { backgroundColor: "#233563" },
-              tabBarActiveTintColor: "orange",
-              tabBarInactiveTintColor: "white",
-              headerTintColor: "white",
-            }}
-          >
-            {role === "Admin" ? (
+      <UserProvider>
+        <NavigationContainer>
+          {user ? (
+            <Tab.Navigator
+              screenOptions={{
+                tabBarStyle: { backgroundColor: "#233563" },
+                headerStyle: { backgroundColor: "#233563" },
+                tabBarActiveTintColor: "orange",
+                tabBarInactiveTintColor: "white",
+                headerTintColor: "white",
+              }}
+            >
+              {role === "Admin" ? (
+                <Tab.Screen
+                  name="Admin"
+                  component={Admin}
+                  initialParams={{ expoPushToken: expoPushToken }}
+                  options={{
+                    tabBarIcon: ({ color, size }) => (
+                      <Icon
+                        name="user-secret"
+                        type="font-awesome"
+                        color={color}
+                      />
+                    ),
+                  }}
+                />
+              ) : (
+                <></>
+              )}
               <Tab.Screen
-                name="Admin"
-                component={Admin}
+                name="Home"
+                component={HomeStackScreen}
                 initialParams={{ expoPushToken: expoPushToken }}
                 options={{
+                  headerShown: false,
                   tabBarIcon: ({ color, size }) => (
-                    <Icon
-                      name="user-secret"
-                      type="font-awesome"
-                      color={color}
-                    />
+                    <Icon name="home" type="font-awesome" color={color} />
                   ),
                 }}
               />
-            ) : (
-              <></>
-            )}
-            <Tab.Screen
-              name="Home"
-              component={HomeStackScreen}
-              initialParams={{ expoPushToken: expoPushToken }}
-              options={{
-                headerShown: false,
-                tabBarIcon: ({ color, size }) => (
-                  <Icon name="home" type="font-awesome" color={color} />
-                ),
-              }}
-            />
-            <Tab.Screen
-              name="Spirit"
-              component={Spirit}
-              options={{
-                headerShown: false,
-                tabBarIcon: ({ color, size }) => (
-                  <Icon name="check" type="font-awesome" color={color} />
-                ),
-              }}
-            />
-            {scannerVisible && (
               <Tab.Screen
-                name="Scanner"
-                component={Scanner}
+                name="Spirit"
+                component={Spirit}
                 options={{
                   headerShown: false,
                   tabBarIcon: ({ color, size }) => (
@@ -388,17 +380,29 @@ const App = () => {
                   ),
                 }}
               />
-            )}
-            <Tab.Screen
-              name="Fundraiser"
-              component={Fundraiser}
-              options={{
-                tabBarIcon: ({ color, size }) => (
-                  <Icon name="money" type="font-awesome" color={color} />
-                ),
-              }}
-            />
-            {/* <Tab.Screen
+              {scannerVisible && (
+                <Tab.Screen
+                  name="Scanner"
+                  component={Scanner}
+                  options={{
+                    headerShown: false,
+                    tabBarIcon: ({ color, size }) => (
+                      <Icon name="check" type="font-awesome" color={color} />
+                    ),
+                  }}
+                />
+              )}
+              <Tab.Screen
+                name="Fundraiser"
+                component={Fundraiser}
+                options={{
+                  headerShown: false,
+                  tabBarIcon: ({ color, size }) => (
+                    <Icon name="money" type="font-awesome" color={color} />
+                  ),
+                }}
+              />
+              {/* <Tab.Screen
             name="Blog"
             component={BlogStack}
             options={{
@@ -411,32 +415,37 @@ const App = () => {
               ),
             }}
           /> */}
-            <Tab.Screen
-              name="About"
-              component={About}
-              options={{
-                tabBarIcon: ({ color, size }) => (
-                  <Icon name="address-card" type="font-awesome" color={color} />
-                ),
-              }}
-            />
-          </Tab.Navigator>
-        ) : (
-          <Stack.Navigator initialRouteName="Login">
-            <Stack.Screen
-              name="Login"
-              component={Login}
-              options={{ headerShown: false }}
-              initialParams={{ expoPushToken: expoPushToken }}
-            />
-            <Stack.Screen
-              name="ForgotPassword"
-              component={ForgotPassword}
-              options={{ headerShown: false }}
-            />
-          </Stack.Navigator>
-        )}
-      </NavigationContainer>
+              <Tab.Screen
+                name="About"
+                component={About}
+                options={{
+                  tabBarIcon: ({ color, size }) => (
+                    <Icon
+                      name="address-card"
+                      type="font-awesome"
+                      color={color}
+                    />
+                  ),
+                }}
+              />
+            </Tab.Navigator>
+          ) : (
+            <Stack.Navigator initialRouteName="Login">
+              <Stack.Screen
+                name="Login"
+                component={Login}
+                options={{ headerShown: false }}
+                initialParams={{ expoPushToken: expoPushToken }}
+              />
+              <Stack.Screen
+                name="ForgotPassword"
+                component={ForgotPassword}
+                options={{ headerShown: false }}
+              />
+            </Stack.Navigator>
+          )}
+        </NavigationContainer>
+      </UserProvider>
     </>
   );
 };

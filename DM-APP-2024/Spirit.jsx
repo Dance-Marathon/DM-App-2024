@@ -221,7 +221,7 @@ const GenerateQRCode = () => {
                 style={styles.closeButton}
                 onPress={() => setQrVisible(false)}
               >
-                <Text style={styles.closeIcon}>X</Text>
+                <Image source={require("./images/X.png")} />
               </TouchableOpacity>
             </View>
             <View
