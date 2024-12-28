@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import {
   View,
   StyleSheet,
@@ -9,14 +9,17 @@ import {
   Image,
 } from "react-native";
 import QRCode from "react-native-qrcode-svg";
-
 import { getUserData } from "./Firebase/UserManager";
 import { getUserInfo } from "./api/index";
 import axios from "axios";
-
 import { sheetsAPIKey } from "./api/apiKeys";
+import { Icon } from "react-native-elements";
+import { useNavigation } from "@react-navigation/native";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "./Firebase/AuthManager";
+import { UserContext } from "./api/calls";
 
-const GenerateQRCode = () => {
+const GenerateQRCode = ({ route }) => {
   const [userIDState, setUserIDState] = useState("");
   const [userInfo, setUserInfo] = useState({});
   const [qrVisible, setQrVisible] = useState(false);
@@ -30,6 +33,15 @@ const GenerateQRCode = () => {
   const range = `Sheet1!A2:B100`;
   const individualRange = `Sheet2!A2:B600`;
   const apiKey = sheetsAPIKey;
+  const [scannerVisible, setScannerVisible] = useState(false);
+  const [scannerPermissions, setScannerPermissions] = useState({
+      allowedRoles: [],
+      teamBasedPermissions: {},
+    });
+
+  const navigation = useNavigation();
+
+  const { role } = useContext(UserContext);
 
   useEffect(() => {
     getUserData()
@@ -107,6 +119,37 @@ const GenerateQRCode = () => {
     fetchIndividualData();
   }, []);
 
+  useEffect(() => {
+    const fetchScannerPermissions = async () => {
+      try {
+        const docRef = doc(db, "Permissions", "ScannerAccess");
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists()) {
+          const permissions = docSnap.data();
+          setScannerPermissions(permissions);
+
+          const isAllowed =
+            permissions.allowedRoles.includes(role) ||
+            (permissions.teamBasedPermissions[role] &&
+              permissions.teamBasedPermissions[role].includes(
+                userInfo.teamName
+              ));
+
+          setScannerVisible(isAllowed);
+        } else {
+          console.log("No permissions found for Scanner.");
+        }
+      } catch (error) {
+        console.error("Error fetching scanner permissions:", error);
+      }
+    };
+
+    fetchScannerPermissions();
+  }, [userInfo]);
+
+  console.log("Scanner Permissions:", scannerVisible); 
+
   const qrData = `name: ${userInfo.displayName}, team: ${userInfo.teamName}`;
 
   return (
@@ -146,15 +189,32 @@ const GenerateQRCode = () => {
             {userInfo.teamName}'s Points: {userTeamScore}
           </Text>
         </View>
-        <TouchableOpacity
-          style={[
-            styles.qrButton,
-            { alignSelf: "flex-end", marginRight: 10, marginTop: 15 },
-          ]}
-          onPress={() => setQrVisible(!qrVisible)}
-        >
-          <Text style={styles.showQrCode}>Show QR Code</Text>
-        </TouchableOpacity>
+        <View style={styles.header}>
+          {scannerVisible ? (
+            <TouchableOpacity
+              onPress={() => navigation.navigate("Scanner")}
+              style={{ marginLeft: 6, marginTop: 13 }}
+            >
+              <Icon
+                name="camera"
+                type="font-awesome-5"
+                color="white"
+                size={28}
+              />
+            </TouchableOpacity>
+          ) : (
+            <View style={{ width: 24 }} />
+          )}
+          <TouchableOpacity
+            style={[
+              styles.qrButton,
+              { alignSelf: "flex-end", marginRight: 18, marginTop: 10 },
+            ]}
+            onPress={() => setQrVisible(!qrVisible)}
+          >
+            <Text style={styles.showQrCode}>Show QR Code</Text>
+          </TouchableOpacity>
+        </View>
       </View>
       <View style={styles.leaderboardBox}>
         <View style={styles.header}>

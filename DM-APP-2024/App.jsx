@@ -50,7 +50,6 @@ import { UserProvider } from "./api/calls";
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
-const HomeStack = createStackNavigator();
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -211,36 +210,6 @@ const App = () => {
   //   checkForUpdate();
   // }, []);
 
-  useEffect(() => {
-    const fetchScannerPermissions = async () => {
-      try {
-        const docRef = doc(db, "Permissions", "ScannerAccess");
-        const docSnap = await getDoc(docRef);
-
-        if (docSnap.exists()) {
-          const permissions = docSnap.data();
-          setScannerPermissions(permissions);
-
-          // Check visibility
-          const isAllowed =
-            permissions.allowedRoles.includes(role) ||
-            (permissions.teamBasedPermissions[role] &&
-              permissions.teamBasedPermissions[role].includes(
-                userInfo.teamName
-              ));
-
-          setScannerVisible(isAllowed);
-        } else {
-          console.log("No permissions found for Scanner.");
-        }
-      } catch (error) {
-        console.error("Error fetching scanner permissions:", error);
-      }
-    };
-
-    fetchScannerPermissions();
-  }, [role, userInfo.teamName]);
-
   async function handleToken() {
     const currentUID = auth.currentUser.uid;
     const docRef = doc(db, "Users", currentUID);
@@ -327,6 +296,33 @@ const App = () => {
     </HomeStack.Navigator>
   );
 
+  const SpiritStack = createStackNavigator();
+
+  const SpiritScreenStack = (props) => (
+    <SpiritStack.Navigator>
+      <SpiritStack.Screen
+        name="Spirit"
+        component={Spirit}
+        options={{ headerShown: false }}
+        initialParams={props.route.params}
+      />
+      <SpiritStack.Screen
+        name="Scanner"
+        component={Scanner}
+        options={{
+          title: "Scanner",
+          headerStyle: {
+            backgroundColor: "#1f1f1f",
+            borderBottomWidth: 0,
+          },
+          headerTintColor: "white",
+          headerShadowVisible: false,
+          headerBackTitleVisible: false,
+        }}
+      />
+    </SpiritStack.Navigator>
+  );
+
   return (
     <>
       <UserProvider>
@@ -372,7 +368,7 @@ const App = () => {
               />
               <Tab.Screen
                 name="Spirit"
-                component={Spirit}
+                component={SpiritScreenStack}
                 options={{
                   headerShown: false,
                   tabBarIcon: ({ color, size }) => (
@@ -380,7 +376,7 @@ const App = () => {
                   ),
                 }}
               />
-              {scannerVisible && (
+              {/* {scannerVisible && (
                 <Tab.Screen
                   name="Scanner"
                   component={Scanner}
@@ -391,7 +387,7 @@ const App = () => {
                     ),
                   }}
                 />
-              )}
+              )} */}
               <Tab.Screen
                 name="Fundraiser"
                 component={Fundraiser}
