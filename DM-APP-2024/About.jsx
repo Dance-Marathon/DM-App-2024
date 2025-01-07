@@ -177,7 +177,7 @@ const About = () => {
           <Button
             icon={<Icon name="question" type="font-awesome" color="white" style={{width: 30, marginRight: 10}}/>}
             title="Frequently Asked Questions"
-            onPress={() => openWebsite("https://floridadm.org/events")}
+            onPress={() => openWebsite("https://floridadm.org/events")} //Change this to FAQ
             buttonStyle={styles.button}
           />
           <Button
@@ -185,14 +185,14 @@ const About = () => {
               <Icon name="heart" type="font-awesome" color="white" size={16} style={{width: 30, marginRight: 10}}/>
             }
             title="Meet the Kids"
-            onPress={() => openWebsite("https://floridadm.org/about")}
+            onPress={() => openWebsite("https://floridadm.org/miraclefamilies")}
             buttonStyle={styles.button}
           />
           <Button
             icon={<Icon name="user" type="font-awesome" color="white" style={{width: 30, marginRight: 10}}/>}
             title="Meet the Overalls"
             onPress={() =>
-              openWebsite("https://floridadm.org/meet-the-overalls")
+              openWebsite("https://floridadm.org/contact")
             }
             buttonStyle={styles.lastButton}
           />

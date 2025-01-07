@@ -793,7 +793,7 @@ const styles = StyleSheet.create({
   milestoneRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 10,
+    marginBottom: 8,
   },
   milestoneAmount: {
     fontWeight: "bold",

@@ -372,7 +372,7 @@ const App = () => {
                 headerTintColor: "white",
               }}
             >
-              {role === "Admin" ? (
+              {/* {role === "Admin" ? (
                 <Tab.Screen
                   name="Admin"
                   component={Admin}
@@ -389,7 +389,7 @@ const App = () => {
                 />
               ) : (
                 <></>
-              )}
+              )} */}
               <Tab.Screen
                 name="Home"
                 component={HomeStackScreen}
