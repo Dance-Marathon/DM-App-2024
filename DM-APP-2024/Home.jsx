@@ -261,6 +261,22 @@ const Home = ({ route }) => {
             <View style={styles.modalContent}>
               {selectedNotification && (
                 <>
+                  <View
+                    style={[
+                      styles.header,
+                      { marginBottom: -5, marginTop: -15 },
+                    ]}
+                  >
+                    <TouchableOpacity
+                      style={[styles.modalClose, { marginLeft: 220 }]}
+                      onPress={() => setNotificationModalVisible(false)}
+                    >
+                      <Image
+                        source={require("./images/X.png")}
+                        style={styles.closeImage}
+                      />
+                    </TouchableOpacity>
+                  </View>
                   <Text style={styles.modalTitle}>
                     {selectedNotification.title}
                   </Text>
@@ -272,12 +288,6 @@ const Home = ({ route }) => {
                   </Text>
                 </>
               )}
-              <TouchableOpacity
-                style={styles.closeButton}
-                onPress={() => setNotificationModalVisible(false)}
-              >
-                <Text style={styles.closeButtonText}>Close</Text>
-              </TouchableOpacity>
             </View>
           </View>
         </Modal>
@@ -417,11 +427,12 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0, 0, 0, 0.5)",
   },
   modalContent: {
-    backgroundColor: "white",
-    borderRadius: 10,
+    backgroundColor: "#233D72",
     padding: 20,
+    borderRadius: 10,
     alignItems: "center",
-    width: "80%",
+    width: 300,
+    maxHeight: 400,
   },
   modalText: {
     fontSize: 16,
@@ -485,5 +496,21 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     marginBottom: 12,
+  },
+  modalTitle: {
+    color: "white",
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 10,
+  },
+  modalDateTime: {
+    color: "white",
+    fontSize: 16,
+    marginBottom: 10,
+  },
+  modalMessage: {
+    color: "white",
+    fontSize: 14,
+    marginBottom: 10,
   },
 });
