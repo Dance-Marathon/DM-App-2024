@@ -5,99 +5,99 @@ const EventDetails = ({ route }) => {
   const { event } = route.params;
 
   return (
-    <View
-      style={{
-        flex: 1,
-        alignItems: "center",
-        backgroundColor: "#1F1F1F",
-      }}
-    >
+    <View style={styles.container}>
       <View style={styles.eventContainer}>
         {event.imageUrl && (
           <Image source={{ uri: event.imageUrl }} style={styles.eventImage} />
         )}
-        <View style={styles.eventDetails}>
+
+        <View style={styles.eventContent}>
           <Text style={styles.eventTitle}>{event.title}</Text>
+          <View>
+            <Text style={styles.dateTime}>
+              <Text style={styles.boldText}>When:</Text> {event.formattedDate}{" "}
+              at {event.time}
+            </Text>
+
+            <Text style={styles.location}>
+              <Text style={styles.boldText}>Where:</Text> {event.location}
+            </Text>
+          </View>
+
+          <Text style={styles.description}>{event.description}</Text>
         </View>
-      </View>
-      <View style={styles.detailsBox}>
-        <Text style={styles.dateTime}>
-          When: {event.formattedDate} at {event.time}
-        </Text>
-        <Text style={styles.location}>Where: {event.location}</Text>
-        <Text style={styles.description}>{event.description}</Text>
       </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  detailsBox: {
-    top: 160,
-    borderRadius: 9,
-    backgroundColor: "#233d72",
-    width: 340,
-    height: 460,
-    position: "absolute",
-    shadowOpacity: 1,
-    elevation: 4,
-    shadowRadius: 4,
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowColor: "rgba(0, 0, 0, 0.25)",
-    padding: 20,
+  container: {
+    flex: 1,
+    backgroundColor: "#1F1F1F",
+    alignItems: "center",
+    paddingTop: 40,
   },
   eventContainer: {
-    backgroundColor: "#EB9F68",
-    alignItems: "center",
-    height: 100,
-    width: "80%",
+    backgroundColor: "#233d72",
+    width: "85%",
     borderRadius: 10,
     overflow: "hidden",
-    marginBottom: 10,
+    padding: 20,
+    alignItems: "center",
     shadowColor: "rgba(0, 0, 0, 0.25)",
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
+    shadowOffset: { width: 0, height: 4 },
     shadowRadius: 4,
     elevation: 4,
     shadowOpacity: 1,
-    top: 45,
+    width: 340,
   },
   eventImage: {
     width: "100%",
-    height: 60,
+    height: 220,
     resizeMode: "cover",
+    borderRadius: 10,
+    marginBottom: 15,
   },
-  eventDetails: {
-    flexDirection: "row",
-    justifyContent: "flex-start",
-    alignItems: "center",
-    paddingHorizontal: 10,
-    marginTop: 10,
+  eventContent: {
+    width: "100%",
   },
   eventTitle: {
     color: "white",
-    fontSize: 16,
+    fontSize: 24,
+    fontWeight: "bold",
     textAlign: "left",
-    flex: 1,
+    marginBottom: 10,
+  },
+  detailsContainer: {
+    marginBottom: 10,
+  },
+  boldText: {
+    fontWeight: "bold",
+    color: "white",
   },
   dateTime: {
     color: "white",
-    fontSize: 14,
-    marginBottom: 10,
+    fontSize: 16,
+    marginBottom: 5,
+    textAlign: "left",
   },
   location: {
     color: "white",
-    fontSize: 14,
+    fontSize: 16,
     marginBottom: 10,
+    textAlign: "left",
+  },
+  separator: {
+    height: 1,
+    backgroundColor: "white",
+    marginVertical: 15,
+    width: "100%",
   },
   description: {
     color: "white",
-    fontSize: 14,
+    fontSize: 16,
+    textAlign: "left",
   },
 });
 
