@@ -410,7 +410,18 @@ const Fundraiser = () => {
               onRequestClose={closeBadgeModal}
             >
               <View style={styles.modalContainer}>
-                <View style={styles.modalContent}>
+                <View style={styles.badgeView}>
+                  <View style={[styles.header, { marginBottom: -10}]}>
+                    <TouchableOpacity
+                      style={[styles.modalClose, { marginLeft: 110}]}
+                      onPress={closeBadgeModal}
+                    >
+                      <Image
+                        source={require("./images/X.png")}
+                        style={styles.closeImage}
+                      />
+                    </TouchableOpacity>
+                  </View>
                   <Text style={styles.modalTitle}>{selectedBadge.title}</Text>
                   <Text style={styles.modalDescription}>
                     {selectedBadge.description}
@@ -419,12 +430,6 @@ const Fundraiser = () => {
                     source={{ uri: selectedBadge.badgeImageURL }}
                     style={styles.modalImage}
                   />
-                  <TouchableOpacity
-                    onPress={closeBadgeModal}
-                    style={styles.closeButton}
-                  >
-                    <Text style={styles.closeButtonText}>Close</Text>
-                  </TouchableOpacity>
                 </View>
               </View>
             </Modal>
@@ -531,6 +536,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     width: 340,
     height: 300,
+  },
+  badgeView: {
+    backgroundColor: "#233D72",
+    padding: 20,
+    borderRadius: 10,
+    alignItems: "center",
+    width: 300,
+    maxHeight: 400
   },
   button: {
     borderRadius: 20,
@@ -649,11 +662,13 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "bold",
     marginBottom: 10,
+    color: "white",
   },
   modalDescription: {
     fontSize: 16,
     textAlign: "center",
     marginBottom: 10,
+    color: "white",
   },
   modalImage: {
     width: 150,
