@@ -99,7 +99,10 @@ const About = () => {
   };
 
   return (
-    <ScrollView>
+    <ScrollView
+    contentContainerStyle={{ flexGrow: 1, backgroundColor: "#1F1F1F" }}
+    style={{ backgroundColor: "#1F1F1F" }}
+    >
       <View
         style={{
           flex: 1,
