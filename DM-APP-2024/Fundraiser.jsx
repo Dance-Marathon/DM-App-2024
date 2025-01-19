@@ -349,7 +349,10 @@ const Fundraiser = () => {
                       key={index}
                       style={[
                         styles.milestoneMarker,
-                        { left: `${milestonePosition * 100}%` },
+                        {
+                          left: `${milestonePosition * 100}%`,
+                          transform: [{ translateX: -4 }, { translateY: -18 }],
+                        },
                       ]}
                     >
                       <Text style={styles.milestoneText}>
@@ -362,16 +365,28 @@ const Fundraiser = () => {
           </View>
 
           <View style={styles.textContainer}>
-            <Text
-              style={{
-                color: "white",
-                marginBottom: 5,
-                fontSize: 12,
-              }}
-            >
-              NEXT MILESTONE: $
-              {allMilestones?.[milestoneIndex]?.fundraisingGoal ?? "Unknown"}
-            </Text>
+            {allMilestones?.[milestoneIndex + 1]?.fundraisingGoal ? (
+              <Text
+                style={{
+                  color: "white",
+                  marginBottom: 5,
+                  fontSize: 12,
+                }}
+              >
+                NEXT MILESTONE: $
+                {allMilestones[milestoneIndex + 1].fundraisingGoal}
+              </Text>
+            ) : (
+              <Text
+                style={{
+                  color: "white",
+                  marginBottom: 5,
+                  fontSize: 12,
+                }}
+              >
+                All Milestones Complete!
+              </Text>
+            )}
             <TouchableOpacity onPress={() => setModalVisible(true)}>
               <Text style={styles.showAll}>Show All</Text>
             </TouchableOpacity>
@@ -411,9 +426,9 @@ const Fundraiser = () => {
             >
               <View style={styles.modalContainer}>
                 <View style={styles.badgeView}>
-                  <View style={[styles.header, { marginBottom: -10}]}>
+                  <View style={[styles.header, { marginBottom: -10 }]}>
                     <TouchableOpacity
-                      style={[styles.modalClose, { marginLeft: 110}]}
+                      style={[styles.modalClose, { marginLeft: 110 }]}
                       onPress={closeBadgeModal}
                     >
                       <Image
@@ -543,7 +558,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: "center",
     width: 300,
-    maxHeight: 400
+    maxHeight: 400,
   },
   button: {
     borderRadius: 20,
@@ -720,7 +735,6 @@ const styles = StyleSheet.create({
   milestoneMarker: {
     position: "absolute",
     top: "90%",
-    transform: [{ translateY: -18 }],
     width: 8,
     height: 8,
     borderRadius: 50,
