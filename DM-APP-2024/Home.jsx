@@ -6,6 +6,7 @@ import {
   Modal,
   StyleSheet,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   Linking,
 } from "react-native";
 const INITIAL_DATE = new Date();
@@ -19,6 +20,8 @@ import axios from "axios";
 import { sheetsAPIKey } from "./api/apiKeys";
 
 import { useNavigation } from "@react-navigation/native";
+import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
+import { faX } from "@fortawesome/free-solid-svg-icons";
 
 const Home = ({ route }) => {
   const [modalVisible, setModalVisible] = useState(false);
@@ -252,12 +255,14 @@ const Home = ({ route }) => {
         </View>
 
         <Modal
-          animationType="slide"
+          animationType="fade"
           transparent={true}
           visible={notificationModalVisible}
           onRequestClose={() => setNotificationModalVisible(false)}
         >
+          <TouchableWithoutFeedback onPress={() => setNotificationModalVisible(false)}>
           <View style={styles.modalContainer}>
+            <TouchableWithoutFeedback>
             <View style={styles.modalContent}>
               {selectedNotification && (
                 <>
@@ -268,13 +273,10 @@ const Home = ({ route }) => {
                     ]}
                   >
                     <TouchableOpacity
-                      style={[styles.modalClose, { marginLeft: 220 }]}
+                      style={styles.modalClose}
                       onPress={() => setNotificationModalVisible(false)}
                     >
-                      <Image
-                        source={require("./images/X.png")}
-                        style={styles.closeImage}
-                      />
+                      <FontAwesomeIcon icon={faX} color="white" size={20} />
                     </TouchableOpacity>
                   </View>
                   <Text style={styles.modalTitle}>
@@ -289,7 +291,9 @@ const Home = ({ route }) => {
                 </>
               )}
             </View>
+            </TouchableWithoutFeedback>
           </View>
+          </TouchableWithoutFeedback>
         </Modal>
       </View>
       <View style={styles.eventsBox}>
@@ -431,12 +435,16 @@ const styles = StyleSheet.create({
     padding: 20,
     borderRadius: 10,
     alignItems: "center",
-    width: 300,
-    maxHeight: 400,
+    width: "80%",
   },
   modalText: {
     fontSize: 16,
     marginBottom: 20,
+  },
+  modalClose: {
+    position: "absolute",
+    right: -130,
+    top: 0,
   },
   eventsList: {
     paddingTop: 10,
@@ -501,6 +509,7 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 18,
     fontWeight: "bold",
+    marginTop: 30,
     marginBottom: 10,
   },
   modalDateTime: {

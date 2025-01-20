@@ -6,6 +6,7 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   Alert,
   TextInput,
   Modal,
@@ -22,6 +23,8 @@ import { Dropdown } from "react-native-element-dropdown";
 import { clearUserDataCache, updateUserData } from "./Firebase/UserManager";
 import { UserContext } from "./api/calls";
 import { useNavigation } from "@react-navigation/native";
+import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
+import { faX } from "@fortawesome/free-solid-svg-icons";
 
 const About = () => {
   const [response, setResponse] = useState(false);
@@ -248,9 +251,18 @@ const About = () => {
       <Modal
         visible={accountModalVisable}
         transparent={true}
-        animationType="slide"
+        animationType="fade"
       >
+        <TouchableWithoutFeedback onPress={toggleAccountModel}>
+        <View style={styles.modalBackground}>
+          <TouchableWithoutFeedback>
         <View style={styles.modalView}>
+        <TouchableOpacity
+            style={styles.closeButton}
+            onPress={toggleAccountModel}
+          >
+            <FontAwesomeIcon icon={faX} color="white" size={20} />
+          </TouchableOpacity>
           <TextInput
             style={styles.input}
             placeholder="Enter new DonorDrive link"
@@ -266,6 +278,7 @@ const About = () => {
             selectedTextStyle={styles.selectedTextStyle}
             inputSearchStyle={styles.inputSearchStyle}
             iconStyle={styles.iconStyle}
+            containerStyle={styles.dropdownContainer}
             data={roles}
             search
             maxHeight={300}
@@ -282,13 +295,11 @@ const About = () => {
           <TouchableOpacity style={styles.updateButton} onPress={changeRole}>
             <Text style={styles.modalButtonText}>Update Role</Text>
           </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.closeButton}
-            onPress={toggleAccountModel}
-          >
-            <Text style={styles.closeButtonText}>Close</Text>
-          </TouchableOpacity>
+          
         </View>
+        </TouchableWithoutFeedback>
+        </View>
+        </TouchableWithoutFeedback>
       </Modal>
     </ScrollView>
   );
@@ -387,12 +398,18 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
   },
+  modalBackground: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
   modalView: {
-    marginTop: 250,
-    margin: 20,
-    backgroundColor: "white",
+    width: "80%",
+    backgroundColor: "#233d72",
     borderRadius: 20,
     padding: 20,
+    paddingTop: 50,
     alignItems: "center",
     shadowColor: "#000",
     shadowOffset: {
@@ -412,38 +429,51 @@ const styles = StyleSheet.create({
   dropdown: {
     marginTop: 15,
     height: 40,
-    borderColor: "black",
+    borderColor: "rgba(255, 255, 255, 0.8)",
     borderWidth: 1,
     paddingHorizontal: 10,
     borderRadius: 5,
-    backgroundColor: "#D9D9D9",
-    width: 200,
+    backgroundColor: "#1e1e1e",
+    width: "95%",
+    fontSize: 16,
+    color: "white",
+  },
+  dropdownContainer: {
+    borderRadius: 10,
+    marginTop: 5,
   },
   icon: {
     marginRight: 5,
   },
   placeholderStyle: {
     fontSize: 16,
+    color: "rgba(255, 255, 255, 0.5)",
   },
   selectedTextStyle: {
     fontSize: 16,
+    color: "white",
   },
   iconStyle: {
     width: 20,
     height: 20,
   },
   inputSearchStyle: {
-    height: 40,
+    // height: 40,
     fontSize: 16,
+    backgroundColor: "#1e1e1e",
+    borderRadius: 5,
+    color: "white",
   },
   input: {
     height: 40,
-    borderColor: "black",
+    borderColor: "rgba(255, 255, 255, 0.8)",
     borderWidth: 1,
     paddingHorizontal: 10,
     borderRadius: 5,
-    backgroundColor: "#D9D9D9",
-    width: "90%",
+    backgroundColor: "#1e1e1e",
+    width: "95%",
+    color: "white",
+    fontSize: 16,
   },
   updateButton: {
     backgroundColor: "#E2883C",
@@ -457,13 +487,13 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   closeButton: {
-    padding: 10,
-    borderRadius: 5,
-    marginTop: 10,
-    alignSelf: "stretch",
+    position: "absolute",
+    top: 15,
+    right: 20,
+    alignSelf: "right",
   },
   closeButtonText: {
-    color: "#233D72",
+    color: "white",
     textAlign: "center",
     fontWeight: "bold",
   },
