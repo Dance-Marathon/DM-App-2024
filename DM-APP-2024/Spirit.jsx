@@ -424,6 +424,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#f18221",
     width: 140,
     height: 40,
+    justifyContent: "center",
+    alignItems: "center",
   },
   showQrCode: {
     textAlign: "center",
@@ -432,8 +434,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: "#fff",
     position: "absolute",
-    top: 10,
-    left: 12,
+
   },
   closeIcon: {
     fontSize: 20,

@@ -194,7 +194,7 @@ const Fundraiser = () => {
 
   const closeBadgeModal = () => {
     setBadgeModalVisible(false);
-    setSelectedBadge(null);
+    // setSelectedBadge(null); <-- this was causing the modal to show a random badge when it was closed
   };
 
   useEffect(() => {
@@ -424,22 +424,21 @@ const Fundraiser = () => {
 
           {selectedBadge && (
             <Modal
-              animationType="slide"
+              animationType="fade"
               transparent={true}
               visible={badgeModalVisible}
               onRequestClose={closeBadgeModal}
             >
+              <TouchableWithoutFeedback onPress={closeBadgeModal}>
               <View style={styles.modalContainer}>
+                <TouchableWithoutFeedback>
                 <View style={styles.badgeView}>
                   <View style={[styles.header, { marginBottom: -10 }]}>
                     <TouchableOpacity
                       style={[styles.modalClose, { marginLeft: 110 }]}
                       onPress={closeBadgeModal}
                     >
-                      <Image
-                        source={require("./images/X.png")}
-                        style={styles.closeImage}
-                      />
+                      <FontAwesomeIcon icon={faX} size={24} color="white" />
                     </TouchableOpacity>
                   </View>
                   <Text style={styles.modalTitle}>{selectedBadge.title}</Text>
@@ -451,7 +450,9 @@ const Fundraiser = () => {
                     style={styles.modalImage}
                   />
                 </View>
+                </TouchableWithoutFeedback>
               </View>
+              </TouchableWithoutFeedback>
             </Modal>
           )}
 
@@ -775,7 +776,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#E2883C",
     paddingVertical: 10,
     paddingHorizontal: 20,
-    borderRadius: 5,
+    borderRadius: 10,
     //alignItems: "center",
     //justifyContent: "center",
     marginRight: 10,
@@ -803,7 +804,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "white",
     right: 80,
-    top: -12,
+    top: -10,
   },
   closeIcon: {
     fontSize: 20,
