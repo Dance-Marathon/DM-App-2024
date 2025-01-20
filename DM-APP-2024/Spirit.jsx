@@ -270,7 +270,8 @@ const GenerateQRCode = ({ route }) => {
       </View>
 
       <Modal
-      animationType="slide"
+      // animationType="slide"
+      animationType="fade"
       transparent={true}
       visible={qrVisible}
       onRequestClose={() => {
