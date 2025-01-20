@@ -595,7 +595,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     width: 350,
-    justifyContent: "center",
+    justifyContent: "left",
     marginBottom: 10,
   },
   avatar: {
@@ -605,6 +605,7 @@ const styles = StyleSheet.create({
     marginRight: 10,
     borderWidth: 1,
     borderColor: "white",
+    marginLeft: 5,
   },
   textContainer: {
     flexDirection: "row",
@@ -621,6 +622,7 @@ const styles = StyleSheet.create({
   tag: {
     fontSize: 14,
     color: "white",
+    marginRight: 5,
   },
   rectangleView: {
     padding: 10,
@@ -697,7 +699,7 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     top: 0,
-    right: 0,
+    right: -10,
   },
   closeButtonText: {
     color: "#fff",
