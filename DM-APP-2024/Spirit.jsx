@@ -6,6 +6,7 @@ import {
   Text,
   Modal,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   Image,
 } from "react-native";
 import QRCode from "react-native-qrcode-svg";
@@ -18,6 +19,9 @@ import { useNavigation } from "@react-navigation/native";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "./Firebase/AuthManager";
 import { UserContext } from "./api/calls";
+import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
+import { faX } from '@fortawesome/free-solid-svg-icons';
+
 
 const GenerateQRCode = ({ route }) => {
   const [userIDState, setUserIDState] = useState("");
@@ -266,35 +270,39 @@ const GenerateQRCode = ({ route }) => {
       </View>
 
       <Modal
-        animationType="slide"
-        transparent={true}
-        visible={qrVisible}
-        onRequestClose={() => {
-          setQrVisible(!qrVisible);
-        }}
-      >
+      animationType="slide"
+      transparent={true}
+      visible={qrVisible}
+      onRequestClose={() => {
+        setQrVisible(false);
+      }}
+    >
+      <TouchableWithoutFeedback onPress={() => setQrVisible(false)}>
         <View style={styles.modalBackground}>
-          <View style={styles.modalContainer}>
-            <View style={styles.header}>
-              <Text style={styles.qrCode}>QR Code</Text>
-              <TouchableOpacity
-                style={styles.closeButton}
-                onPress={() => setQrVisible(false)}
+          <TouchableWithoutFeedback>
+            <View style={styles.modalContainer}>
+              <View style={styles.header}>
+                <Text style={styles.qrCode}>QR Code</Text>
+                <TouchableOpacity
+                  style={styles.closeButton}
+                  onPress={() => setQrVisible(false)}
+                >
+                  <FontAwesomeIcon icon={faX} size={24} color="white" />
+                </TouchableOpacity>
+              </View>
+              <View
+                style={{
+                  backgroundColor: "white",
+                  padding: 5,
+                }}
               >
-                <Image source={require("./images/X.png")} />
-              </TouchableOpacity>
+                <QRCode value={qrData} size={300} />
+              </View>
             </View>
-            <View
-              style={{
-                backgroundColor: "white",
-                padding: 5,
-              }}
-            >
-              <QRCode value={qrData} size={300} />
-            </View>
-          </View>
+          </TouchableWithoutFeedback>
         </View>
-      </Modal>
+      </TouchableWithoutFeedback>
+    </Modal>
     </View>
   );
 };
