@@ -296,7 +296,7 @@ const Fundraiser = () => {
             />
             <View>
               <Text style={styles.displayName}>{userInfo.displayName}</Text>
-              <View style={[styles.header, { marginTop: 5 }]}>
+              <View style={styles.tagsContainer}>
                 <View style={styles.section}>
                   <View style={styles.smallCircle} />
                   <Text style={styles.tag}>{userInfo.teamName}</Text>
@@ -505,13 +505,14 @@ const Fundraiser = () => {
             >
               <Text style={styles.buttonText}>DonorDrive</Text>
             </TouchableOpacity>
-            <TouchableOpacity
+            
+          </View>
+          <TouchableOpacity
               onPress={copyToClipboard}
-              // style={styles.touchable}
+              style={styles.copyToClipboard}
             >
               <Icon name="link" type="font-awesome-5" color="white" />
             </TouchableOpacity>
-          </View>
         </View>
       )}
     </View>
@@ -534,6 +535,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: 10,
     marginBottom: 10,
+  },
+  tagsContainer: {
+    minWidth: "85%",
+    maxWidth: "85%",
+    display: "flex",
+    flexDirection: "row",
+    flexWrap: "wrap",
   },
   textInput: {
     width: 150,
@@ -726,6 +734,7 @@ const styles = StyleSheet.create({
   section: {
     flexDirection: "row",
     alignItems: "center",
+    marginTop: 5,
   },
   milestonesContainer: {
     position: "absolute",
@@ -779,7 +788,12 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     //alignItems: "center",
     //justifyContent: "center",
-    marginRight: 10,
+
+  },
+  copyToClipboard: {
+    position: "absolute",
+    right: "20%",
+    bottom: 6,
   },
   touchable: {
     // width: 40,
