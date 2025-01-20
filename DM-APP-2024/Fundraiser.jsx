@@ -8,6 +8,7 @@ import {
   Modal,
   ScrollView,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   ActivityIndicator,
 } from "react-native";
 // import {
@@ -19,6 +20,8 @@ import {
 import * as Clipboard from "expo-clipboard";
 import * as Progress from "react-native-progress";
 import { Icon } from "react-native-elements";
+import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
+import { faX } from '@fortawesome/free-solid-svg-icons';
 
 // import { getUserData } from "./Firebase/UserManager";
 
@@ -223,7 +226,7 @@ const Fundraiser = () => {
       }}
     >
       <Modal
-        animationType="slide"
+        animationType="fade"
         transparent={true}
         visible={modalVisible}
         onRequestClose={() => {
@@ -231,50 +234,52 @@ const Fundraiser = () => {
           setModalVisible(!modalVisible);
         }}
       >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalView}>
-            <View style={styles.header}>
-              <Text style={styles.milestones}>MILESTONES</Text>
-              <TouchableOpacity
-                style={styles.modalClose}
-                onPress={() => setModalVisible(false)}
-              >
-                <Image
-                  source={require("./images/X.png")}
-                  style={styles.closeImage}
-                />
-              </TouchableOpacity>
-            </View>
-            <View style={styles.modalMilestonesContainer}>
-              {Array.isArray(allMilestones) && userInfo.numMilestones > 0 ? (
-                allMilestones.map((milestone, index) => (
-                  <View key={index} style={styles.milestoneRow}>
-                    <Icon
-                      name={
-                        milestone.fundraisingGoal <= userInfo.sumDonations
-                          ? "check-square"
-                          : "square"
-                      }
-                      type="font-awesome-5"
-                      size={24}
-                      color="white"
-                      style={{ marginRight: 10 }}
-                    />
-                    <Text style={styles.milestoneAmount}>
-                      ${milestone.fundraisingGoal}
-                    </Text>
-                    <Text style={styles.milestoneDescription}>
-                      {milestone.description}
-                    </Text>
-                  </View>
-                ))
-              ) : (
-                <Text style={{ color: "white" }}>No milestones to display</Text>
-              )}
-            </View>
+        <TouchableWithoutFeedback onPress={() => setModalVisible(false)}>
+          <View style={styles.modalContainer}>
+            <TouchableWithoutFeedback>
+              <View style={styles.modalView}>
+                <View style={styles.header}>
+                  <Text style={styles.milestones}>Milestones</Text>
+                  <TouchableOpacity
+                    style={styles.modalClose}
+                    onPress={() => setModalVisible(false)}
+                  >
+                    <FontAwesomeIcon icon={faX} size={24} color="white" style={styles.closeButton}/>
+                  </TouchableOpacity>
+                </View>
+                <View style={styles.modalMilestonesContainer}>
+                  {Array.isArray(allMilestones) && userInfo.numMilestones > 0 ? (
+                    allMilestones.map((milestone, index) => (
+                      <View key={index} style={styles.milestoneRow}>
+                        <Icon
+                          name={
+                            milestone.fundraisingGoal <= userInfo.sumDonations
+                              ? "check-square"
+                              : "square"
+                          }
+                          type="font-awesome-5"
+                          size={24}
+                          color="white"
+                          style={{ marginRight: 10 }}
+                        />
+                        <Text style={styles.milestoneAmount}>
+                          ${milestone.fundraisingGoal}
+                        </Text>
+                        <Text style={styles.milestoneDescription}>
+                          {milestone.description}
+                        </Text>
+                      </View>
+                    ))
+                  ) : (
+                    <Text style={{ color: "white" }}>No milestones to display</Text>
+                  )}
+                </View>
+              </View>
+            </TouchableWithoutFeedback>
           </View>
-        </View>
+        </TouchableWithoutFeedback>
       </Modal>
+
 
       <Image
         style={styles.dmlogo}
@@ -691,11 +696,8 @@ const styles = StyleSheet.create({
     marginVertical: 10,
   },
   closeButton: {
-    marginTop: 10,
-    backgroundColor: "#007AFF",
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 5,
+    top: 0,
+    right: 0,
   },
   closeButtonText: {
     color: "#fff",
@@ -709,7 +711,7 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+    
   },
   smallCircle: {
     width: 15,
@@ -798,7 +800,7 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: "bold",
     color: "white",
-    right: 70,
+    right: 80,
     top: -12,
   },
   closeIcon: {
