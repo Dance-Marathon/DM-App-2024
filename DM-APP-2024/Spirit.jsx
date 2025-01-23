@@ -434,7 +434,6 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: "#fff",
     position: "absolute",
-
   },
   closeIcon: {
     fontSize: 20,
