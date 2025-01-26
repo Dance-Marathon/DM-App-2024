@@ -404,7 +404,7 @@ const styles = StyleSheet.create({
     left: 5,
   },
   showAll: {
-    color: "#9DB6F3",
+    color: "white",
     fontSize: 14,
     right: 20,
     textDecorationLine: "underline",
@@ -463,6 +463,7 @@ const styles = StyleSheet.create({
   },
   eventTitle: {
     color: "white",
+    fontWeight: "bold",
     fontSize: 14,
     flex: 1,
     left: 10,

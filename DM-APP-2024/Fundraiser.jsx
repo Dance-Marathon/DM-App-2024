@@ -769,7 +769,7 @@ const styles = StyleSheet.create({
     left: 5,
   },
   showAll: {
-    color: "#5a72a2",
+    color: "white",
     fontSize: 12,
     textDecorationLine: "underline",
     marginTop: -5,
