@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import {
   View,
   Text,
@@ -227,7 +228,7 @@ const Home = ({ route }) => {
       />
       <View style={styles.notificationsBox}>
         <View style={styles.header}>
-          <View style={styles.smallCircle} />
+          <FontAwesome name="bell-o" size={18} color="orange" />
           <Text style={styles.headerText}>NOTIFICATIONS</Text>
           <TouchableOpacity
             onPress={() =>
@@ -298,7 +299,7 @@ const Home = ({ route }) => {
       </View>
       <View style={styles.eventsBox}>
         <View style={styles.header}>
-          <View style={styles.smallCircle} />
+          <FontAwesome name="calendar" size={18} color="orange" />
           <Text style={styles.headerText}>UPCOMING EVENTS</Text>
         </View>
         <View style={styles.eventsList}>

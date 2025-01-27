@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useContext } from "react";
+import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import {
   View,
   StyleSheet,
@@ -173,7 +174,7 @@ const GenerateQRCode = ({ route }) => {
       <Text style={styles.spiritpoints}>Spirit Points</Text>
       <View style={styles.pointsBox}>
         <View style={styles.header}>
-          <View style={styles.smallCircle} />
+          <FontAwesome name="star" size={20} color="orange" />
           <Text style={styles.headerText}>MY POINTS</Text>
         </View>
         <View style={styles.pointsText}>
@@ -222,7 +223,7 @@ const GenerateQRCode = ({ route }) => {
       </View>
       <View style={styles.leaderboardBox}>
         <View style={styles.header}>
-          <View style={styles.smallCircle} />
+          <FontAwesome name="trophy" size={18} color="orange" />
           <Text style={styles.headerText}>LEADERBOARD</Text>
         </View>
         <View style={styles.bothLeaderboards}>

@@ -1,4 +1,5 @@
 import React, { useContext, useState, useEffect } from "react";
+import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import {
   View,
   Text,
@@ -298,11 +299,11 @@ const Fundraiser = () => {
               <Text style={styles.displayName}>{userInfo.displayName}</Text>
               <View style={styles.tagsContainer}>
                 <View style={styles.section}>
-                  <View style={styles.smallCircle} />
+                  <FontAwesome name="list" size={15} color="orange" />
                   <Text style={styles.tag}>{userInfo.teamName}</Text>
                 </View>
                 <View style={styles.section}>
-                  <View style={styles.smallCircle} />
+                  <FontAwesome name="list" size={15} color="orange" />
                   <Text style={styles.tag}>{role}</Text>
                 </View>
               </View>
@@ -458,7 +459,7 @@ const Fundraiser = () => {
 
           <View style={styles.rectangleView}>
             <View style={styles.header}>
-              <View style={styles.smallCircle} />
+              <FontAwesome name="dollar" size={18} color="orange" />
               <Text style={styles.headerText}>DONATIONS</Text>
             </View>
             <View style={{ marginTop: 5, marginLeft: 5, flex: 1 }}>
@@ -632,6 +633,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "white",
     marginRight: 5,
+    marginLeft: 5,
   },
   rectangleView: {
     padding: 10,
