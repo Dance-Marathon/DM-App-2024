@@ -4,6 +4,8 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createStackNavigator } from "@react-navigation/stack";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth, db } from "./Firebase/AuthManager";
+import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
+import { faSparkles } from '@fortawesome/free-solid-svg-icons';
 import {
   doc,
   getDoc,
@@ -422,7 +424,7 @@ const App = () => {
                 options={{
                   headerShown: false,
                   tabBarIcon: ({ color, size }) => (
-                    <Icon name="check" type="font-awesome" color={color} />
+                    <Icon name="star" type="font-awesome" color={color} />
                   ),
                 }}
               />
