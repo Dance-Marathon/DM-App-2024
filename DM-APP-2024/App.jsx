@@ -43,7 +43,7 @@ import TTHome from "./HomeTT";
 import checkForUpdate from "./AppUpdateCheck";
 import EventDetails from "./EventDetails";
 import AllNotifications from "./AllNotifications";
-import FAQ from "./FAQ";
+import FAQ from "./FAQpage";
 
 import { addUserExpoPushToken } from "./Firebase/AuthManager";
 
@@ -345,7 +345,7 @@ const App = () => {
       />
       <AboutStack.Screen
         name="FAQ"
-        component={Admin}
+        component={FAQ}
         options={{
           title: "FAQ",
           headerStyle: {
