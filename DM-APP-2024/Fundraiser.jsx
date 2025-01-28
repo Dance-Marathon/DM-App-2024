@@ -299,11 +299,11 @@ const Fundraiser = () => {
               <Text style={styles.displayName}>{userInfo.displayName}</Text>
               <View style={styles.tagsContainer}>
                 <View style={styles.section}>
-                  <FontAwesome name="list" size={15} color="orange" />
+                  <FontAwesome name="circle" size={15} color="orange" />
                   <Text style={styles.tag}>{userInfo.teamName}</Text>
                 </View>
                 <View style={styles.section}>
-                  <FontAwesome name="list" size={15} color="orange" />
+                  <FontAwesome name="circle" size={15} color="orange" />
                   <Text style={styles.tag}>{role}</Text>
                 </View>
               </View>
@@ -794,7 +794,7 @@ const styles = StyleSheet.create({
   },
   copyToClipboard: {
     position: "absolute",
-    right: "20%",
+    right: "18%",
     bottom: 6,
   },
   touchable: {
