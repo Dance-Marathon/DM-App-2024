@@ -41,6 +41,7 @@ import TTHome from "./HomeTT";
 import checkForUpdate from "./AppUpdateCheck";
 import EventDetails from "./EventDetails";
 import AllNotifications from "./AllNotifications";
+import FAQ from "./FAQ";
 
 import { addUserExpoPushToken } from "./Firebase/AuthManager";
 
@@ -339,6 +340,20 @@ const App = () => {
           headerTintColor: "white",
         }}
         initialParams={props.route.params}
+      />
+      <AboutStack.Screen
+        name="FAQ"
+        component={Admin}
+        options={{
+          title: "FAQ",
+          headerStyle: {
+            backgroundColor: "#1f1f1f",
+            borderBottomWidth: 0,
+          },
+          headerTintColor: "white",
+          headerShadowVisible: false,
+          headerBackTitleVisible: false,
+        }}
       />
       <AboutStack.Screen
         name="Admin"
