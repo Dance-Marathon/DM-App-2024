@@ -183,7 +183,7 @@ const About = () => {
           <Button
             icon={<Icon name="question" type="font-awesome" color="white" style={{width: 30, marginRight: 10}}/>}
             title="Frequently Asked Questions"
-            onPress={() => openWebsite("https://floridadm.org/events")} //Change this to FAQ
+            onPress={() => navigation.navigate("FAQ")}
             buttonStyle={styles.button}
           />
           <Button
