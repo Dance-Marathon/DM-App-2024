@@ -22,6 +22,7 @@ import { db } from "./Firebase/AuthManager";
 import { UserContext } from "./api/calls";
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faX } from '@fortawesome/free-solid-svg-icons';
+import LogoStyles from "./LogoStyles";
 
 
 const GenerateQRCode = ({ route }) => {
@@ -167,11 +168,10 @@ const GenerateQRCode = ({ route }) => {
       }}
     >
       <Image
-        style={styles.dmlogo}
+        style={LogoStyles.logo}
         resizeMode="contain"
         source={require("./images/PrimaryLogo.png")}
       />
-      <Text style={styles.spiritpoints}>Spirit Points</Text>
       <View style={styles.pointsBox}>
         <View style={styles.header}>
           <FontAwesome name="star" size={20} color="orange" />
@@ -341,12 +341,11 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   pointsBox: {
-    top: 180,
+    marginTop: 100,
     borderRadius: 9,
     backgroundColor: "#233d72",
-    width: 340,
+    width: '85%',
     height: 180,
-    position: "absolute",
     shadowOpacity: 1,
     elevation: 4,
     shadowRadius: 4,
@@ -357,12 +356,11 @@ const styles = StyleSheet.create({
     shadowColor: "rgba(0, 0, 0, 0.25)",
   },
   leaderboardBox: {
-    top: 380,
     borderRadius: 9,
     backgroundColor: "#233d72",
-    width: 340,
+    width: '85%',
     height: 370,
-    position: "absolute",
+    marginTop: 30,
     shadowOpacity: 1,
     elevation: 4,
     shadowRadius: 4,

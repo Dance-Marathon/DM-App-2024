@@ -23,6 +23,7 @@ import { sheetsAPIKey } from "./api/apiKeys";
 import { useNavigation } from "@react-navigation/native";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 import { faX } from "@fortawesome/free-solid-svg-icons";
+import LogoStyles from "./LogoStyles";
 
 const Home = ({ route }) => {
   const [modalVisible, setModalVisible] = useState(false);
@@ -222,7 +223,7 @@ const Home = ({ route }) => {
       }}
     >
       <Image
-        style={styles.dmlogo}
+        style={LogoStyles.logo}
         resizeMode="contain"
         source={require("./images/logo.png")}
       />
@@ -352,12 +353,11 @@ const styles = StyleSheet.create({
     height: 75,
   },
   notificationsBox: {
-    top: 160,
+    marginTop: 100,
     borderRadius: 9,
     backgroundColor: "#233d72",
-    width: 340,
+    width: '85%',
     height: 180,
-    position: "absolute",
     shadowOpacity: 1,
     elevation: 4,
     shadowRadius: 4,
@@ -368,12 +368,11 @@ const styles = StyleSheet.create({
     shadowColor: "rgba(0, 0, 0, 0.25)",
   },
   eventsBox: {
-    top: 370,
+    marginTop: 30,
     borderRadius: 9,
     backgroundColor: "#233d72",
-    width: 340,
+    width: '85%',
     height: 370,
-    position: "absolute",
     shadowOpacity: 1,
     elevation: 4,
     shadowRadius: 4,

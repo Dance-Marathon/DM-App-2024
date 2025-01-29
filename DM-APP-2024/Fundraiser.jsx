@@ -23,6 +23,8 @@ import * as Progress from "react-native-progress";
 import { Icon } from "react-native-elements";
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faX } from '@fortawesome/free-solid-svg-icons';
+import LogoStyles from "./LogoStyles";
+
 
 // import { getUserData } from "./Firebase/UserManager";
 
@@ -283,7 +285,7 @@ const Fundraiser = () => {
 
 
       <Image
-        style={styles.dmlogo}
+        style={LogoStyles.logo}
         resizeMode="contain"
         source={require("./images/PrimaryLogo.png")}
       />
@@ -598,7 +600,7 @@ const styles = StyleSheet.create({
   info: {
     alignItems: "center",
     marginBottom: 20,
-    marginTop: 10,
+    marginTop: 60,
     top: 30,
   },
   profileContainer: {
