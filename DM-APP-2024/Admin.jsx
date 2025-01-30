@@ -35,6 +35,7 @@ const fetchData = async () => {
       const docData = doc.data();
         //console.log(docData);
         fetchedItems.push(docData.notificationToken);
+
     });
 
     //console.log('Item:',fetchedItems);
@@ -122,53 +123,7 @@ const Home = ({route}) => {
   const [userIDState, setUserIDState] = useState('');
   const [allNotifications, setAllNotifications] = useState({});
 
-  const [allowedRoles, setAllowedRoles] = useState([]);
-  const [teamBasedPermissions, setTeamBasedPermissions] = useState({});
-  const [newRole, setNewRole] = useState("");
-  const [newTeamRole, setNewTeamRole] = useState("");
-  const [newTeam, setNewTeam] = useState("");
-
   const {expoPushToken} = route.params;
-
-  useEffect(() => {
-    const fetchPermissions = async () => {
-      const docRef = doc(db, "Permissions", "ScannerAccess");
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        setAllowedRoles(data.allowedRoles || []);
-        setTeamBasedPermissions(data.teamBasedPermissions || {});
-      }
-    };
-    fetchPermissions();
-  }, []);
-
-  const updatePermissions = async () => {
-    const docRef = doc(db, "Permissions", "ScannerAccess");
-    await updateDoc(docRef, {
-      allowedRoles,
-      teamBasedPermissions,
-    });
-    Alert.alert("Success", "Permissions updated successfully!");
-  };
-
-  const addTeamPermission = () => {
-    if (newTeamRole && newTeam) {
-      setTeamBasedPermissions((prev) => ({
-        ...prev,
-        [newTeamRole]: [...(prev[newTeamRole] || []), newTeam],
-      }));
-      setNewTeamRole("");
-      setNewTeam("");
-    }
-  };
-
-  const removeTeamPermission = (role, team) => {
-    setTeamBasedPermissions((prev) => ({
-      ...prev,
-      [role]: prev[role].filter((t) => t !== team),
-    }));
-  };
 
   const dismissKeyboard = () => {
     Keyboard.dismiss();
@@ -270,7 +225,7 @@ const Home = ({route}) => {
 
   let handleClick = async () => {
     fetchItems = await fetchData();
-    await sendPushNotificationsToAll(fetchItems, {
+    sendPushNotificationsToAll(fetchItems, {
       date: getCurrentDate(),
       message: message,
       time: getCurrentTime(),
@@ -286,7 +241,7 @@ const Home = ({route}) => {
       time: getCurrentTime(),
       title: title
     }); */
-    await addNotification({
+    addNotification({
       date: getCurrentDate(),
       message: message,
       time: getCurrentTime(),
@@ -315,122 +270,32 @@ const Home = ({route}) => {
     };
 
 return (
-  <ScrollView>
-    <View style={{ flex: 1 }}>
-      {/* Notification Section */}
-      <View style={styles.container}>
-        <TextInput
-          style={styles.input}
-          onChangeText={(text) => setTitle(text)}
-          placeholder="Title"
-          autoCapitalize="none"
-          value={title}
-        />
-        <TextInput
-          style={[styles.input, { minHeight: 40 }]}
-          onChangeText={(text) => setMessage(text)}
-          placeholder="Message"
-          autoCapitalize="none"
-          value={message}
-          multiline={true}
-          numberOfLines={4}
-          textAlignVertical="top"
-        />
-        <Button
-          title="Send Notification"
-          onPress={confirmSend}
-          buttonStyle={styles.button}
-        />
-      </View>
-
-      {/* Permission Management Section */}
-      <View style={styles.container}>
-
-        {/* Display Current Permissions */}
-        <View style={styles.currentPermissions}>
-          <Text style={styles.subHeader}>Allowed Roles:</Text>
-          <FlatList
-            data={allowedRoles}
-            keyExtractor={(item, index) => `${item}-${index}`}
-            renderItem={({ item }) => <Text style={styles.textItem}>- {item}</Text>}
-          />
-          <Text style={styles.subHeader}>Team-Based Permissions:</Text>
-          {Object.entries(teamBasedPermissions).map(([role, teams]) => (
-            <View key={role} style={styles.teamSection}>
-              <Text style={styles.textItem}>{role}:</Text>
-              {teams.map((team, index) => (
-                <Text key={`${role}-${team}-${index}`} style={styles.textItem}>
-                  - {team}
-                </Text>
-              ))}
-            </View>
-          ))}
-        </View>
-
-        {/* Manage Permissions */}
-        <Text style={styles.sectionTitle}>Allowed Roles</Text>
-        <FlatList
-          data={allowedRoles}
-          keyExtractor={(item, index) => `${item}-${index}`}
-          renderItem={({ item }) => (
-            <View style={styles.listItem}>
-              <Text style={styles.textItem}>{item}</Text>
-              <Button
-                title="Remove"
-                onPress={() =>
-                  setAllowedRoles((prev) => prev.filter((role) => role !== item))
-                }
-              />
-            </View>
-          )}
-        />
-        <TextInput
-          style={styles.input}
-          value={newRole}
-          onChangeText={setNewRole}
-          placeholder="Add Role"
-        />
-        <Button
-          title="Add Role"
-          onPress={() => {
-            if (newRole) setAllowedRoles([...allowedRoles, newRole]);
-            setNewRole("");
-          }}
-        />
-
-        <Text style={styles.sectionTitle}>Team-Based Permissions</Text>
-        {Object.keys(teamBasedPermissions).map((role) => (
-          <View key={role} style={styles.teamSection}>
-            <Text style={styles.subHeader}>{role}</Text>
-            {teamBasedPermissions[role].map((team, index) => (
-              <View key={`${role}-${team}-${index}`} style={styles.listItem}>
-                <Text style={styles.textItem}>{team}</Text>
-                <Button
-                  title="Remove"
-                  onPress={() => removeTeamPermission(role, team)}
-                />
-              </View>
-            ))}
-          </View>
-        ))}
-        <TextInput
-          style={styles.input}
-          value={newTeamRole}
-          onChangeText={setNewTeamRole}
-          placeholder="Role (e.g., Assistant Director)"
-        />
-        <TextInput
-          style={styles.input}
-          value={newTeam}
-          onChangeText={setNewTeam}
-          placeholder="Team (e.g., Recruitment)"
-        />
-        <Button title="Add Team Permission" onPress={addTeamPermission} />
-
-        <Button title="Save Changes" onPress={updatePermissions} />
-      </View>
+    <TouchableWithoutFeedback onPress={dismissKeyboard}>
+    <View style={styles.container}>
+      <TextInput
+        style={styles.input}
+        onChangeText={(text) => setTitle(text)}
+        placeholder="Title"
+        autoCapitalize="none"
+        value={title}
+      />
+      <TextInput
+        style={[styles.input, { minHeight: 40 }]}
+        onChangeText={(text) => setMessage(text)}
+        placeholder="Message"
+        autoCapitalize="none"
+        value={message}
+        multiline={true}
+        numberOfLines={4} // Set the number of lines you want to show initially
+        textAlignVertical="top" // Align text to the top
+      />
+      <Button
+        title="Send Notification"
+        onPress={confirmSend}
+        buttonStyle={styles.button}
+      />
     </View>
-  </ScrollView>
+    </TouchableWithoutFeedback>
   );
 };
 export default Home;
@@ -449,7 +314,7 @@ const styles = StyleSheet.create({
         height: 40,
         borderColor: 'black',
         borderWidth: 1,
-        marginBottom: 10,
+        marginBottom: 15,
         paddingHorizontal: 10,
         borderRadius: 5,
         backgroundColor: '#D9D9D9',
@@ -497,7 +362,7 @@ const styles = StyleSheet.create({
   header: {
     fontSize: 24,
     fontWeight: "bold",
-    marginBottom: 5,
+    marginBottom: 20,
     marginTop: 20,
     color: "white",
     textAlign: "center",
@@ -545,37 +410,5 @@ const styles = StyleSheet.create({
     marginTop: 15,
     width: 200,
     marginBottom: 20,
-  },
-  sectionTitle: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: "bold",
-    marginTop: 10,
-    marginBottom: 5,
-  },
-  listItem: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginVertical: 5,
-    color: 'white',
-  },
-  teamSection: {
-    marginVertical: 10,
-  },
-  subHeader: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: 'white',
-    marginTop: 10,
-  },
-  currentPermissions: {
-    padding: 10,
-    marginBottom: 20,
-    width: "100%",
-  },
-  textItem: {
-    fontSize: 14,
-    color: 'white',
   },
 });

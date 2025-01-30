@@ -32,8 +32,7 @@ import Blog7 from './blogs/Blog_ChildHealthDay';
 import Blog8 from './blogs/Blog_MiracleMaker';
 import Scanner from './Scanner';
 import TTHome from './HomeTT';
-import checkForUpdate from './AppUpdateCheck';
-import MissionDM from './MissionDM';
+import { checkForUpdate } from './AppUpdateCheck';
 
 import { addUserExpoPushToken } from "./Firebase/AuthManager";
 
@@ -113,12 +112,6 @@ const App = () => {
   const [userIDState, setUserIDState] = useState('');
   const [userInfo, setUserInfo] = useState({});
 
-  const [scannerPermissions, setScannerPermissions] = useState({
-    allowedRoles: [],
-    teamBasedPermissions: {},
-  });
-  const [scannerVisible, setScannerVisible] = useState(false);
-
   const displayDocumentData = async () => {
     try {
       const currentUID = auth.currentUser.uid;
@@ -163,37 +156,9 @@ const App = () => {
       });
   }, [userIDState]);
 
-  // useEffect(() => {
-  //   checkForUpdate();
-  // }, []);
-
   useEffect(() => {
-    const fetchScannerPermissions = async () => {
-      try {
-        const docRef = doc(db, "Permissions", "ScannerAccess");
-        const docSnap = await getDoc(docRef);
-
-        if (docSnap.exists()) {
-          const permissions = docSnap.data();
-          setScannerPermissions(permissions);
-
-          // Check visibility
-          const isAllowed =
-            permissions.allowedRoles.includes(role) ||
-            (permissions.teamBasedPermissions[role] &&
-              permissions.teamBasedPermissions[role].includes(userInfo.teamName));
-
-          setScannerVisible(isAllowed);
-        } else {
-          console.log("No permissions found for Scanner.");
-        }
-      } catch (error) {
-        console.error("Error fetching scanner permissions:", error);
-      }
-    };
-
-    fetchScannerPermissions();
-  }, [role, userInfo.teamName]);
+    checkForUpdate();
+  }, []);
 
   async function handleToken() {
     const currentUID = auth.currentUser.uid;
@@ -278,7 +243,7 @@ const App = () => {
               ),
             }}
           />
-          {/* <Tab.Screen
+          <Tab.Screen
             name="Calendar"
             component={CalendarPage}
             options={{
@@ -290,7 +255,7 @@ const App = () => {
                 />
               ),
             }}
-          /> */}
+          />
           <Tab.Screen
             name="Spirit"
             component={Spirit}
@@ -305,36 +270,28 @@ const App = () => {
               ),
             }}
           />
-          <Tab.Screen
-            name="MissionDM"
-            component={MissionDM}
-            options={{
-              headerShown: false,
-              tabBarIcon: ({ color, size }) => (
-                <Icon
-                  name="rocket"
-                  type="font-awesome"
-                  color={color}
-                />
-              ),
-            }}
-          />
-          {scannerVisible && (
+          {(role === "Admin" || 
+            role === "Manager" || 
+            role === "Overall" ||
+            (role === "Assistant Director" && userInfo.teamName === "Dancer Engagement") ||
+            (role === "Assistant Director" && userInfo.teamName === "Recruitment") ||
+            (role === "Assistant Director" && userInfo.teamName === "Partnerships")
+            ) ? (
               <Tab.Screen
-              name="Scanner"
-              component={Scanner}
-              options={{
-                headerShown: false,
-                tabBarIcon: ({ color, size }) => (
-                  <Icon
-                    name="check"
-                    type="font-awesome"
-                    color={color}
-                  />
-                ),
-              }}
-            />
-          )}
+                name="Scanner"
+                component={Scanner}
+                options={{
+                  headerShown: false,
+                  tabBarIcon: ({ color, size }) => (
+                    <Icon
+                      name="check"
+                      type="font-awesome"
+                      color={color}
+                    />
+                  ),
+                }}
+              />
+          ) : (<></>)}
           <Tab.Screen
             name="Fundraiser"
             component={Fundraiser}

@@ -20,10 +20,8 @@ const GenerateQRCode = () => {
   const [userInfo, setUserInfo] = useState({});
   const [qrVisible, setQrVisible] = useState(false);
   const [leaderboard, setLeaderboard] = useState([]);
-  const [individualLeaderboard, setIndividualLeaderboard] = useState([]);
   const SPREADSHEET_ID = '1VTr6Jq_UbrJ1HEUTxCo0TlLvoLXc5PaPagufrzbAAxY';
   const range = `Sheet1!A2:B100`;
-  const individualRange = `Sheet2!A2:B600`;
   const apiKey = sheetsAPIKey;
 
   useEffect(() => {
@@ -66,28 +64,8 @@ const GenerateQRCode = () => {
     }
   };
 
-  const fetchIndividualData = async () => {
-    try {
-      const response = await axios.get(
-        `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${individualRange}?key=${apiKey}`
-      );
-      const sortedData = response.data.values
-        .filter((row) => row[1])
-        .map((row) => [row[0], parseInt(row[1], 10)])
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 5);
-      setIndividualLeaderboard(sortedData);
-    } catch (error) {
-      console.error('Error fetching individual leaderboard data', error);
-    }
-  };
-
   useEffect(() => {
     fetchLeaderboardData();
-  }, []);
-
-  useEffect(() => {
-    fetchIndividualData();
   }, []);
 
   const qrData = `name: ${userInfo.displayName}, team: ${userInfo.teamName}`;
@@ -100,17 +78,6 @@ const GenerateQRCode = () => {
           <View key={index} style={styles.leaderboardItem}>
             <Text style={styles.leaderboardText}>
               {index + 1}. {team[0]} - {team[1]} points
-            </Text>
-          </View>
-        ))}
-      </View>
-
-      <View style={styles.leaderboardContainer}>
-        <Text style={styles.title}>Top 5 Individuals</Text>
-        {individualLeaderboard.map((individual, index) => (
-          <View key={index} style={styles.leaderboardItem}>
-            <Text style={styles.leaderboardText}>
-              {index + 1}. {individual[0]} - {individual[1]} points
             </Text>
           </View>
         ))}
