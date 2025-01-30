@@ -26,6 +26,7 @@ import { getUserData, updateUserData } from "./Firebase/UserManager";
 import FontAwesome from "react-native-vector-icons/FontAwesome";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 import { faCrosshairs } from "@fortawesome/free-solid-svg-icons";
+import { faBullseye } from "@fortawesome/free-solid-svg-icons";
 import { faCircleInfo } from "@fortawesome/free-solid-svg-icons"
 
 const MissionDM = () => {
@@ -374,34 +375,24 @@ const MissionDM = () => {
         <View style={styles.inGameTimeContainer}>
           <View style={styles.inGameTimeBox}>
             <Text style={styles.inGameTimeValue}>{timeLeft.days}</Text>
-            <Text style={styles.timeLabel}>Days</Text>
           </View>
-          <Text style={styles.inGameTimeValue}> : </Text>
+          <Text style={styles.colon}>:</Text>
           <View style={styles.inGameTimeBox}>
-            <Text style={styles.inGameTimeValue}>
-              {String(timeLeft.hours).padStart(2, "0")}
-            </Text>
-            <Text style={styles.timeLabel}>Hours</Text>
+            <Text style={styles.inGameTimeValue}>{String(timeLeft.hours).padStart(2, "0")}</Text>
           </View>
-          <Text style={styles.inGameTimeValue}> : </Text>
+          <Text style={styles.colon}>:</Text>
           <View style={styles.inGameTimeBox}>
-            <Text style={styles.inGameTimeValue}>
-              {String(timeLeft.minutes).padStart(2, "0")}
-            </Text>
-            <Text style={styles.timeLabel}>Minutes</Text>
+            <Text style={styles.inGameTimeValue}>{String(timeLeft.minutes).padStart(2, "0")}</Text>
           </View>
-          <Text style={styles.inGameTimeValue}> : </Text>
+          <Text style={styles.colon}>:</Text>
           <View style={styles.inGameTimeBox}>
-            <Text style={styles.inGameTimeValue}>
-              {String(timeLeft.seconds).padStart(2, "0")}
-            </Text>
-            <Text style={styles.timeLabel}>Seconds</Text>
+            <Text style={styles.inGameTimeValue}>{String(timeLeft.seconds).padStart(2, "0")}</Text>
           </View>
         </View>
       </View>
       <View style={styles.targetBox}>
         <View style={styles.tileHeader}>
-          <FontAwesomeIcon icon={faCrosshairs} color="#f18221" size={18} />
+          <FontAwesomeIcon icon={faBullseye} color="#f18221" size={18} />
           <Text style={styles.tileTitleText}>TARGET INFO</Text>
         </View>
         <View style={styles.targetInfoContainer}>
@@ -608,7 +599,7 @@ export default MissionDM;
 const styles = StyleSheet.create({
   header: {
     fontSize: 32,
-    fontWeight: "bold",
+    fontWeight: 800,
     marginBottom: 5,
     marginTop: 10,
     color: "white",
@@ -725,6 +716,8 @@ targetTag: {
   inGameTimeContainer: {
     flexDirection: "row",
     justifyContent: "center",
+    marginBottom: 10,
+    alignItems: "center",
   },
   eliminationContainer: {
     display: "flex",
@@ -748,17 +741,21 @@ targetTag: {
     width: 80,
   },
   inGameTimeBox: {
+    width: 45,
     alignItems: "center",
-    marginHorizontal: 0,
-    marginBottom: 5,
-    padding: 5,
-    borderRadius: 10,
-    width: 50,
-    height: 70,
   },
   inGameTimeValue: {
-    fontSize: 28,
+    fontSize: 32,
+    margin: 2,
+    fontWeight: 600,
     color: "#FFFFFF",
+    alignText: "center",
+  },
+  colon: {
+    fontSize: 32,
+    fontWeight: 600,
+    color: "#FFFFFF",
+    marginBottom: 3,
   },
   timeLabel: {
     fontSize: 9,
