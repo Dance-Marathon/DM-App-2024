@@ -25,7 +25,7 @@ import { getUserInfo } from "./api/index";
 import { getUserData, updateUserData } from "./Firebase/UserManager";
 import FontAwesome from "react-native-vector-icons/FontAwesome";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
-import { faBullseye } from "@fortawesome/free-solid-svg-icons";
+import { faCrosshairs } from "@fortawesome/free-solid-svg-icons";
 import { faCircleInfo } from "@fortawesome/free-solid-svg-icons"
 
 const MissionDM = () => {
@@ -401,7 +401,7 @@ const MissionDM = () => {
       </View>
       <View style={styles.targetBox}>
         <View style={styles.tileHeader}>
-          <FontAwesomeIcon icon={faBullseye} color="#f18221" size={18} />
+          <FontAwesomeIcon icon={faCrosshairs} color="#f18221" size={18} />
           <Text style={styles.tileTitleText}>TARGET INFO</Text>
         </View>
         <View style={styles.targetInfoContainer}>
@@ -439,7 +439,7 @@ const MissionDM = () => {
           <Text style={styles.tileTitleText}>MY INFO</Text>
       </View>
       <View style={styles.eliminationContainer}>
-        <FontAwesomeIcon icon={faBullseye} color="#FFFFFF" size={32}/>
+        <FontAwesomeIcon icon={faCrosshairs} color="#FFFFFF" size={32}/>
         <Text style={styles.eliminationHeader}> 12 Eliminations </Text>
       </View>
         </View>
