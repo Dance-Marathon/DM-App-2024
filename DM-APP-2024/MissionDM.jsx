@@ -340,24 +340,27 @@ const MissionDM = () => {
     >
       
       <View style={styles.roundBox}>
-        
+      <Text style={styles.header}>ROUND {currentRound}</Text>
         <View style={styles.inGameTimeContainer}>
           <View style={styles.inGameTimeBox}>
             <Text style={styles.inGameTimeValue}>{timeLeft.days}</Text>
             <Text style={styles.timeLabel}>Days</Text>
           </View>
+          <Text style={styles.inGameTimeValue}> : </Text>
           <View style={styles.inGameTimeBox}>
             <Text style={styles.inGameTimeValue}>
               {String(timeLeft.hours).padStart(2, "0")}
             </Text>
             <Text style={styles.timeLabel}>Hours</Text>
           </View>
+          <Text style={styles.inGameTimeValue}> : </Text>
           <View style={styles.inGameTimeBox}>
             <Text style={styles.inGameTimeValue}>
               {String(timeLeft.minutes).padStart(2, "0")}
             </Text>
             <Text style={styles.timeLabel}>Minutes</Text>
           </View>
+          <Text style={styles.inGameTimeValue}> : </Text>
           <View style={styles.inGameTimeBox}>
             <Text style={styles.inGameTimeValue}>
               {String(timeLeft.seconds).padStart(2, "0")}
@@ -537,10 +540,10 @@ export default MissionDM;
 
 const styles = StyleSheet.create({
   header: {
-    fontSize: 24,
+    fontSize: 32,
     fontWeight: "bold",
-    marginBottom: 20,
-    marginTop: 20,
+    marginBottom: 5,
+    marginTop: 10,
     color: "white",
     textAlign: "center",
   },
@@ -590,25 +593,19 @@ const styles = StyleSheet.create({
   },
   inGameTimeBox: {
     alignItems: "center",
-    marginHorizontal: 2,
+    marginHorizontal: 0,
+    marginBottom: 5,
     padding: 5,
-    backgroundColor: "#333333",
     borderRadius: 10,
-    width: 70,
+    width: 50,
     height: 70,
   },
-  timeValue: {
-    fontSize: 36,
-    fontWeight: "bold",
-    color: "#f18221",
-  },
   inGameTimeValue: {
-    fontSize: 30,
-    fontWeight: "bold",
-    color: "#f18221",
+    fontSize: 28,
+    color: "#FFFFFF",
   },
   timeLabel: {
-    fontSize: 14,
+    fontSize: 9,
     color: "#FFFFFF",
     marginTop: 5,
   },
