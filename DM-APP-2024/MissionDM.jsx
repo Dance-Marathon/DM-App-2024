@@ -24,6 +24,7 @@ import { getUserInfo } from "./api/index";
 import { getUserData, updateUserData } from "./Firebase/UserManager";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 import { faBullseye } from "@fortawesome/free-solid-svg-icons";
+import { faCircleInfo } from "@fortawesome/free-solid-svg-icons"
 
 const MissionDM = () => {
   const [timeLeft, setTimeLeft] = useState({
@@ -398,7 +399,14 @@ const MissionDM = () => {
       </View>
 
       <View style={styles.userBox}>
-
+      <View style={styles.tileHeader}>
+          <FontAwesomeIcon icon={faCircleInfo} color="#f18221" size={18}/>
+          <Text style={styles.tileTitleText}>MY INFO</Text>
+      </View>
+      <View style={styles.eliminationContainer}>
+        <FontAwesomeIcon icon={faBullseye} color="#FFFFFF" size={32}/>
+        <Text style={styles.eliminationHeader}> 12 Eliminations </Text>
+      </View>
         </View>
 
 
@@ -585,6 +593,13 @@ const styles = StyleSheet.create({
     marginLeft: 15,
     marginBottom: 0,
   },
+  eliminationHeader: {
+    fontSize: 32,
+    fontWeight: "bold",
+    marginBottom: 10,
+    color: "white",
+    textAlign: "center",
+  },
   avatar: {
     width: 100,
     height: 100,
@@ -653,6 +668,11 @@ targetTag: {
   inGameTimeContainer: {
     flexDirection: "row",
     justifyContent: "center",
+  },
+  eliminationContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignContent: "center",
   },
   otherContainer: {
     flexDirection: "column",
