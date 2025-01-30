@@ -1,10 +1,9 @@
-// Page1.js (similar structure for other pages)
 import React, { useState, useEffect } from 'react';
-import { View, Text, Image, StyleSheet, Button, Linking, TextInput, Modal, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, Image, StyleSheet, Button, Linking, Modal, ScrollView, TouchableOpacity } from 'react-native';
 import { getUserInfo, getUserMilestones, getUserDonations } from './api/index';
 import * as Clipboard from 'expo-clipboard';
-import { auth, db } from './Firebase/AuthManager';
-import { doc, getDoc } from 'firebase/firestore';
+// import { auth, db } from './Firebase/AuthManager';
+// import { doc, getDoc } from 'firebase/firestore';
 import * as Progress from 'react-native-progress';
 
 import { getUserData } from './Firebase/UserManager';
@@ -22,8 +21,15 @@ const Fundraiser = () => {
   const [allDonations, setAllDonations] = useState({});
   const [sortedDonations, setSortedDonations] = useState([allDonations]);
 
+  const [isLoadingUserInfo, setIsLoadingUserInfo] = useState(true);
+  const [isLoadingMilestones, setIsLoadingMilestones] = useState(true);
+  const [isLoadingDonations, setIsLoadingDonations] = useState(true);
+  const isAllDataLoaded = !isLoadingUserInfo && !isLoadingMilestones && !isLoadingDonations;
+
+
   useEffect(() => {
     getUserData().then((data) => {
+      console.log("Fetched User Data:", data);
       setUserIDState(data.donorID);
       setRole(data.role);
     })
@@ -37,34 +43,38 @@ const Fundraiser = () => {
     getUserInfo(userIDState)
       .then((data) => {
         setUserInfo(data);
+        setIsLoadingUserInfo(false); // Mark as loaded
       })
       .catch((err) => {
-        console.error(err);
-        setError(err);
+        console.error("Error fetching user info:", err);
+        setIsLoadingUserInfo(false); // Also mark as loaded on error
       });
   }, [userIDState]);
-
-  useEffect(() => {
-    getUserDonations(userIDState)
-      .then((data) => {
-        setDonationInfo(data);
-      })
-      .catch((err) => {
-        console.error(err);
-        setError(err);
-      });
-  }, [userIDState]);
-
+  
   useEffect(() => {
     getUserMilestones(userIDState)
       .then((data) => {
         setMilestoneInfo(data);
+        setIsLoadingMilestones(false);
       })
       .catch((err) => {
-        console.error(err);
-        setError(err);
+        console.error("Error fetching milestones:", err);
+        setIsLoadingMilestones(false);
       });
   }, [userIDState]);
+  
+  useEffect(() => {
+    getUserDonations(userIDState)
+      .then((data) => {
+        setDonationInfo(data);
+        setIsLoadingDonations(false);
+      })
+      .catch((err) => {
+        console.error("Error fetching donations:", err);
+        setIsLoadingDonations(false);
+      });
+  }, [userIDState]);
+  
 
   useEffect(() => {
     if (userIDState && userInfo.numMilestones) {
@@ -102,156 +112,180 @@ const Fundraiser = () => {
     }
   }, [userIDState, userInfo, donationInfo]);   
 
-  // Method to sort the donations by their createdDateUTC in descending order
   useEffect(() => {
+    console.log("Donations before sorting:", sortedDonations);
     const sorted = sortedDonations.sort((a, b) => {
-      // Convert the createdDateUTC strings to Date objects for comparison
       const dateA = new Date(a.createdDateUTC);
       const dateB = new Date(b.createdDateUTC);
-      return dateB - dateA; // Subtract to get the descending order
+      return dateB - dateA;
     });
-    // Update the state with the sorted list of donations
     setSortedDonations(sorted);
+    console.log("Donations after sorting:", sorted);
   }, []);
 
   const copyToClipboard = () => {
     const text = userInfo.donateURL;
-    Clipboard.setStringAsync(text);
-    alert('Text copied to clipboard!');
+    console.log("Copying URL to clipboard:", text);
+    Clipboard.setStringAsync(text)
+    .then(() => alert("Text copied to clipboard!"))
+    .catch((err) => console.error("Error copying to clipboard:", err));
   };
 
-  const ProgressBar = () => {
-    const progress = userInfo.sumDonations / userInfo.fundraisingGoal;
-  };
+  console.log("Progress calculation:", userInfo.sumDonations, userInfo.fundraisingGoal);
+  console.log("All Milestones:", allMilestones);
+  console.log("Milestone Info for modal:", milestoneInfo);
+
+  useEffect(() => {
+    console.log("userIDState:", userIDState);
+    console.log("userInfo:", userInfo);
+    console.log("milestoneInfo:", milestoneInfo);
+    console.log("donationInfo:", donationInfo);
+  }, [userIDState, userInfo, milestoneInfo, donationInfo]);
+
+  const isProgressDataValid = typeof userInfo.sumDonations === "number" && typeof userInfo.fundraisingGoal === "number" && userInfo.fundraisingGoal > 0;
 
   return (
     <View style={styles.container}>
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={modalVisible}
-        onRequestClose={() => {
-          Alert.alert("Modal has been closed.");
-          setModalVisible(!modalVisible);
-        }}
-      >
-        <View style={styles.centeredView}>
-          <View style={styles.modalView}>
-            <Text>Milestones</Text>
-            <View>
-              {Array.isArray(allMilestones) && userInfo.numMilestones > 0 ? (
-                allMilestones.map((milestone, index) => (
-                  <Text
-                    key={index}
-                    style={{
-                      textDecorationLine:
-                        milestone.fundraisingGoal < userInfo.sumDonations
-                          ? "line-through"
-                          : "none",
-                    }}
-                  >
-                    {milestone.description} - ${milestone.fundraisingGoal}
-                  </Text>
-                ))
-              ) : (
-                <Text>No milestones to display</Text>
-              )}
-            </View>
-            <Button
-              style={[styles.button, styles.buttonClose]}
-              onPress={() => setModalVisible(!modalVisible)}
-              title="Hide Milestones"
-            />
-          </View>
-        </View>
-      </Modal>
-      {userInfo && userInfo.displayName && (
-        <View style={styles.info}>
-          <View style={styles.profileContainer}>
-            <Image
-              source={{ uri: userInfo.avatarImageURL }}
-              style={styles.avatar}
-            />
-            <View style={styles.profileSection}>
-              <Text style={styles.displayName}>{userInfo.displayName}</Text>
-              <Text style={styles.tag}>{userInfo.teamName}</Text>
-              <Text style={styles.tag}>{role}</Text>
-            </View>
-          </View>
-          <View style={styles.textContainer}>
-            <Text style={{ color: "white", marginRight: 65, marginBottom: 5 }}>
-              ${userInfo.sumDonations} RAISED
-            </Text>
-            <Text style={{ color: "white", marginBottom: 5 }}>
-              GOAL ${userInfo.fundraisingGoal}
-            </Text>
-          </View>
-          <Progress.Bar
-            progress={userInfo.sumDonations / userInfo.fundraisingGoal}
-            width={250}
-            borderColor="white"
-            color="white"
-            height={20}
-            borderRadius={10}
-            marginBottom={10}
-          />
-
-          <View style={styles.rectangleView}>
-            <Text
-              style={{
-                color: "white",
-                marginLeft: 10,
-                marginTop: 5,
-                fontSize: 24,
-              }}
-            >
-              Donations - {userInfo.numDonations}
-            </Text>
-            <View style={{ marginTop: 5, marginLeft: 5, height: "85%" }}>
-              <ScrollView>
-                {Array.isArray(allDonations) && allDonations.length > 0 ? (
-                  allDonations.map((donation, index) => {
-                    displayName = donation.displayName
-                      ? donation.displayName
-                      : "Anonymous";
-                    displayName = displayName
-                      .replace("Dance Marathon at UF", "")
-                      .trim();
-                    return (
+      {!isAllDataLoaded ? (
+        // Display a loading message while waiting for all data to load
+        <Text style={{ color: "white", fontSize: 18, marginTop: 20 }}>Loading...</Text>
+      ) : (
+        // Main content rendering after all data is loaded
+        <>
+          <Modal
+            animationType="slide"
+            transparent={true}
+            visible={modalVisible}
+            onRequestClose={() => {
+              Alert.alert("Modal has been closed.");
+              setModalVisible(!modalVisible);
+            }}
+          >
+            <View style={styles.centeredView}>
+              <View style={styles.modalView}>
+                <Text>Milestones</Text>
+                <View>
+                  {Array.isArray(allMilestones) && userInfo.numMilestones > 0 ? (
+                    allMilestones.map((milestone, index) => (
                       <Text
-                        style={{ fontSize: 16, color: "white" }}
                         key={index}
+                        style={{
+                          textDecorationLine:
+                            milestone.fundraisingGoal < userInfo.sumDonations
+                              ? "line-through"
+                              : "none",
+                        }}
                       >
-                        • {displayName} - ${donation.amount}
+                        {milestone.description} - ${milestone.fundraisingGoal}
                       </Text>
-                    );
-                  })
-                ) : (
-                  <Text>No donations to display. Keep Fundraising!</Text>
-                )}
-              </ScrollView>
+                    ))
+                  ) : (
+                    <Text>No milestones to display</Text>
+                  )}
+                </View>
+                <Button
+                  style={[styles.button, styles.buttonClose]}
+                  onPress={() => setModalVisible(!modalVisible)}
+                  title="Hide Milestones"
+                />
+              </View>
             </View>
-          </View>
-          <View style={styles.buttonContainer} >
-            <TouchableOpacity
-              style={styles.showDonordrivePageButton}
-              onPress={() => Linking.openURL(userInfo.donateURL)}>
-                <Text style={styles.buttonText}>DonorDrive Page</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.showMilestoneButton}
-              onPress={() => setModalVisible(true)}>
-                <Text style={styles.buttonText}>Show Milestones</Text>
-            </TouchableOpacity>
-          </View>
-          <View>
-            <Button title="Copy DonorDrive URL" onPress={copyToClipboard} />
-          </View>
-        </View>
+          </Modal>
+  
+          {userInfo && userInfo.displayName && (
+            <View style={styles.info}>
+              <View style={styles.profileContainer}>
+                <Image
+                  source={{ uri: userInfo.avatarImageURL }}
+                  style={styles.avatar}
+                />
+                <View style={styles.profileSection}>
+                  <Text style={styles.displayName}>{userInfo.displayName}</Text>
+                  <Text style={styles.tag}>{userInfo.teamName}</Text>
+                  <Text style={styles.tag}>{role}</Text>
+                </View>
+              </View>
+  
+              <View style={styles.textContainer}>
+                <Text style={{ color: "white", marginRight: 65, marginBottom: 5 }}>
+                  ${userInfo.sumDonations} RAISED
+                </Text>
+                <Text style={{ color: "white", marginBottom: 5 }}>
+                  GOAL ${userInfo.fundraisingGoal}
+                </Text>
+              </View>
+  
+              <Progress.Bar
+                progress={userInfo.sumDonations / userInfo.fundraisingGoal}
+                width={250}
+                borderColor="white"
+                color="white"
+                height={20}
+                borderRadius={10}
+              />
+  
+              <View style={styles.rectangleView}>
+                <Text
+                  style={{
+                    color: "white",
+                    marginLeft: 10,
+                    marginTop: 5,
+                    fontSize: 24,
+                  }}
+                >
+                  Donations - {userInfo.numDonations}
+                </Text>
+                <View style={{ marginTop: 5, marginLeft: 5, height: "85%" }}>
+                  <ScrollView>
+                    {Array.isArray(allDonations) && allDonations.length > 0 ? (
+                      allDonations.map((donation, index) => {
+                        displayName = donation.displayName
+                          ? donation.displayName
+                          : "Anonymous";
+                        displayName = displayName
+                          .replace("Dance Marathon at UF", "")
+                          .trim();
+                        return (
+                          <Text
+                            style={{ fontSize: 16, color: "white" }}
+                            key={index}
+                          >
+                            • {displayName} - ${donation.amount}
+                          </Text>
+                        );
+                      })
+                    ) : (
+                      <Text>No donations to display. Keep Fundraising!</Text>
+                    )}
+                  </ScrollView>
+                </View>
+              </View>
+  
+              <View style={styles.buttonContainer}>
+                <TouchableOpacity
+                  style={styles.showDonordrivePageButton}
+                  onPress={() => Linking.openURL(userInfo.donateURL)}
+                >
+                  <Text style={styles.buttonText}>DonorDrive Page</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.showMilestoneButton}
+                  onPress={() => setModalVisible(true)}
+                >
+                  <Text style={styles.buttonText}>Show Milestones</Text>
+                </TouchableOpacity>
+              </View>
+  
+              <View>
+                <Button title="Copy DonorDrive URL" onPress={copyToClipboard} />
+              </View>
+            </View>
+          )}
+        </>
       )}
-      {error ? <Text message={error.message} /> : null}
     </View>
   );
+  
 }
 
 const styles = StyleSheet.create({

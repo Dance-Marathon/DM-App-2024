@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, Button, StyleSheet, Modal, TouchableOpacity } from 'react-native';
 import CheckBox from 'expo-checkbox'; // Updated import
-import { BarCodeScanner } from 'expo-barcode-scanner';
+import { CameraView, Camera } from "expo-camera";
 import axios from 'axios';
 import getAccessToken from './api/googleAuth';
 import { getUserData } from './Firebase/UserManager';
@@ -30,6 +30,15 @@ const Scanner = () => {
     const [option3Checked, setOption3Checked] = useState(false);
     const [option4Checked, setOption4Checked] = useState(false);
     const [option5Checked, setOption5Checked] = useState(false);
+
+    useEffect(() => {
+        const getCameraPermissions = async () => {
+            const { status } = await Camera.requestCameraPermissionsAsync();
+            setHasPermission(status === "granted");
+        };
+
+        getCameraPermissions();
+    }, []);
 
     useEffect(() => {
         getUserData().then((data) => {
@@ -217,8 +226,11 @@ const Scanner = () => {
                 onRequestClose={() => setModalVisible(false)} // Close the modal if back button is pressed
             >
                 <View style={styles.modalContainer}>
-                    <BarCodeScanner
-                        onBarCodeScanned={scanned ? undefined : handleBarCodeScanned}
+                    <CameraView
+                        onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
+                        barcodeScannerSettings={{
+                            barcodeTypes: ["qr", "pdf417"],
+                        }}
                         style={StyleSheet.absoluteFillObject}
                     />
                     <View style={styles.infoContainer}>

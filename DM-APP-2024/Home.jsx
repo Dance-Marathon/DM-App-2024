@@ -28,6 +28,9 @@ import { getStorage, ref, getDownloadURL } from 'firebase/storage';
 import { addUserExpoPushToken } from "./Firebase/AuthManager";
 import { getUserData } from "./Firebase/UserManager";
 
+import axios from 'axios';
+import { sheetsAPIKey } from './api/apiKeys';
+
 const Home = ({route}) => {
 
   const [modalVisible, setModalVisible] = useState(false);
@@ -36,6 +39,10 @@ const Home = ({route}) => {
   const [userIDState, setUserIDState] = useState('');
   const [allNotifications, setAllNotifications] = useState({});
   const [items, setItems] = useState([]);
+
+  const SPREADSHEET_ID = '15kkihl7I0p4A_jyT-a-ozXQA9kvi_as-ry_6J0PfPis';
+  const range = 'Sheet1!A5:F100';
+  const apiKey = sheetsAPIKey;
 
   const {expoPushToken} = route.params;
 
@@ -68,62 +75,97 @@ const Home = ({route}) => {
 
   const fetchDates = async () => {
     try {
-      const eventsCollectionRef = collection(db, "Calendar2024");
-      const querySnapshot = await getDocs(eventsCollectionRef);
-      const fetchedItems = [];
+      const response = await axios.get(
+        `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${range}?key=${apiKey}`
+      );
   
-      querySnapshot.forEach((doc) => {
-        const docData = doc.data();
-        Object.keys(docData).forEach((date) => {
-          const events = docData[date].events;
-          events.forEach((event) => {
-            let timeString = event.time || '12:00 AM'; // Default to 12:00 AM if no time is provided
-            const [time, period] = timeString.split(' ');
-            let [hours, minutes] = time.split(':').map(Number);
+      const rows = response.data.values;
   
-            if (period === 'PM' && hours !== 12) {
-              hours += 12;
-            } else if (period === 'AM' && hours === 12) {
-              hours = 0;
-            }
+      if (!rows || rows.length === 0) {
+        console.log("No data found.");
+        setItems([]);
+        return;
+      }
+    
+      const fetchedItems = rows.slice(0).map((row, index) => {
+        const [title, date, time, location, description, pictureName] = row;
   
-            const [year, month, day] = date.split('-').map(Number);
+        if (!date || !time) {
+          return null;
+        }
   
-            // Create a valid Date object
-            if (year && month && day && !isNaN(hours) && !isNaN(minutes)) {
-              const eventDate = new Date(year, month - 1, day, hours, minutes);
-              if (!isNaN(eventDate)) {
-                fetchedItems.push({
-                  formattedDate: new Intl.DateTimeFormat('en-US', { month: 'long', day: 'numeric', year: 'numeric' }).format(eventDate),
-                  date,
-                  time: event.time || '', // Preserve original time or empty string if not provided
-                  title: event.title,
-                  description: event.description,
-                  datetime: eventDate,
-                  picture: event.picture,
-                });
-              }
-            }
-          });
-        });
+        const [year, month, day] = date.split("-").map(Number);
+        
+        let hours = 0,
+        minutes = 0;
+        const timeMatch = time.match(/^(\d+):(\d+)\s?(AM|PM)$/i);
+        if (timeMatch) {
+          hours = parseInt(timeMatch[1], 10);
+          minutes = parseInt(timeMatch[2], 10);
+          const period = timeMatch[3].toUpperCase();
+
+          if (period === "PM" && hours !== 12) {
+            hours += 12;
+          } else if (period === "AM" && hours === 12) {
+            hours = 0;
+          }
+        } else {
+          return null;
+        }
+
+        if (
+          isNaN(year) ||
+          isNaN(month) ||
+          isNaN(day) ||
+          isNaN(hours) ||
+          isNaN(minutes)
+        ) {
+          return null;
+        }
+  
+        const eventDate = new Date(year, month - 1, day, hours, minutes);
+        if (isNaN(eventDate.getTime())) {
+          return null;
+        }
+  
+        return {
+          formattedDate: new Intl.DateTimeFormat("en-US", {
+            month: "long",
+            day: "numeric",
+            year: "numeric",
+          }).format(eventDate),
+          date,
+          time: time,
+          title: title,
+          description: description,
+          location: location,
+          datetime: eventDate,
+          picture: pictureName,
+        };
       });
   
-      // Sort events by datetime
-      fetchedItems.sort((a, b) => a.datetime - b.datetime);
+      const currentDate = new Date(INITIAL_DATE).getTime();
   
-      // Set the next three events
-      setItems(fetchedItems.slice(0, 3));
+      const validItems = fetchedItems.filter((item) => item !== null);
 
-      fetchedItems.forEach(item => {
+      const filteredItems = validItems.filter(
+        (item) => item.datetime.getTime() >= currentDate
+      );
+  
+      filteredItems.sort((a, b) => a.datetime - b.datetime);
+  
+      filteredItems.forEach((item) => {
         if (item.picture) {
           fetchImageUrl(item.picture);
         }
       });
+  
+      setItems(filteredItems.slice(0, 3));
     } catch (error) {
       console.error("Error fetching events:", error);
       setItems([]);
     }
-  };
+  };  
   
   useEffect(() => {
     getUserData().then((data) => {
@@ -164,7 +206,8 @@ const Home = ({route}) => {
     const renderNotif = ({ item }) => {
       return (
         <View style={styles.notificationContainer}>
-          <Text style={styles.notificationTitle}>{item.title} - {item.date} at {item.time}</Text>
+          <Text style={styles.notificationTitle}>{item.title}</Text>
+          <Text style={styles.notificationDate}>{item.date} at {item.time}</Text>
           <Text style={styles.notificationMessage}>{item.message}</Text>
         </View>
       );
@@ -236,6 +279,11 @@ const Home = ({route}) => {
               ) : (
                 <Text style={styles.itemTime}>{item.formattedDate}</Text>
               )}
+              {item.location ? (
+                <Text style={styles.itemTime}>{item.location}</Text>
+              ) : (
+                null
+              )}
               {item.description ? (
                 <Text style={styles.description}>{item.description}</Text>
               ) : (
@@ -257,16 +305,22 @@ const Home = ({route}) => {
         }} >
         <View style={styles.centeredView}>
           <View style={styles.modalView}>
-            <Text>Past Notifications</Text>
+            <Text style={styles.notificationHeader}>Notifications</Text>
+            <TouchableOpacity
+              style={styles.button}
+              onPress={() => setNotificationModalVisible(!notificationModalVisible)} >
+                <Icon
+                  name="close"
+                  type="font-awesome"
+                  color="black"
+                  size={30}
+                />
+            </TouchableOpacity>
             <FlatList
               data={allNotifications}
               renderItem={renderNotif} // Your renderItem function to display the notification
               keyExtractor={item => item.id} // Unique key for each notification
-            />
-            <Button
-              style={[styles.button, styles.buttonClose]}
-              onPress={() => setNotificationModalVisible(!notificationModalVisible)}
-              title="Hide Notifications"
+              showsVerticalScrollIndicator={false} // Hide the vertical scrollbar
             />
           </View>
         </View>
@@ -294,11 +348,13 @@ const styles = StyleSheet.create({
     marginTop: 22,
   },
   modalView: {
+    marginTop: 70,
+    marginBottom: 70,
     margin: 20,
+    position: "relative",
     backgroundColor: "white",
     borderRadius: 20,
-    padding: 35,
-    alignItems: "center",
+    padding: 20,
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
@@ -307,6 +363,16 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 4,
     elevation: 5,
+  },
+  flatListContainer: {
+    overflow: 'hidden',
+  },
+  notificationHeader: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "black",
+    textAlign: "left",
+    marginBottom: 20,
   },
   header: {
     fontSize: 24,
@@ -317,14 +383,12 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   button: {
-    backgroundColor: '#233D72',
     margin: 2,
-    justifyContent: 'flex-start',
-    paddingLeft: 15,
-    borderRadius: 5,
-    borderWidth: 0,
-    borderBottomWidth: 2,
-    borderColor: '#2B457A',
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    fontSize: 20,
+    color: 'black',
     },
   inputTop: {
     height: 40,
@@ -343,14 +407,29 @@ const styles = StyleSheet.create({
   },
   notificationContainer: {
     backgroundColor: 'white',
-    padding: 20,
-    marginRight: 10,
-    marginTop: 17,
+    padding: 10,
+    // marginTop: 17,
+    marginBottom: 10,
     borderRadius: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    borderWidth: 3,
+    borderColor: '#231F7C',
+    // shadowColor: '#000',
+    // shadowOffset: { width: 0, height: 2 },
+    // shadowOpacity: 0.1,
+    // shadowRadius: 4,
+  },
+  notificationTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  notificationDate: {
+    fontSize: 12,
+    color: 'gray',
+    fontWeight: 'bold',
+  },
+  notificationMessage: {
+    fontSize: 14,
+    marginTop: 5,
   },
   showNotificationButton: {
     backgroundColor: '#E2883C',
