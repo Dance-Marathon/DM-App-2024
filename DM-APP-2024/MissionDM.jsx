@@ -27,7 +27,8 @@ import FontAwesome from "react-native-vector-icons/FontAwesome";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 import { faCrosshairs } from "@fortawesome/free-solid-svg-icons";
 import { faBullseye } from "@fortawesome/free-solid-svg-icons";
-import { faCircleInfo } from "@fortawesome/free-solid-svg-icons"
+import { faCircleInfo } from "@fortawesome/free-solid-svg-icons";
+import CrosshairOverImage from "./images/Crosshair Over Image.png";
 
 const MissionDM = () => {
   const [timeLeft, setTimeLeft] = useState({
@@ -365,6 +366,8 @@ const MissionDM = () => {
     }
   };
 
+  const [isImageModalVisible, setIsImageModalVisible] = useState(false);
+
   return (
     <View
       style={{
@@ -399,7 +402,12 @@ const MissionDM = () => {
           <Text style={styles.tileTitleText}>TARGET INFO</Text>
         </View>
         <View style={styles.targetInfoContainer}>
-          <Image source={{ uri: targetImageURL }} style={styles.avatar} />
+          <TouchableOpacity onPress={() => setIsImageModalVisible(true)}>
+            <View style={styles.imageOverlay}>
+              <Image source={{ uri: targetImageURL }} style={styles.avatar}/>
+              <Image source={CrosshairOverImage} style={styles.crosshairOverlay}/> 
+            </View>
+          </TouchableOpacity>
           <View style={styles.targetInfo}>
             <Text style={styles.targetName}>{targetName}</Text>
             <View style={styles.tagsContainer}>
@@ -446,7 +454,7 @@ const MissionDM = () => {
       </View>
       </View>
       <Modal
-          animationType="slide"
+          animationType="fade"
           transparent={true}
           visible={isStatsModalVisible}
           onRequestClose={() => setIsStatsModalVisible(false)}
@@ -464,6 +472,24 @@ const MissionDM = () => {
             </View>
           </View>
         </Modal>
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={isImageModalVisible}
+        onRequestClose={() => setIsImageModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Image source={{ uri: targetImageURL }} style={styles.zoomedImage} />
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={() => setIsImageModalVisible(false)}
+            >
+              <Text style={styles.closeButtonText}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 
@@ -654,11 +680,28 @@ const styles = StyleSheet.create({
     color: "white",
     textAlign: "center",
   },
+  imageOverlay: {
+    width: 100,
+    height: 100,
+    marginRight: 25,
+  },
   avatar: {
     width: 100,
     height: 100,
     borderRadius: 50,
-    marginRight: 25,
+  },
+  zoomedImage: {
+    width: 300,
+    height: 300,
+    marginBottom: 20,
+    borderRadius: 10,
+  },
+  crosshairOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    width: 100,
+    height: 100,
   },
   targetInfoContainer: {
     flexDirection: "row",
@@ -893,7 +936,7 @@ targetTag: {
     backgroundColor: "rgba(0, 0, 0, 0.5)",
   },
   modalContent: {
-    backgroundColor: "white",
+    backgroundColor: "#233d72",
     padding: 20,
     borderRadius: 10,
     width: "80%",
@@ -901,22 +944,25 @@ targetTag: {
   },
   modalTitle: {
     fontSize: 20,
+    color: "white",
     fontWeight: "bold",
     marginBottom: 10,
   },
   modalText: {
+    color: "white",
     fontSize: 16,
     marginBottom: 10,
   },
   closeButton: {
-    backgroundColor: "#E2883C",
+    backgroundColor: "#f18221",
     padding: 10,
-    borderRadius: 5,
-    width: "50%",
+    borderRadius: 10,
+    width: 80,
     alignItems: "center",
   },
   closeButtonText: {
     color: "white",
+    fontSize: 16,
     fontWeight: "bold",
   },
   profileImage: {
