@@ -439,8 +439,8 @@ const MissionDM = () => {
           <Text style={styles.tileTitleText}>MY INFO</Text>
       </View>
       <View style={styles.eliminationContainer}>
-        <FontAwesomeIcon icon={faCrosshairs} color="#FFFFFF" size={32}/>
-        <Text style={styles.eliminationHeader}> 12 Eliminations </Text>
+        <FontAwesomeIcon icon={faCrosshairs} color="#FFFFFF" size={25}/>
+        <Text style={styles.eliminationHeader}>12 Eliminations</Text>
       </View>
         </View>
 
@@ -632,9 +632,8 @@ const styles = StyleSheet.create({
   eliminationHeader: {
     fontSize: 32,
     fontWeight: "bold",
-    marginBottom: 10,
     color: "white",
-    textAlign: "center",
+
   },
   avatar: {
     width: 100,
@@ -728,9 +727,12 @@ targetTag: {
     justifyContent: "center",
   },
   eliminationContainer: {
+    display: "flex",
     flexDirection: "row",
     justifyContent: "center",
-    alignContent: "center",
+    alignItems: "center",
+    gap: 10,
+    marginBottom: 20,
   },
   otherContainer: {
     flexDirection: "column",
