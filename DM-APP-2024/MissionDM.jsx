@@ -345,6 +345,9 @@ const MissionDM = () => {
   };
 
   const handleCodeSubmit = async () => {
+    if (!enteredCode) {
+      return;
+    }
     try {
       const currentUID = auth.currentUser.uid;
       const userDocRef = doc(db, "MissionDMPlayers", currentUID);
@@ -766,7 +769,7 @@ targetTag: {
     width: 80,
   },
   inGameTimeBox: {
-    width: 45,
+    width: 50,
     alignItems: "center",
   },
   inGameTimeValue: {
