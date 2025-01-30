@@ -22,6 +22,8 @@ import {
 } from "firebase/firestore";
 import { getUserInfo } from "./api/index";
 import { getUserData, updateUserData } from "./Firebase/UserManager";
+import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
+import { faBullseye } from "@fortawesome/free-solid-svg-icons";
 
 const MissionDM = () => {
   const [timeLeft, setTimeLeft] = useState({
@@ -45,6 +47,8 @@ const MissionDM = () => {
 
   const [targetName, setTargetName] = useState("");
   const [targetImageURL, setTargetImageURL] = useState("");
+  const [targetRole, setTargetRole] = useState("");
+  const [targetTeam, setTargetTeam] = useState("");
 
   useEffect(() => {
     getUserData()
@@ -320,11 +324,16 @@ const MissionDM = () => {
       const targetUserDoc = querySnapshot.docs[0];
       const targetUserName = targetUserDoc.data().name;
       const targetImageURL = targetUserDoc.data().imageURL;
+      const targetRole = targetUserDoc.data().role;
+      const targetTeam = targetUserDoc.data().teamName;
+      
 
       console.log(`Target user name: ${targetUserName}`);
       console.log(`Target image url: ${targetImageURL}`);
       setTargetName(targetUserName);
       setTargetImageURL(targetImageURL);
+      setTargetRole(targetRole);
+      setTargetTeam(targetTeam);
     } catch (error) {
       console.error("Error fetching target user:", error);
     }
@@ -367,10 +376,22 @@ const MissionDM = () => {
         </View>
       </View>
       <View style={styles.targetBox}>
-        <Text style={styles.tileTitleText}>TARGET INFO</Text>
+        <View style={styles.tileHeader}>
+          <FontAwesomeIcon icon={faBullseye} color="#f18221" size={18}/>
+          <Text style={styles.tileTitleText}>TARGET INFO</Text>
+        </View>
+        <View style={styles.targetInfoContainer}>
+          <Image
+            source={{ uri: targetImageURL }}
+            style={styles.avatar}
+          />
+          <View style={styles.targetInfo}>
+            <Text style={styles.targetName}>{targetName}</Text>
+            <Text style={styles.targetTag}>Captain</Text>
+            <Text style={styles.targetTag}>Digital Marketing</Text>
+          </View>
 
-        
-
+        </View>
       </View>
 
       <View style={styles.userBox}>
@@ -550,9 +571,54 @@ const styles = StyleSheet.create({
   tileTitleText: {
     color: "white",
     fontSize: 14,
-    paddingVertical: 16,
+    
     textAlign: "left",
-    left: 15,
+    marginLeft: 10,
+  },
+  tileHeader: {
+    paddingVertical: 16,
+    flexDirection: "row",
+    justifyContent: "flex-start",
+    marginLeft: 15,
+    marginBottom: 0,
+  },
+  avatar: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    marginRight: 25,
+  },
+  targetInfoContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+
+    paddingLeft: 20,
+    paddingRight: 20,
+  },
+  targetName: {
+    color: "white",
+    fontSize: 24,
+    fontWeight: "bold",
+  },
+  tagsContainer: {
+    minWidth: "85%",
+    maxWidth: "85%",
+    display: "flex",
+    flexDirection: "row",
+    flexWrap: "wrap",
+  },
+
+section: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 5,
+  },
+
+targetTag: {
+    fontSize: 14,
+    color: "white",
+    marginRight: 5,
+    marginLeft: 5,
   },
   button: {
     margin: 2,
