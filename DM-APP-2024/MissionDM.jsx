@@ -330,6 +330,54 @@ const MissionDM = () => {
     }
   };
 
+  return (
+    <View
+      style={{
+        flex: 1,
+        alignItems: "center",
+        backgroundColor: "#1F1F1F",
+      }}
+    >
+      
+      <View style={styles.roundBox}>
+        
+        <View style={styles.inGameTimeContainer}>
+          <View style={styles.inGameTimeBox}>
+            <Text style={styles.inGameTimeValue}>{timeLeft.days}</Text>
+            <Text style={styles.timeLabel}>Days</Text>
+          </View>
+          <View style={styles.inGameTimeBox}>
+            <Text style={styles.inGameTimeValue}>
+              {String(timeLeft.hours).padStart(2, "0")}
+            </Text>
+            <Text style={styles.timeLabel}>Hours</Text>
+          </View>
+          <View style={styles.inGameTimeBox}>
+            <Text style={styles.inGameTimeValue}>
+              {String(timeLeft.minutes).padStart(2, "0")}
+            </Text>
+            <Text style={styles.timeLabel}>Minutes</Text>
+          </View>
+          <View style={styles.inGameTimeBox}>
+            <Text style={styles.inGameTimeValue}>
+              {String(timeLeft.seconds).padStart(2, "0")}
+            </Text>
+            <Text style={styles.timeLabel}>Seconds</Text>
+          </View>
+        </View>
+      </View>
+      <View style={styles.targetBox}>
+        
+      </View>
+
+      <View style={styles.userBox}>
+
+        </View>
+
+
+    </View>
+  );
+
   if (inGame && gameActive) {
     return (
       <View
@@ -526,7 +574,6 @@ const styles = StyleSheet.create({
   inGameTimeContainer: {
     flexDirection: "row",
     justifyContent: "center",
-    top: 400,
   },
   otherContainer: {
     flexDirection: "column",
@@ -565,13 +612,39 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     marginTop: 5,
   },
-  interiorBox: {
-    top: 180,
+  roundBox: {
+    marginTop: 100,
     borderRadius: 9,
     backgroundColor: "#233d72",
-    width: 340,
-    height: 560,
-    position: "absolute",
+    width: '85%',
+    shadowOpacity: 1,
+    elevation: 4,
+    shadowRadius: 4,
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowColor: "rgba(0, 0, 0, 0.25)",
+  },
+  targetBox: {
+    marginTop: 50,
+    borderRadius: 9,
+    backgroundColor: "#233d72",
+    width: '85%',
+    shadowOpacity: 1,
+    elevation: 4,
+    shadowRadius: 4,
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowColor: "rgba(0, 0, 0, 0.25)",
+  },
+  userBox: {
+    marginTop: 50,
+    borderRadius: 9,
+    backgroundColor: "#233d72",
+    width: '85%',
     shadowOpacity: 1,
     elevation: 4,
     shadowRadius: 4,
@@ -587,7 +660,6 @@ const styles = StyleSheet.create({
     height: 75,
   },
   missiondm: {
-    top: 150,
     fontSize: 24,
     fontWeight: "700",
     fontFamily: "Outfit-Bold",
@@ -598,7 +670,6 @@ const styles = StyleSheet.create({
     display: "flex",
     color: "#fff",
     left: 27,
-    position: "absolute",
   },
   groupChild: {
     borderRadius: 10,
