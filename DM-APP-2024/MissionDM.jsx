@@ -7,6 +7,7 @@ import {
   Alert,
   Image,
   Modal,
+  TextInput,
 } from "react-native";
 import { auth, db } from "./Firebase/AuthManager";
 import {
@@ -22,6 +23,7 @@ import {
 } from "firebase/firestore";
 import { getUserInfo } from "./api/index";
 import { getUserData, updateUserData } from "./Firebase/UserManager";
+import FontAwesome from "react-native-vector-icons/FontAwesome";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 import { faBullseye } from "@fortawesome/free-solid-svg-icons";
 import { faCircleInfo } from "@fortawesome/free-solid-svg-icons"
@@ -50,6 +52,7 @@ const MissionDM = () => {
   const [targetImageURL, setTargetImageURL] = useState("");
   const [targetRole, setTargetRole] = useState("");
   const [targetTeam, setTargetTeam] = useState("");
+  const [enteredCode, setEnteredCode] = useState("");
 
   useEffect(() => {
     getUserData()
@@ -340,6 +343,24 @@ const MissionDM = () => {
     }
   };
 
+  const handleCodeSubmit = async () => {
+    try {
+      const currentUID = auth.currentUser.uid;
+      const userDocRef = doc(db, "MissionDMPlayers", currentUID);
+      const userDoc = await getDoc(userDocRef);
+
+      if (userDoc.exists() && userDoc.data().code === enteredCode) {
+        Alert.alert("Success", "Code accepted!");
+        // Add any additional logic for when the code is accepted
+      } else {
+        Alert.alert("Error", "Invalid code. Please try again.");
+      }
+    } catch (error) {
+      console.error("Error verifying code:", error);
+      Alert.alert("Error", "Failed to verify code. Please try again.");
+    }
+  };
+
   return (
     <View
       style={{
@@ -348,9 +369,8 @@ const MissionDM = () => {
         backgroundColor: "#1F1F1F",
       }}
     >
-      
       <View style={styles.roundBox}>
-      <Text style={styles.header}>ROUND {currentRound}</Text>
+        <Text style={styles.header}>ROUND {currentRound}</Text>
         <View style={styles.inGameTimeContainer}>
           <View style={styles.inGameTimeBox}>
             <Text style={styles.inGameTimeValue}>{timeLeft.days}</Text>
@@ -381,20 +401,35 @@ const MissionDM = () => {
       </View>
       <View style={styles.targetBox}>
         <View style={styles.tileHeader}>
-          <FontAwesomeIcon icon={faBullseye} color="#f18221" size={18}/>
+          <FontAwesomeIcon icon={faBullseye} color="#f18221" size={18} />
           <Text style={styles.tileTitleText}>TARGET INFO</Text>
         </View>
         <View style={styles.targetInfoContainer}>
-          <Image
-            source={{ uri: targetImageURL }}
-            style={styles.avatar}
-          />
+          <Image source={{ uri: targetImageURL }} style={styles.avatar} />
           <View style={styles.targetInfo}>
             <Text style={styles.targetName}>{targetName}</Text>
-            <Text style={styles.targetTag}>Captain</Text>
-            <Text style={styles.targetTag}>Digital Marketing</Text>
+            <View style={styles.tagsContainer}>
+              <View style={styles.section}>
+                <FontAwesome name="circle" size={15} color="#f18221" />
+                <Text style={styles.targetTag}>Digital Marketing</Text>
+              </View>
+              <View style={styles.section}>
+                <FontAwesome name="circle" size={15} color="#f18221" />
+                <Text style={styles.targetTag}>Captain</Text>
+              </View>
+            </View>
           </View>
-
+        </View>
+        <View style={styles.enterCodeContainer}>
+          <Text style={styles.enterCodeText}>If target is eliminated, enter their code here:</Text>
+          <TextInput
+            style={styles.codeInput}
+            placeholder="Enter code"
+            placeholderTextColor="#888"
+            onChangeText={(text) => setEnteredCode(text)}
+            value={enteredCode}
+            onSubmitEditing={handleCodeSubmit}
+          />
         </View>
       </View>
 
@@ -590,6 +625,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     flexDirection: "row",
     justifyContent: "flex-start",
+    alignItems: "center",
     marginLeft: 15,
     marginBottom: 0,
   },
@@ -609,7 +645,7 @@ const styles = StyleSheet.create({
   targetInfoContainer: {
     flexDirection: "row",
     alignItems: "center",
-
+    marginBottom: 20,
     paddingLeft: 20,
     paddingRight: 20,
   },
@@ -617,10 +653,15 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 24,
     fontWeight: "bold",
+    minWidth: "80%",
+    maxWidth: "80%",
+    display: "flex",
+    flexDirection: "row",
+    flexWrap: "wrap",
   },
   tagsContainer: {
-    minWidth: "85%",
-    maxWidth: "85%",
+    minWidth: "80%",
+    maxWidth: "80%",
     display: "flex",
     flexDirection: "row",
     flexWrap: "wrap",
@@ -637,6 +678,23 @@ targetTag: {
     color: "white",
     marginRight: 5,
     marginLeft: 5,
+  },
+  enterCodeContainer: {
+    paddingRight: 20,
+    paddingLeft: 20,
+    marginBottom: 20,
+  },
+  enterCodeText: {
+    color: "white",
+    fontSize: 12, 
+    marginLeft: 10,
+  },
+  codeInput: {
+    backgroundColor: "#1e1e1e",
+    color: "white",
+    padding: 15,
+    borderRadius: 9,
+    marginTop: 5,
   },
   button: {
     margin: 2,
@@ -720,7 +778,7 @@ targetTag: {
     shadowColor: "rgba(0, 0, 0, 0.25)",
   },
   targetBox: {
-    marginTop: 50,
+    marginTop: 30,
     borderRadius: 9,
     backgroundColor: "#233d72",
     width: '85%',
@@ -734,7 +792,7 @@ targetTag: {
     shadowColor: "rgba(0, 0, 0, 0.25)",
   },
   userBox: {
-    marginTop: 50,
+    marginTop: 30,
     borderRadius: 9,
     backgroundColor: "#233d72",
     width: '85%',
