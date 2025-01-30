@@ -367,7 +367,10 @@ const MissionDM = () => {
         </View>
       </View>
       <View style={styles.targetBox}>
+        <Text style={styles.tileTitleText}>TARGET INFO</Text>
+
         
+
       </View>
 
       <View style={styles.userBox}>
@@ -543,6 +546,13 @@ const styles = StyleSheet.create({
     marginTop: 20,
     color: "white",
     textAlign: "center",
+  },
+  tileTitleText: {
+    color: "white",
+    fontSize: 14,
+    paddingVertical: 16,
+    textAlign: "left",
+    left: 15,
   },
   button: {
     margin: 2,
