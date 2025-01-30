@@ -648,7 +648,6 @@ const styles = StyleSheet.create({
   eliminationHeader: {
     fontSize: 32,
     fontWeight: "bold",
-    marginBottom: 10,
     color: "white",
     textAlign: "center",
   },
@@ -751,7 +750,7 @@ targetTag: {
     justifyContent: "center",
     alignItems: "center",
     gap: 10,
-    marginBottom: 5,
+    marginBottom: 10,
   },
   otherContainer: {
     flexDirection: "column",
