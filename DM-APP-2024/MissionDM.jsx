@@ -442,9 +442,34 @@ const MissionDM = () => {
         <FontAwesomeIcon icon={faCrosshairs} color="#FFFFFF" size={25}/>
         <Text style={styles.eliminationHeader}>12 Eliminations</Text>
       </View>
-        </View>
-
-
+      <View style={styles.buttonBox}>
+      <TouchableOpacity
+                style={styles.orangeButton}
+                onPress={() => setIsStatsModalVisible(true)}
+              >
+                <Text style={styles.orangeButtonText}>Game Stats</Text>
+        </TouchableOpacity>
+      </View>
+      </View>
+      <Modal
+          animationType="slide"
+          transparent={true}
+          visible={isStatsModalVisible}
+          onRequestClose={() => setIsStatsModalVisible(false)}
+        >
+          <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Game Stats</Text>
+              <Text style={styles.modalText}>Here are your game stats!</Text>
+              <TouchableOpacity
+                style={styles.closeButton}
+                onPress={() => setIsStatsModalVisible(false)}
+              >
+                <Text style={styles.closeButtonText}>Close</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
     </View>
   );
 
@@ -632,8 +657,9 @@ const styles = StyleSheet.create({
   eliminationHeader: {
     fontSize: 32,
     fontWeight: "bold",
+    marginBottom: 10,
     color: "white",
-
+    textAlign: "center",
   },
   avatar: {
     width: 100,
@@ -732,7 +758,7 @@ targetTag: {
     justifyContent: "center",
     alignItems: "center",
     gap: 10,
-    marginBottom: 20,
+    marginBottom: 5,
   },
   otherContainer: {
     flexDirection: "column",
@@ -844,20 +870,17 @@ targetTag: {
     top: 295,
     left: 230,
   },
-  buttonBox: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: 15,
-  },
   orangeButton: {
-    flex: 1,
     backgroundColor: "#f18221",
-    marginHorizontal: 10,
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 10,
     height: 40,
+    width: 120,
+  },
+  buttonBox:{
+    alignItems: "center",
+    marginBottom: 20,
   },
   orangeButtonText: {
     color: "white",
