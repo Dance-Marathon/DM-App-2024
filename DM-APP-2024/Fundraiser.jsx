@@ -1,5 +1,6 @@
 import React, { useContext, useState, useEffect } from "react";
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
+import Toast from "react-native-toast-message";
 import {
   View,
   Text,
@@ -186,9 +187,25 @@ const Fundraiser = () => {
   const copyToClipboard = () => {
     const text = userInfo.donateURL;
     Clipboard.setStringAsync(text)
-      .then(() => alert("DonorDrive Link Copied!"))
-      .catch((err) => console.error("Error copying to clipboard:", err));
+    .then(() => {
+      Toast.show({
+        type: "success",
+        text1: "DonorDrive Link Copied!",
+        position: "bottom",
+        visibilityTime: 3000, // Auto-hide in 3 seconds
+        autoHide: true,
+        // Styling
+        text1Style: {
+          color: "black", 
+          fontSize: 20,
+          fontWeight: "bold",
+          textAlign: "center", 
+        },
+      });
+    })
+    .catch((err) => console.error("Error copying to clipboard:", err));
   };
+
 
   const openBadgeModal = (badge) => {
     setSelectedBadge(badge);
@@ -516,6 +533,7 @@ const Fundraiser = () => {
             >
               <Icon name="link" type="font-awesome-5" color="white" />
             </TouchableOpacity>
+            <Toast />
         </View>
       )}
     </View>
