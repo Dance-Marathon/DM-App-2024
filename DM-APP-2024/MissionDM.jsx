@@ -92,6 +92,47 @@ const MissionDM = () => {
     return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
   }
 
+  const eliminate = async (data) => {
+    const { eliminatorId, code } = data;
+
+    if (!eliminatorId || !code) {
+      throw new Error("Missing required fields.");
+    }
+
+    try {
+      const eliminatedSnapshot = await db
+        .collection("MissionDMPlayers")
+        .where("code", "==", code)
+        .get();
+
+      if (eliminatedSnapshot.empty) {
+        throw new Error("Invalid code.");
+      }
+
+      const selfRef = doc(db, "MissionDMPlayers", auth.currentUser.uid);
+      const selfDoc = await getDoc(selfRef);
+
+      const eliminatedDoc = eliminatedSnapshot.docs[0];
+      const eliminatedId = eliminatedDoc.id;
+      if (selfDoc.exists()) {
+        if (eliminatedId != selfDoc.data().targetId) {
+          throw new Error("Incorrect target!");
+        }
+      } else {
+        throw new Error("Code doesn't exist");
+      }
+
+      await db.collection("MissionDMPlayers").doc(eliminatedId).update({
+        isAlive: false,
+      });
+
+      return { message: "Elimination verified." };
+    } catch (error) {
+      console.error("Error in eliminate function:", error);
+      throw new Error("Elimination failed.");
+    }
+  };
+
   const getRoundInfo = async () => {
     const col = collection(db, "MissionDMGames");
     const snap = await getDocs(col);
@@ -332,7 +373,6 @@ const MissionDM = () => {
       const targetImageURL = targetUserDoc.data().imageURL;
       const targetRole = targetUserDoc.data().role;
       const targetTeam = targetUserDoc.data().teamName;
-      
 
       console.log(`Target user name: ${targetUserName}`);
       console.log(`Target image url: ${targetImageURL}`);
@@ -384,15 +424,21 @@ const MissionDM = () => {
           </View>
           <Text style={styles.colon}>:</Text>
           <View style={styles.inGameTimeBox}>
-            <Text style={styles.inGameTimeValue}>{String(timeLeft.hours).padStart(2, "0")}</Text>
+            <Text style={styles.inGameTimeValue}>
+              {String(timeLeft.hours).padStart(2, "0")}
+            </Text>
           </View>
           <Text style={styles.colon}>:</Text>
           <View style={styles.inGameTimeBox}>
-            <Text style={styles.inGameTimeValue}>{String(timeLeft.minutes).padStart(2, "0")}</Text>
+            <Text style={styles.inGameTimeValue}>
+              {String(timeLeft.minutes).padStart(2, "0")}
+            </Text>
           </View>
           <Text style={styles.colon}>:</Text>
           <View style={styles.inGameTimeBox}>
-            <Text style={styles.inGameTimeValue}>{String(timeLeft.seconds).padStart(2, "0")}</Text>
+            <Text style={styles.inGameTimeValue}>
+              {String(timeLeft.seconds).padStart(2, "0")}
+            </Text>
           </View>
         </View>
       </View>
@@ -404,8 +450,11 @@ const MissionDM = () => {
         <View style={styles.targetInfoContainer}>
           <TouchableOpacity onPress={() => setIsImageModalVisible(true)}>
             <View style={styles.imageOverlay}>
-              <Image source={{ uri: targetImageURL }} style={styles.avatar}/>
-              <Image source={CrosshairOverImage} style={styles.crosshairOverlay}/> 
+              <Image source={{ uri: targetImageURL }} style={styles.avatar} />
+              <Image
+                source={CrosshairOverImage}
+                style={styles.crosshairOverlay}
+              />
             </View>
           </TouchableOpacity>
           <View style={styles.targetInfo}>
@@ -423,7 +472,9 @@ const MissionDM = () => {
           </View>
         </View>
         <View style={styles.enterCodeContainer}>
-          <Text style={styles.enterCodeText}>If target is eliminated, enter their code here:</Text>
+          <Text style={styles.enterCodeText}>
+            If target is eliminated, enter their code here:
+          </Text>
           <TextInput
             style={styles.codeInput}
             placeholder="Enter code"
@@ -436,42 +487,42 @@ const MissionDM = () => {
       </View>
 
       <View style={styles.userBox}>
-      <View style={styles.tileHeader}>
-          <FontAwesomeIcon icon={faCircleInfo} color="#f18221" size={18}/>
+        <View style={styles.tileHeader}>
+          <FontAwesomeIcon icon={faCircleInfo} color="#f18221" size={18} />
           <Text style={styles.tileTitleText}>MY INFO</Text>
-      </View>
-      <View style={styles.eliminationContainer}>
-        <FontAwesomeIcon icon={faCrosshairs} color="#FFFFFF" size={25}/>
-        <Text style={styles.eliminationHeader}>12 Eliminations</Text>
-      </View>
-      <View style={styles.buttonBox}>
-      <TouchableOpacity
-                style={styles.orangeButton}
-                onPress={() => setIsStatsModalVisible(true)}
-              >
-                <Text style={styles.orangeButtonText}>Game Stats</Text>
-        </TouchableOpacity>
-      </View>
+        </View>
+        <View style={styles.eliminationContainer}>
+          <FontAwesomeIcon icon={faCrosshairs} color="#FFFFFF" size={25} />
+          <Text style={styles.eliminationHeader}>12 Eliminations</Text>
+        </View>
+        <View style={styles.buttonBox}>
+          <TouchableOpacity
+            style={styles.orangeButton}
+            onPress={() => setIsStatsModalVisible(true)}
+          >
+            <Text style={styles.orangeButtonText}>Game Stats</Text>
+          </TouchableOpacity>
+        </View>
       </View>
       <Modal
-          animationType="fade"
-          transparent={true}
-          visible={isStatsModalVisible}
-          onRequestClose={() => setIsStatsModalVisible(false)}
-        >
-          <View style={styles.modalContainer}>
-            <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>Game Stats</Text>
-              <Text style={styles.modalText}>Here are your game stats!</Text>
-              <TouchableOpacity
-                style={styles.closeButton}
-                onPress={() => setIsStatsModalVisible(false)}
-              >
-                <Text style={styles.closeButtonText}>Close</Text>
-              </TouchableOpacity>
-            </View>
+        animationType="fade"
+        transparent={true}
+        visible={isStatsModalVisible}
+        onRequestClose={() => setIsStatsModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Game Stats</Text>
+            <Text style={styles.modalText}>Here are your game stats!</Text>
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={() => setIsStatsModalVisible(false)}
+            >
+              <Text style={styles.closeButtonText}>Close</Text>
+            </TouchableOpacity>
           </View>
-        </Modal>
+        </View>
+      </Modal>
       <Modal
         animationType="fade"
         transparent={true}
@@ -480,7 +531,10 @@ const MissionDM = () => {
       >
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
-            <Image source={{ uri: targetImageURL }} style={styles.zoomedImage} />
+            <Image
+              source={{ uri: targetImageURL }}
+              style={styles.zoomedImage}
+            />
             <TouchableOpacity
               style={styles.closeButton}
               onPress={() => setIsImageModalVisible(false)}
@@ -662,7 +716,7 @@ const styles = StyleSheet.create({
   tileTitleText: {
     color: "white",
     fontSize: 14,
-    
+
     textAlign: "left",
     marginLeft: 10,
   },
@@ -728,13 +782,13 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
   },
 
-section: {
+  section: {
     flexDirection: "row",
     alignItems: "center",
     marginTop: 5,
   },
 
-targetTag: {
+  targetTag: {
     fontSize: 14,
     color: "white",
     marginRight: 5,
@@ -747,7 +801,7 @@ targetTag: {
   },
   enterCodeText: {
     color: "white",
-    fontSize: 12, 
+    fontSize: 12,
     marginLeft: 10,
   },
   codeInput: {
@@ -837,7 +891,7 @@ targetTag: {
     marginTop: 100,
     borderRadius: 9,
     backgroundColor: "#233d72",
-    width: '85%',
+    width: "85%",
     shadowOpacity: 1,
     elevation: 4,
     shadowRadius: 4,
@@ -851,7 +905,7 @@ targetTag: {
     marginTop: 30,
     borderRadius: 9,
     backgroundColor: "#233d72",
-    width: '85%',
+    width: "85%",
     shadowOpacity: 1,
     elevation: 4,
     shadowRadius: 4,
@@ -865,7 +919,7 @@ targetTag: {
     marginTop: 30,
     borderRadius: 9,
     backgroundColor: "#233d72",
-    width: '85%',
+    width: "85%",
     shadowOpacity: 1,
     elevation: 4,
     shadowRadius: 4,
@@ -920,7 +974,7 @@ targetTag: {
     height: 40,
     width: 120,
   },
-  buttonBox:{
+  buttonBox: {
     alignItems: "center",
     marginBottom: 20,
   },
