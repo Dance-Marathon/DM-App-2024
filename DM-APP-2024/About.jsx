@@ -186,6 +186,7 @@ const About = () => {
             onPress={() => navigation.navigate("FAQ")}
             buttonStyle={styles.button}
           />
+          
           <Button
             icon={
               <Icon name="heart" type="font-awesome" color="white" size={16} style={{width: 30, marginRight: 10}}/>
