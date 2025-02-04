@@ -1,6 +1,6 @@
 import React, { useContext, useState, useEffect } from "react";
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
-import Toast from "react-native-toast-message";
+import Toast, {BaseToast} from "react-native-toast-message";
 import {
   View,
   Text,
@@ -70,6 +70,24 @@ const Fundraiser = () => {
     isLoadingMilestones,
     isLoadingDonations,
   };
+
+  const toastConfig = {
+    success: (props) => (
+      <BaseToast
+        {...props}
+        style={{
+          borderLeftColor: '#EB9F68',
+        }}
+        contentContainerStyle={{ paddingHorizontal: 15 }}
+        text1Style={{
+          color: "black", 
+          fontSize: 20,
+          fontWeight: "bold",
+          textAlign: "center",
+        }}
+      />
+    ),
+    }
 
   Object.entries(variables).forEach(([key, value]) => {
     if (value === undefined) {
@@ -194,13 +212,6 @@ const Fundraiser = () => {
         position: "bottom",
         visibilityTime: 3000, // Auto-hide in 3 seconds
         autoHide: true,
-        // Styling
-        text1Style: {
-          color: "black", 
-          fontSize: 20,
-          fontWeight: "bold",
-          textAlign: "center", 
-        },
       });
     })
     .catch((err) => console.error("Error copying to clipboard:", err));
@@ -536,6 +547,7 @@ const Fundraiser = () => {
             <Toast />
         </View>
       )}
+      <Toast config={toastConfig} />
     </View>
   );
 };
