@@ -51,32 +51,98 @@ const fetchData = async () => {
   }
 };
 
+// async function sendPushNotificationsToAll(expoPushTokens, notification) {
+//   console.log("Sending notifications...");
+//   const messages = [];
+
+//   for (const token of expoPushTokens) {
+//     messages.push({
+//       to: token,
+//       sound: "default",
+//       title: notification.title,
+//       body: notification.message,
+//       //data: { someData: 'goes here' },
+//     });
+
+//     console.log(token);
+//   }
+//   for (const message of messages) {
+//     //console.log(`Sending to token: ${message.to}`);
+//     await fetch("https://exp.host/--/api/v2/push/send", {
+//       method: "POST",
+//       headers: {
+//         Accept: "application/json",
+//         "Accept-encoding": "gzip, deflate",
+//         "Content-Type": "application/json",
+//       },
+//       body: JSON.stringify(message),
+//     });
+//   }
+// }
+
 async function sendPushNotificationsToAll(expoPushTokens, notification) {
   console.log("Sending notifications...");
-  const messages = [];
+
+  const batchSize = 50;
+  let messages = [];
 
   for (const token of expoPushTokens) {
+    if (!token || token.trim() === "") {
+      console.warn("Skipping empty or invalid token:", token);
+      continue;
+    }
+
     messages.push({
       to: token,
       sound: "default",
       title: notification.title,
       body: notification.message,
-      //data: { someData: 'goes here' },
     });
 
-    console.log(token);
+    console.log(`Added token: ${token}`);
+
+    if (messages.length >= batchSize) {
+      await sendBatch(messages);
+      messages = [];
+    }
   }
-  for (const message of messages) {
-    //console.log(`Sending to token: ${message.to}`);
-    await fetch("https://exp.host/--/api/v2/push/send", {
+
+  if (messages.length > 0) {
+    await sendBatch(messages);
+  }
+}
+
+async function sendBatch(batch) {
+  if (batch.length === 0) {
+    console.warn("Skipping empty batch.");
+    return;
+  }
+
+  try {
+    console.log(`Sending batch of ${batch.length} notifications...`);
+
+    const response = await fetch("https://exp.host/--/api/v2/push/send", {
       method: "POST",
       headers: {
         Accept: "application/json",
         "Accept-encoding": "gzip, deflate",
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(message),
+      body: JSON.stringify(batch),
     });
+
+    const json = await response.json();
+    console.log("Expo response:", JSON.stringify(json, null, 2));
+
+    if (json.data) {
+      json.data.forEach((result, index) => {
+        if (result.status === "error") {
+          console.error(`Error sending to ${batch[index].to}:`, result.message);
+        }
+      });
+    }
+  } catch (error) {
+    console.error("Error sending notifications:", error);
   }
 }
 
@@ -231,12 +297,12 @@ const Admin = ({ route }) => {
       .catch((error) => {
         console.error("Error sending notifications:", error);
       });
-    /* sendPushNotification('ExponentPushToken[UVH4ZkJqvUH8iQJRWE2Z5o]',{
-      date: getCurrentDate(),
-      message: message,
-      time: getCurrentTime(),
-      title: title
-    }); */
+    // sendPushNotification("ExponentPushToken[QYYQuGIxjfZXo1OpP86uhe]", {
+    //   date: getCurrentDate(),
+    //   message: message,
+    //   time: getCurrentTime(),
+    //   title: title,
+    // });
     await addNotification({
       date: getCurrentDate(),
       message: message,
@@ -278,7 +344,7 @@ const Admin = ({ route }) => {
         <View>
           <Text style={[styles.sectionTitle, { marginTop: 5 }]}>Title</Text>
           <TextInput
-            style={[styles.input, { minHeight: 40 }]}
+            style={styles.input}
             onChangeText={(text) => setTitle(text)}
             placeholder="Enter title here..."
             autoCapitalize="none"
@@ -287,12 +353,12 @@ const Admin = ({ route }) => {
           />
           <Text style={styles.sectionTitle}>Message</Text>
           <TextInput
-            style={[styles.input, { minHeight: 40 }]}
+            style={styles.input}
             onChangeText={(text) => setMessage(text)}
             placeholder="Enter message here..."
             autoCapitalize="none"
             value={message}
-            // multiline={true}
+            multiline={true}
             // numberOfLines={4}
             placeholderTextColor="white"
           />
@@ -449,7 +515,7 @@ const eventItemWidth = Dimensions.get("window").width * 0.9;
 
 const styles = StyleSheet.create({
   input: {
-    height: 40,
+    minHeight: 40,
     borderColor: "white",
     borderWidth: 1,
     marginBottom: 5,
@@ -458,6 +524,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#1F1F1F",
     width: "95%",
     left: 10,
+    color: "white",
   },
   button: {
     backgroundColor: "#233D72",
