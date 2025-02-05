@@ -4,8 +4,8 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createStackNavigator } from "@react-navigation/stack";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth, db } from "./Firebase/AuthManager";
-import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { faSparkles } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
+import { faSparkles } from "@fortawesome/free-solid-svg-icons";
 import {
   doc,
   getDoc,
@@ -217,19 +217,16 @@ const App = () => {
     const currentUID = auth.currentUser.uid;
     const docRef = doc(db, "Users", currentUID);
     const docSnap = await getDoc(docRef);
+    console.log("Token: ", expoPushToken);
     if (docSnap.exists()) {
       const data = docSnap.data();
-      if (!data.notificationToken) {
+      if (data.notificationToken != expoPushToken) {
         await addUserExpoPushToken(auth.currentUser.uid, expoPushToken);
       } else {
-        console.log("Token exists");
+        console.log("Token is already stored in database");
       }
     }
   }
-
-  useEffect(() => {
-    handleToken();
-  }, [expoPushToken]);
 
   useEffect(() => {
     registerForPushNotificationsAsync().then((token) => {
@@ -253,6 +250,10 @@ const App = () => {
       Notifications.removeNotificationSubscription(responseListener.current);
     };
   }, []);
+
+  useEffect(() => {
+    handleToken();
+  }, [expoPushToken]);
 
   if (loading) {
     return null;
