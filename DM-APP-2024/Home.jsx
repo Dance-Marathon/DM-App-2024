@@ -475,6 +475,12 @@ const styles = StyleSheet.create({
     alignSelf: "flex-end",
     right: 10,
   },
+  noEvents: {
+    color: "white",
+    fontSize: 14,
+    left: 10,
+    top: 5,
+  },
   eventContainer: {
     backgroundColor: "#EB9F68",
     alignItems: "center",
