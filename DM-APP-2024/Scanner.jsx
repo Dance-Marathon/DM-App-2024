@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -37,6 +37,8 @@ const Scanner = () => {
   const [option3Checked, setOption3Checked] = useState(false);
   const [option4Checked, setOption4Checked] = useState(false);
   const [option5Checked, setOption5Checked] = useState(false);
+
+  const scanLock = useRef(false);
 
   useEffect(() => {
     const getCameraPermissions = async () => {
@@ -103,14 +105,15 @@ const Scanner = () => {
     reason,
     date,
     time,
-    giver
+    giver,
+    value
   ) => {
     const SPREADSHEET_ID = "1VTr6Jq_UbrJ1HEUTxCo0TlLvoLXc5PaPagufrzbAAxY";
 
     try {
       const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/Sheet3:append?valueInputOption=RAW`;
 
-      const rowData = [recipient, team, reason, date, time, giver];
+      const rowData = [recipient, team, reason, date, time, giver, value];
 
       const postData = {
         values: [rowData],
@@ -139,7 +142,7 @@ const Scanner = () => {
     const currentDate = new Date();
 
     const year = currentDate.getFullYear();
-    const month = String(currentDate.getMonth() + 1).padStart(2, "0"); // Months are zero-based
+    const month = String(currentDate.getMonth() + 1).padStart(2, "0");
     const day = String(currentDate.getDate()).padStart(2, "0");
 
     return `${year}-${month}-${day}`;
@@ -163,50 +166,39 @@ const Scanner = () => {
   }, []);
 
   const handleBarCodeScanned = async ({ type, data }) => {
+    if (scanLock.current) return;
+    scanLock.current = true;
     setScanned(true);
+
     const extractedData = await parseQRCodeData(data);
-    if (extractedData) {
+    if (extractedData || extractedData.name !== "undefined") {
       const ACCESS_TOKEN = await getAccessToken();
       setUserData(extractedData);
-
-      const points = [
-        option1Checked,
-        option2Checked,
-        option3Checked,
-        option4Checked,
-        option5Checked,
-      ].filter(Boolean).length;
-      const reasons = [
-        "Checked-In",
-        "Wore DM Shirt to Check-In",
-        "Brought A Friend to Check-In",
-        "Attended All-Member",
-        "Attended Spirit Night",
-      ].filter(
-        (_, index) =>
-          [
-            option1Checked,
-            option2Checked,
-            option3Checked,
-            option4Checked,
-            option5Checked,
-          ][index]
-      );
-
-      if (points > 0) {
-        const date = getCurrentDate();
-        const time = getCurrentTime();
-        const giver = userInfo.displayName;
-
-        for (const reason of reasons) {
+  
+      const options = [
+        { label: "Checked-In", checked: option1Checked, points: 1 },
+        { label: "Wore DM Shirt to Check-In", checked: option2Checked, points: 1 },
+        { label: "Brought A Friend to Check-In", checked: option3Checked, points: 1 },
+        { label: "Attended All-Member", checked: option4Checked, points: 1 },
+        { label: "Attended Spirit Night", checked: option5Checked, points: 2 },
+      ];
+  
+      const selectedOptions = options.filter(option => option.checked);
+  
+      if (selectedOptions.length > 0) {  
+        for (const option of selectedOptions) {
+          const date = getCurrentDate();
+          const time = getCurrentTime();
+          const giver = userInfo.displayName;
           await postRowToSheet(
             ACCESS_TOKEN,
             extractedData.name,
             extractedData.team,
-            reason,
+            option.label,
             date,
             time,
-            giver
+            giver,
+            option.points
           );
         }
       }
@@ -220,7 +212,69 @@ const Scanner = () => {
     setOption3Checked(false);
     setOption4Checked(false);
     setOption5Checked(false);
-  };
+
+    scanLock.current = false;
+  };  
+
+  // const handleBarCodeScanned = async ({ type, data }) => {
+  //   setScanned(true);
+  //   const extractedData = await parseQRCodeData(data);
+  //   if (extractedData) {
+  //     const ACCESS_TOKEN = await getAccessToken();
+  //     setUserData(extractedData);
+
+  //     const points = [
+  //       option1Checked,
+  //       option2Checked,
+  //       option3Checked,
+  //       option4Checked,
+  //       option5Checked,
+  //     ].filter(Boolean).length;
+  //     const reasons = [
+  //       "Checked-In",
+  //       "Wore DM Shirt to Check-In",
+  //       "Brought A Friend to Check-In",
+  //       "Attended All-Member",
+  //       "Attended Spirit Night",
+  //     ].filter(
+  //       (_, index) =>
+  //         [
+  //           option1Checked,
+  //           option2Checked,
+  //           option3Checked,
+  //           option4Checked,
+  //           option5Checked,
+  //         ][index]
+  //     );
+
+  //     if (points > 0) {
+  //       const date = getCurrentDate();
+  //       const time = getCurrentTime();
+  //       const giver = userInfo.displayName;
+
+  //       for (const reason of reasons) {
+  //         await postRowToSheet(
+  //           ACCESS_TOKEN,
+  //           extractedData.name,
+  //           extractedData.team,
+  //           reason,
+  //           date,
+  //           time,
+  //           giver
+  //         );
+  //       }
+  //     }
+  //   } else {
+  //     setUserData({ name: "Invalid QR code", team: "" });
+  //   }
+  //   setModalVisible(false);
+  //   setScanned(false);
+  //   setOption1Checked(false);
+  //   setOption2Checked(false);
+  //   setOption3Checked(false);
+  //   setOption4Checked(false);
+  //   setOption5Checked(false);
+  // };
 
   // Function to parse the QR code data
   const parseQRCodeData = async (data) => {
@@ -407,7 +461,7 @@ const styles = StyleSheet.create({
   statusText: {
     marginTop: 20,
     fontSize: 16,
-    color: "black",
+    color: "white",
     textAlign: "center",
   },
   container: {
