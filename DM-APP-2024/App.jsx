@@ -138,7 +138,7 @@ const App = () => {
       const currentUID = auth.currentUser.uid;
       const docRef = doc(db, "Users", currentUID);
       const docSnap = await getDoc(docRef);
-      console.log("Doc Snap:", docSnap);
+      //console.log("Doc Snap:", docSnap);
       if (docSnap.exists()) {
         const data = docSnap.data();
         setUserIDState(data.donorID);
@@ -220,6 +220,8 @@ const App = () => {
     console.log("Token: ", expoPushToken);
     if (docSnap.exists()) {
       const data = docSnap.data();
+      console.log(data.notificationToken);
+      console.log(expoPushToken);
       if (data.notificationToken != expoPushToken) {
         await addUserExpoPushToken(auth.currentUser.uid, expoPushToken);
       } else {

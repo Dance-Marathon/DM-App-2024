@@ -25,12 +25,12 @@ export const UserProvider = ({ children }) => {
     const fetchUserData = async () => {
       try {
         const userData = await getUserData();
-        console.log("userData", userData);
+        //console.log("userData", userData);
         setUserID(userData.donorID);
         setRole(userData.role);
 
         const userInfoData = await getUserInfo(userData.donorID);
-        console.log("userInfoData", userInfoData);
+        //console.log("userInfoData", userInfoData);
         setUserInfo(userInfoData);
       } catch (err) {
         console.error("Error fetching user info:", err);
@@ -48,7 +48,7 @@ export const UserProvider = ({ children }) => {
       getUserMilestones(userID)
         .then((milestonesData) => {
           setMilestoneInfo(milestonesData);
-          console.log("Fetched Milestones:", milestonesData);
+          //console.log("Fetched Milestones:", milestonesData);
         })
         .catch((err) => {
           console.error("Error fetching milestones:", err);
@@ -65,7 +65,7 @@ export const UserProvider = ({ children }) => {
       getUserDonations(userID)
         .then((donationsData) => {
           setDonationInfo(donationsData);
-          console.log("Fetched Donations:", donationsData);
+          //console.log("Fetched Donations:", donationsData);
         })
         .catch((err) => {
           console.error("Error fetching donations:", err);
@@ -82,7 +82,7 @@ export const UserProvider = ({ children }) => {
       getUserBadges(userID)
         .then((data) => {
           setBadgeInfo(data);
-          console.log("Fetched Badges:", data);
+          //console.log("Fetched Badges:", data);
         })
         .catch((err) => {
           console.error("Error fetching badges:", err);
