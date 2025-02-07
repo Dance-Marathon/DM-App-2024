@@ -46,6 +46,7 @@ const MissionDM = () => {
   const [gameActive, setGameActive] = useState(false);
   const [hasFetchedTarget, setHasFetchedTarget] = useState(false);
   const [currentRound, setCurrentRound] = useState(1);
+  const [role, setRole] = useState("");
 
   const [isTargetModalVisible, setIsTargetModalVisible] = useState(false);
   const [isStatsModalVisible, setIsStatsModalVisible] = useState(false);
@@ -61,6 +62,7 @@ const MissionDM = () => {
       .then((data) => {
         console.log("Fetched User Data:", data);
         setUserIDState(data.donorID);
+        setRole(data.role);
         if (data.inMissionDM) {
           setInGame(true);
         }
@@ -222,6 +224,8 @@ const MissionDM = () => {
           id: userid,
           targetId: target,
           imageURL: userInfo.avatarImageURL,
+          role: role,
+          team: userInfo.teamName,
         },
         { merge: true }
       );
@@ -372,10 +376,12 @@ const MissionDM = () => {
       const targetUserName = targetUserDoc.data().name;
       const targetImageURL = targetUserDoc.data().imageURL;
       const targetRole = targetUserDoc.data().role;
-      const targetTeam = targetUserDoc.data().teamName;
+      const targetTeam = targetUserDoc.data().team;
 
       console.log(`Target user name: ${targetUserName}`);
       console.log(`Target image url: ${targetImageURL}`);
+      console.log(`Target role: ${targetRole}`);
+      console.log(`Target team: ${targetTeam}`);
       setTargetName(targetUserName);
       setTargetImageURL(targetImageURL);
       setTargetRole(targetRole);
@@ -462,11 +468,11 @@ const MissionDM = () => {
             <View style={styles.tagsContainer}>
               <View style={styles.section}>
                 <FontAwesome name="circle" size={15} color="#f18221" />
-                <Text style={styles.targetTag}>Digital Marketing</Text>
+                <Text style={styles.targetTag}>{targetTeam}</Text>
               </View>
               <View style={styles.section}>
                 <FontAwesome name="circle" size={15} color="#f18221" />
-                <Text style={styles.targetTag}>Captain</Text>
+                <Text style={styles.targetTag}>{targetRole}</Text>
               </View>
             </View>
           </View>
@@ -503,6 +509,33 @@ const MissionDM = () => {
             <Text style={styles.orangeButtonText}>Game Stats</Text>
           </TouchableOpacity>
         </View>
+      </View>
+      <View
+        style={{
+          flexDirection: "row",
+          justifyContent: "space-between",
+          marginTop: 10,
+          width: "95%",
+        }}
+      >
+        <TouchableOpacity
+          style={[
+            styles.enrollButton,
+            { flex: 1, marginRight: 5, marginTop: 10 },
+          ]}
+          onPress={unenrollUser}
+        >
+          <Text style={styles.enrollButtonText}>Leave Game</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[
+            styles.enrollButton,
+            { flex: 1, marginLeft: 5, marginTop: 10 },
+          ]}
+          onPress={enrollUser}
+        >
+          <Text style={styles.enrollButtonText}>Enroll In MissionDM</Text>
+        </TouchableOpacity>
       </View>
       <Modal
         animationType="fade"
@@ -737,7 +770,7 @@ const styles = StyleSheet.create({
   imageOverlay: {
     width: 100,
     height: 100,
-    marginRight: 25,
+    marginRight: 15,
   },
   avatar: {
     width: 100,
