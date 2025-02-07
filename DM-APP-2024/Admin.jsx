@@ -1,4 +1,3 @@
-// Page1.js (similar structure for other pages)
 import React, { useEffect, useState } from "react";
 import {
   View,
@@ -19,11 +18,18 @@ import {
 } from "react-native";
 import UpcomingEventsScreen from "./UpcomingEvents";
 const INITIAL_DATE = new Date();
-import { auth, db } from './Firebase/AuthManager';
-import { doc, getDoc, collection, getDocs, setDoc, updateDoc, arrayUnion } from 'firebase/firestore';
+import { auth, db } from "./Firebase/AuthManager";
+import {
+  doc,
+  getDoc,
+  collection,
+  getDocs,
+  setDoc,
+  updateDoc,
+  arrayUnion,
+} from "firebase/firestore";
 
 import { addUserExpoPushToken } from "./Firebase/AuthManager";
-import { getUserData } from "./Firebase/UserManager";
 
 const fetchData = async () => {
   try {
@@ -33,9 +39,8 @@ const fetchData = async () => {
 
     querySnapshot.forEach((doc) => {
       const docData = doc.data();
-        //console.log(docData);
-        fetchedItems.push(docData.notificationToken);
-
+      //console.log(docData);
+      fetchedItems.push(docData.notificationToken);
     });
 
     //console.log('Item:',fetchedItems);
@@ -46,49 +51,115 @@ const fetchData = async () => {
   }
 };
 
+// async function sendPushNotificationsToAll(expoPushTokens, notification) {
+//   console.log("Sending notifications...");
+//   const messages = [];
+
+//   for (const token of expoPushTokens) {
+//     messages.push({
+//       to: token,
+//       sound: "default",
+//       title: notification.title,
+//       body: notification.message,
+//       //data: { someData: 'goes here' },
+//     });
+
+//     console.log(token);
+//   }
+//   for (const message of messages) {
+//     //console.log(`Sending to token: ${message.to}`);
+//     await fetch("https://exp.host/--/api/v2/push/send", {
+//       method: "POST",
+//       headers: {
+//         Accept: "application/json",
+//         "Accept-encoding": "gzip, deflate",
+//         "Content-Type": "application/json",
+//       },
+//       body: JSON.stringify(message),
+//     });
+//   }
+// }
+
 async function sendPushNotificationsToAll(expoPushTokens, notification) {
-  console.log('Sending notifications...');
-  const messages = []
+  console.log("Sending notifications...");
+
+  const batchSize = 50;
+  let messages = [];
 
   for (const token of expoPushTokens) {
-    messages.push({
-    to: token,
-    sound: 'default',
-    title: notification.title,
-    body: notification.message,
-    //data: { someData: 'goes here' },
-    })
+    if (!token || token.trim() === "") {
+      console.warn("Skipping empty or invalid token:", token);
+      continue;
+    }
 
-    console.log(token)
-  }
-  for (const message of messages) {
-    //console.log(`Sending to token: ${message.to}`);
-    await fetch('https://exp.host/--/api/v2/push/send', {
-      method: 'POST',
-      headers: {
-        Accept: 'application/json',
-        'Accept-encoding': 'gzip, deflate',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(message),
+    messages.push({
+      to: token,
+      sound: "default",
+      title: notification.title,
+      body: notification.message,
     });
+
+    console.log(`Added token: ${token}`);
+
+    if (messages.length >= batchSize) {
+      await sendBatch(messages);
+      messages = [];
+    }
+  }
+
+  if (messages.length > 0) {
+    await sendBatch(messages);
+  }
+}
+
+async function sendBatch(batch) {
+  if (batch.length === 0) {
+    console.warn("Skipping empty batch.");
+    return;
+  }
+
+  try {
+    console.log(`Sending batch of ${batch.length} notifications...`);
+
+    const response = await fetch("https://exp.host/--/api/v2/push/send", {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Accept-encoding": "gzip, deflate",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(batch),
+    });
+
+    const json = await response.json();
+    console.log("Expo response:", JSON.stringify(json, null, 2));
+
+    if (json.data) {
+      json.data.forEach((result, index) => {
+        if (result.status === "error") {
+          console.error(`Error sending to ${batch[index].to}:`, result.message);
+        }
+      });
+    }
+  } catch (error) {
+    console.error("Error sending notifications:", error);
   }
 }
 
 async function sendPushNotification(expoPushToken, notification) {
   const message = {
     to: expoPushToken,
-    sound: 'default',
+    sound: "default",
     title: notification.title,
     body: notification.message,
   };
 
-  await fetch('https://exp.host/--/api/v2/push/send', {
-    method: 'POST',
+  await fetch("https://exp.host/--/api/v2/push/send", {
+    method: "POST",
     headers: {
-      Accept: 'application/json',
-      'Accept-encoding': 'gzip, deflate',
-      'Content-Type': 'application/json',
+      Accept: "application/json",
+      "Accept-encoding": "gzip, deflate",
+      "Content-Type": "application/json",
     },
     body: JSON.stringify(message),
   });
@@ -97,47 +168,73 @@ async function sendPushNotification(expoPushToken, notification) {
 function getCurrentDate() {
   const date = new Date();
   const year = date.getFullYear();
-  const month = (date.getMonth() + 1).toString().padStart(2, '0'); // Convert month to 2 digits
-  const day = date.getDate().toString().padStart(2, '0'); // Convert day to 2 digits
+  const month = (date.getMonth() + 1).toString().padStart(2, "0"); // Convert month to 2 digits
+  const day = date.getDate().toString().padStart(2, "0"); // Convert day to 2 digits
   return `${year}-${month}-${day}`;
 }
 
 function getCurrentTime() {
   const date = new Date();
   let hours = date.getHours();
-  const minutes = date.getMinutes().toString().padStart(2, '0');
-  const ampm = hours >= 12 ? 'PM' : 'AM';
+  const minutes = date.getMinutes().toString().padStart(2, "0");
+  const ampm = hours >= 12 ? "PM" : "AM";
   hours = hours % 12;
   hours = hours ? hours : 12; // the hour '0' should be '12'
-  hours = hours.toString().padStart(2, '0'); // Convert hours to 2 digits
+  hours = hours.toString().padStart(2, "0"); // Convert hours to 2 digits
   return `${hours}:${minutes} ${ampm}`;
 }
 
-const Home = ({route}) => {
-
-  const [title, setTitle] = useState('');
-  const [message, setMessage] = useState('');
+const Admin = ({ route }) => {
+  const [title, setTitle] = useState("");
+  const [message, setMessage] = useState("");
+  const [allowedRoles, setAllowedRoles] = useState([]);
+  const [teamBasedPermissions, setTeamBasedPermissions] = useState({});
+  const [newRole, setNewRole] = useState("");
+  const [newTeamRole, setNewTeamRole] = useState("");
+  const [newTeam, setNewTeam] = useState("");
   const [modalVisible, setModalVisible] = useState(false);
-  const [notificationModalVisible, setNotificationModalVisible] = useState(false);
-  const [role, setRole] = useState('');
-  const [userIDState, setUserIDState] = useState('');
-  const [allNotifications, setAllNotifications] = useState({});
 
-  const {expoPushToken} = route.params;
+  const { expoPushToken } = route.params;
 
-  const dismissKeyboard = () => {
-    Keyboard.dismiss();
-  };
-/* 
   useEffect(() => {
-    const interval = setInterval(() => {
-      fetchAllNotifications();
-    }, 120000); // Refresh every two minutes
+    const fetchPermissions = async () => {
+      const docRef = doc(db, "Permissions", "ScannerAccess");
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        setAllowedRoles(data.allowedRoles || []);
+        setTeamBasedPermissions(data.teamBasedPermissions || {});
+      }
+    };
+    fetchPermissions();
+  }, []);
 
-    fetchData(); // Also fetch immediately on component mount
+  const updatePermissions = async () => {
+    const docRef = doc(db, "Permissions", "ScannerAccess");
+    await updateDoc(docRef, {
+      allowedRoles,
+      teamBasedPermissions,
+    });
+    Alert.alert("Success", "Permissions updated successfully!");
+  };
 
-    return () => clearInterval(interval); // Clear interval on component unmount
-  }, []); */
+  const addTeamPermission = () => {
+    if (newTeamRole && newTeam) {
+      setTeamBasedPermissions((prev) => ({
+        ...prev,
+        [newTeamRole]: [...(prev[newTeamRole] || []), newTeam],
+      }));
+      setNewTeamRole("");
+      setNewTeam("");
+    }
+  };
+
+  const removeTeamPermission = (role, team) => {
+    setTeamBasedPermissions((prev) => ({
+      ...prev,
+      [role]: prev[role].filter((t) => t !== team),
+    }));
+  };
 
   const addNotification = async (notification) => {
     try {
@@ -145,7 +242,7 @@ const Home = ({route}) => {
       const notificationDate = notification.date; // Ensure that 'notification' has a 'date' property
       const dateDocRef = doc(notificationsRef, notificationDate);
       const docSnapshot = await getDoc(dateDocRef);
-  
+
       if (docSnapshot.exists()) {
         // If the document exists, append the new event to the 'events' array
         await updateDoc(dateDocRef, {
@@ -164,44 +261,6 @@ const Home = ({route}) => {
     }
   };
 
-  const fetchAllNotifications = async () => {
-    try {
-      console.log('Starting to fetch notifications...');
-      const notificationsRef = collection(db, "Notifications");
-      const querySnapshot = await getDocs(notificationsRef);
-      const fetchedNotifs = [];
-  
-      querySnapshot.forEach((docSnapshot) => {
-        const docData = docSnapshot.data();
-        const eventsArray = docData.events; // This is an array based on your Firestore structure
-  
-        if (Array.isArray(eventsArray)) {
-          eventsArray.forEach(event => {
-            fetchedNotifs.push({
-              ...event, // Spread operator to get all properties of the event
-              id: `${docSnapshot.id}_${event.time}` // Construct a unique id for the keyExtractor later
-            });
-          });
-        }
-      });
-  
-      setAllNotifications(fetchedNotifs); // Assuming setAllNotifications is a state setter
-    } catch (error) {
-      console.error("Error fetching notifications:", error);
-    }
-  };
-  
-  useEffect(() => {
-    getUserData().then((data) => {
-      setUserIDState(data.donorID);
-      setRole(data.role);
-    })
-    .catch((err) => {
-      console.error(err);
-      setError(err);
-    });
-  }, []);
-
   useEffect(() => {
     const getUserRole = async () => {
       if (auth.currentUser) {
@@ -213,11 +272,12 @@ const Home = ({route}) => {
           const data = docSnap.data();
           if (!data.notificationToken) {
             await addUserExpoPushToken(auth.currentUser.uid, expoPushToken);
-        } else {
-          console.log("Token exists");
-        }}
+          } else {
+            console.log("Token exists");
+          }
+        }
       } else {
-        console.log('auth.currentUser is null, waiting for authentication.');
+        console.log("auth.currentUser is null, waiting for authentication.");
       }
     };
     getUserRole();
@@ -229,108 +289,254 @@ const Home = ({route}) => {
       date: getCurrentDate(),
       message: message,
       time: getCurrentTime(),
-      title: title
-    }).then(() => {
-      console.log('All notifications sent!');
-    }).catch(error => {
-      console.error('Error sending notifications:', error);
-    });
-    /* sendPushNotification('ExponentPushToken[UVH4ZkJqvUH8iQJRWE2Z5o]',{
+      title: title,
+    })
+      .then(() => {
+        console.log("All notifications sent!");
+      })
+      .catch((error) => {
+        console.error("Error sending notifications:", error);
+      });
+    // sendPushNotification("ExponentPushToken[QYYQuGIxjfZXo1OpP86uhe]", {
+    //   date: getCurrentDate(),
+    //   message: message,
+    //   time: getCurrentTime(),
+    //   title: title,
+    // });
+    await addNotification({
       date: getCurrentDate(),
       message: message,
       time: getCurrentTime(),
-      title: title
-    }); */
-    addNotification({
-      date: getCurrentDate(),
-      message: message,
-      time: getCurrentTime(),
-      title: title
+      title: title,
     });
-    setTitle('');
-    setMessage('');
-    }
+    setTitle("");
+    setMessage("");
+  };
 
-    useEffect(() => {
-      fetchAllNotifications();
-    }, []);
+  const confirmSend = () => {
+    Alert.alert(
+      "Send Notification",
+      "Are you sure you want to send this notification?",
+      [
+        // The "Yes" button
+        { text: "Yes", onPress: () => handleClick() },
+        // The "No" button
+        { text: "No", style: "cancel" },
+      ],
+      { cancelable: false }
+    );
+  };
 
-    const confirmSend = () => {
-      Alert.alert(
-        'Send Notification',
-        'Are you sure you want to send this notification?',
-        [
-          // The "Yes" button
-          { text: 'Yes', onPress: () => handleClick() },
-          // The "No" button
-          { text: 'No', style: 'cancel' },
-        ],
-        { cancelable: false }
-      );
-    };
+  return (
+    <View
+      style={{
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+        backgroundColor: "#1F1F1F",
+      }}
+    >
+      <View style={styles.notificationsBox}>
+        <View style={styles.header}>
+          <View style={styles.smallCircle} />
+          <Text style={styles.headerText}>NOTIFICATIONS</Text>
+        </View>
+        <View>
+          <Text style={[styles.sectionTitle, { marginTop: 5 }]}>Title</Text>
+          <TextInput
+            style={styles.input}
+            onChangeText={(text) => setTitle(text)}
+            placeholder="Enter title here..."
+            autoCapitalize="none"
+            value={title}
+            placeholderTextColor="white"
+          />
+          <Text style={styles.sectionTitle}>Message</Text>
+          <TextInput
+            style={styles.input}
+            onChangeText={(text) => setMessage(text)}
+            placeholder="Enter message here..."
+            autoCapitalize="none"
+            value={message}
+            multiline={true}
+            // numberOfLines={4}
+            placeholderTextColor="white"
+          />
+        </View>
+        <TouchableOpacity
+          style={[
+            styles.sendButton,
+            {
+              alignSelf: "flex-end",
+              marginRight: 10,
+              marginTop: 5,
+              marginBottom: 10,
+            },
+          ]}
+          onPress={confirmSend}
+        >
+          <Text style={styles.sendMessage}>Send</Text>
+        </TouchableOpacity>
+      </View>
 
-return (
-    <TouchableWithoutFeedback onPress={dismissKeyboard}>
-    <View style={styles.container}>
-      <TextInput
-        style={styles.input}
-        onChangeText={(text) => setTitle(text)}
-        placeholder="Title"
-        autoCapitalize="none"
-        value={title}
-      />
-      <TextInput
-        style={[styles.input, { minHeight: 40 }]}
-        onChangeText={(text) => setMessage(text)}
-        placeholder="Message"
-        autoCapitalize="none"
-        value={message}
-        multiline={true}
-        numberOfLines={4} // Set the number of lines you want to show initially
-        textAlignVertical="top" // Align text to the top
-      />
-      <Button
-        title="Send Notification"
-        onPress={confirmSend}
-        buttonStyle={styles.button}
-      />
+      <View style={styles.permsBox}>
+        <View style={styles.header}>
+          <View style={styles.smallCircle} />
+          <Text style={styles.headerText}>SCANNER PERMISSIONS</Text>
+        </View>
+        <View style={styles.currentPermissions}>
+          <Text style={[styles.subHeader, { marginTop: -5 }]}>
+            Currently Selected Roles:
+          </Text>
+          <FlatList
+            data={allowedRoles}
+            keyExtractor={(item, index) => `${item}-${index}`}
+            renderItem={({ item }) => (
+              <Text style={styles.textItem}>- {item}</Text>
+            )}
+          />
+          <Text style={[styles.subHeader, { marginTop: 10 }]}>
+            Team-Based Permissions:
+          </Text>
+          {Object.entries(teamBasedPermissions).map(([role, teams]) => (
+            <View key={role} style={styles.teamSection}>
+              <Text style={styles.textItem}>{role}:</Text>
+              {teams.map((team, index) => (
+                <Text key={`${role}-${team}-${index}`} style={styles.textItem}>
+                  - {team}
+                </Text>
+              ))}
+            </View>
+          ))}
+        </View>
+        <TouchableOpacity
+          style={[
+            styles.accessButton,
+            {
+              alignSelf: "flex-end",
+              marginRight: 10,
+              marginTop: 5,
+              marginBottom: 10,
+            },
+          ]}
+          onPress={() => setModalVisible(true)}
+        >
+          <Text style={styles.accessMessage}>Manage Access</Text>
+        </TouchableOpacity>
+      </View>
+
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.sectionTitle}>Allowed Roles</Text>
+            <FlatList
+              data={allowedRoles}
+              keyExtractor={(item, index) => `${item}-${index}`}
+              renderItem={({ item }) => (
+                <View style={styles.listItem}>
+                  <Text style={styles.textItem}>{item}</Text>
+                  <Button
+                    title="Remove"
+                    onPress={() =>
+                      setAllowedRoles((prev) =>
+                        prev.filter((role) => role !== item)
+                      )
+                    }
+                  />
+                </View>
+              )}
+            />
+            <TextInput
+              style={styles.input}
+              value={newRole}
+              onChangeText={setNewRole}
+              placeholder="Add Role"
+            />
+            <Button
+              title="Add Role"
+              onPress={() => {
+                if (newRole) setAllowedRoles([...allowedRoles, newRole]);
+                setNewRole("");
+              }}
+            />
+
+            <Text style={styles.sectionTitle}>Team-Based Permissions</Text>
+            {Object.keys(teamBasedPermissions).map((role) => (
+              <View key={role} style={styles.teamSection}>
+                <Text style={styles.subHeader}>{role}</Text>
+                {teamBasedPermissions[role].map((team, index) => (
+                  <View
+                    key={`${role}-${team}-${index}`}
+                    style={styles.listItem}
+                  >
+                    <Text style={styles.textItem}>{team}</Text>
+                    <Button
+                      title="Remove"
+                      onPress={() => removeTeamPermission(role, team)}
+                    />
+                  </View>
+                ))}
+              </View>
+            ))}
+            <TextInput
+              style={styles.input}
+              value={newTeamRole}
+              onChangeText={setNewTeamRole}
+              placeholder="Role (e.g., Assistant Director)"
+            />
+            <TextInput
+              style={styles.input}
+              value={newTeam}
+              onChangeText={setNewTeam}
+              placeholder="Team (e.g., Recruitment)"
+            />
+            <Button title="Add Team Permission" onPress={addTeamPermission} />
+
+            <Button title="Save Changes" onPress={updatePermissions} />
+            <Button
+              title="Close"
+              onPress={() => setModalVisible(false)}
+              color="#FF6347"
+            />
+          </View>
+        </View>
+      </Modal>
     </View>
-    </TouchableWithoutFeedback>
   );
 };
-export default Home;
+export default Admin;
 
 const eventItemWidth = Dimensions.get("window").width * 0.9;
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: '#233563',
-        paddingHorizontal: 20,
-      },
-      input: {
-        height: 40,
-        borderColor: 'black',
-        borderWidth: 1,
-        marginBottom: 15,
-        paddingHorizontal: 10,
-        borderRadius: 5,
-        backgroundColor: '#D9D9D9',
-        width: '100%',
-      },
-      button: {
-        backgroundColor: '#233D72',
-        margin: 2,
-        justifyContent: 'flex-start',
-        paddingLeft: 15,
-        borderRadius: 5,
-        borderWidth: 0,
-        borderBottomWidth: 2,
-        borderColor: '#2B457A',
-        width: '100%',
-      },
+  input: {
+    minHeight: 40,
+    borderColor: "white",
+    borderWidth: 1,
+    marginBottom: 5,
+    paddingHorizontal: 10,
+    borderRadius: 5,
+    backgroundColor: "#1F1F1F",
+    width: "95%",
+    left: 10,
+    color: "white",
+  },
+  button: {
+    backgroundColor: "#233D72",
+    margin: 2,
+    justifyContent: "flex-start",
+    paddingLeft: 15,
+    borderRadius: 5,
+    borderWidth: 0,
+    borderBottomWidth: 2,
+    borderColor: "#2B457A",
+    width: "100%",
+  },
   eventItem: {
     width: eventItemWidth,
     backgroundColor: "white",
@@ -359,24 +565,16 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 5,
   },
-  header: {
-    fontSize: 24,
-    fontWeight: "bold",
-    marginBottom: 20,
-    marginTop: 20,
-    color: "white",
-    textAlign: "center",
-  },
   button: {
-    backgroundColor: '#233D72',
+    backgroundColor: "#233D72",
     margin: 2,
-    justifyContent: 'flex-start',
+    justifyContent: "flex-start",
     paddingLeft: 15,
     borderRadius: 5,
     borderWidth: 0,
     borderBottomWidth: 2,
-    borderColor: '#2B457A',
-    },
+    borderColor: "#2B457A",
+  },
   inputTop: {
     height: 40,
     borderColor: "black",
@@ -387,28 +585,161 @@ const styles = StyleSheet.create({
     backgroundColor: "#D9D9D9",
   },
   topText: {
-    color: 'white',
+    color: "white",
     fontSize: 12,
-    textAlign: 'center',
+    textAlign: "center",
     margin: 10,
   },
   notificationContainer: {
-    backgroundColor: 'white',
+    backgroundColor: "white",
     padding: 20,
     marginRight: 10,
     marginTop: 17,
     borderRadius: 5,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
   },
   showNotificationButton: {
-    backgroundColor: '#E2883C',
+    backgroundColor: "#E2883C",
     padding: 15,
     borderRadius: 5,
     marginTop: 15,
     width: 200,
     marginBottom: 20,
+  },
+  listItem: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginVertical: 5,
+    color: "white",
+  },
+  teamSection: {
+    marginVertical: 10,
+  },
+  subHeader: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "white",
+    marginTop: 5,
+  },
+  currentPermissions: {
+    padding: 10,
+    marginBottom: 20,
+    width: "100%",
+  },
+  textItem: {
+    fontSize: 14,
+    color: "white",
+  },
+  notificationsBox: {
+    top: 30,
+    borderRadius: 9,
+    backgroundColor: "#233d72",
+    width: 340,
+    position: "absolute",
+    shadowOpacity: 1,
+    elevation: 4,
+    shadowRadius: 4,
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowColor: "rgba(0, 0, 0, 0.25)",
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 15,
+    left: 10,
+    top: 10,
+  },
+  headerText: {
+    color: "white",
+    fontWeight: "bold",
+    fontSize: 16,
+    flex: 1,
+    left: 5,
+  },
+  smallCircle: {
+    width: 15,
+    height: 15,
+    borderRadius: 50,
+    backgroundColor: "#EB9F68",
+  },
+  sectionTitle: {
+    color: "white",
+    fontSize: 14,
+    fontWeight: "bold",
+    left: 10,
+    // marginTop: 10,
+    // marginBottom: 5,
+  },
+  sendButton: {
+    borderRadius: 10,
+    backgroundColor: "#f18221",
+    width: 80,
+    height: 40,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  sendMessage: {
+    textAlign: "center",
+    fontSize: 16,
+    fontFamily: "Outfit-Bold",
+    fontWeight: "700",
+    color: "#fff",
+    position: "absolute",
+  },
+  permsBox: {
+    top: 260,
+    borderRadius: 9,
+    backgroundColor: "#233d72",
+    width: 340,
+    position: "absolute",
+    shadowOpacity: 1,
+    elevation: 4,
+    shadowRadius: 4,
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowColor: "rgba(0, 0, 0, 0.25)",
+  },
+  accessButton: {
+    borderRadius: 10,
+    backgroundColor: "#f18221",
+    width: 160,
+    height: 40,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  accessMessage: {
+    textAlign: "center",
+    fontSize: 16,
+    fontFamily: "Outfit-Bold",
+    fontWeight: "700",
+    color: "#fff",
+    position: "absolute",
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.5)", // Semi-transparent background
+  },
+  modalContent: {
+    width: "80%",
+    padding: 20,
+    backgroundColor: "#233D72",
+    borderRadius: 10,
+    alignItems: "center",
+  },
+  modalText: {
+    fontSize: 18,
+    marginBottom: 15,
   },
 });

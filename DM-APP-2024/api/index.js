@@ -229,4 +229,27 @@ export const getTeamRoster = async (id, page) => {
   });
 };
 
+export const getUserActivity = async (id, limit = 100, page = 1) => {
+  return new Promise((resolve, reject) => {
+    const url = apiPaths.userActivityUrl(id, limit, page);
+    const userActivityJson = {};
+
+    fetch(url)
+      .then(async (res) => {
+        try {
+          userActivityJson.countActivity = parseInt(res.headers.get('num-records'), 10) || 0;
+          userActivityJson.countPages = Math.ceil(userActivityJson.countActivity / limit);
+          userActivityJson.activities = await res.json();
+          resolve(userActivityJson);
+        } catch (e) {
+          reject(e);
+        }
+      })
+      .catch(() => {
+        console.log('Error parsing userActivity URL');
+        reject('There was an error trying to make your request');
+      });
+  });
+};
+
 //module.exports = { getUserInfo, getUserDonations, getUserMilestones, getUserIncentives, getUserBadges, getTeamInfo, getTeamDonations, getTeamRoster };

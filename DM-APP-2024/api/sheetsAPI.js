@@ -9,7 +9,7 @@ const postRowToSheet = async (recipient, team, reason, date, time, giver) => {
     try {
         const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/Sheet3:append?valueInputOption=RAW`;
 
-        const rowData = [recipient, team, reason, date, time, giver];
+        const rowData = [recipient, team, reason, date, time, giver, value];
 
         const postData = {
             values: [rowData],

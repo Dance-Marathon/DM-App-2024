@@ -60,5 +60,9 @@ export const apiPaths = {
     teamRosterUrl: function (id, offset) {
         return `${DOMAIN_STUB}api/teams/${id}/participants${offset ? `?offset=${offset + 1}` : ''}`;
     },
+
+    userActivityUrl: function (id, limit = 100, page = 1) {
+        return `${DOMAIN_STUB}api/participants/${id}/activity`;
+    },
 };
 
