@@ -102,33 +102,44 @@ const MissionDM = () => {
     }
 
     try {
-      const eliminatedSnapshot = await db
-        .collection("MissionDMPlayers")
-        .where("code", "==", code)
-        .get();
+      const eliminatedQuery = query(collection(db, "MissionDMPlayers"), where("code", "==", code));
+      const eliminatedSnapshot = await getDocs(eliminatedQuery);
 
       if (eliminatedSnapshot.empty) {
         throw new Error("Invalid code.");
       }
 
-      const selfRef = doc(db, "MissionDMPlayers", auth.currentUser.uid);
+      const selfRef = doc(db, "MissionDMPlayers", eliminatorId);
       const selfDoc = await getDoc(selfRef);
 
       const eliminatedDoc = eliminatedSnapshot.docs[0];
-      const eliminatedId = eliminatedDoc.id;
-      if (selfDoc.exists()) {
-        if (eliminatedId != selfDoc.data().targetId) {
-          throw new Error("Incorrect target!");
-        }
-      } else {
-        throw new Error("Code doesn't exist");
+      const eliminatedData = eliminatedDoc.data();
+      const eliminatedTargetId = eliminatedData.targetId;
+
+      const selfData = selfDoc.data();
+      console.log("Self Target ID:", selfData.targetId);
+      console.log("Eliminated Player ID:", eliminatedData.id);
+
+      if (!selfDoc.exists()){
+          throw new Error("Eliminator does not exist");
       }
 
-      await db.collection("MissionDMPlayers").doc(eliminatedId).update({
-        isAlive: false,
-      });
+      if (selfDoc.data().targetId !== eliminatedData.id){
+        throw new Error("Incorrect target");
+      }
 
-      return { message: "Elimination verified." };
+      // Update self's target to the eliminated player's target
+    await updateDoc(selfRef, {
+      targetId: eliminatedTargetId,
+    });
+
+    // Mark eliminated player as eliminated
+    await updateDoc(eliminatedDoc.ref, {
+      isAlive: false,
+      targetId: null, // Remove target since they're out
+    });
+
+      return { message: "Elimination verified. New target assigned." };
     } catch (error) {
       console.error("Error in eliminate function:", error);
       throw new Error("Elimination failed.");
@@ -393,6 +404,7 @@ const MissionDM = () => {
 
   const handleCodeSubmit = async () => {
     if (!enteredCode) {
+      Alert.alert("Error", "Please enter a code.")
       return;
     }
     try {
@@ -400,12 +412,16 @@ const MissionDM = () => {
       const userDocRef = doc(db, "MissionDMPlayers", currentUID);
       const userDoc = await getDoc(userDocRef);
 
-      if (userDoc.exists() && userDoc.data().code === enteredCode) {
-        Alert.alert("Success", "Code accepted!");
-        // Add any additional logic for when the code is accepted
-      } else {
-        Alert.alert("Error", "Invalid code. Please try again.");
-      }
+      const result = await eliminate({ eliminatorId: currentUID, code: enteredCode});
+      await getTargetUserInfo();
+      Alert.alert("Success", result.message);
+      setEnteredCode("")
+
+      // if (userDoc.exists() && userDoc.data().code === enteredCode) {
+      //   Alert.alert("Success", "Code accepted!");
+      // } else {
+      //   Alert.alert("Error", "Invalid code. Please try again.");
+      // }
     } catch (error) {
       console.error("Error verifying code:", error);
       Alert.alert("Error", "Failed to verify code. Please try again.");
