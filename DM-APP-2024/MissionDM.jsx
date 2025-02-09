@@ -136,6 +136,7 @@ const MissionDM = () => {
     // Mark eliminated player as eliminated
     await updateDoc(eliminatedDoc.ref, {
       isAlive: false,
+      isEliminated: true,
       targetId: null, // Remove target since they're out
     });
 
@@ -417,11 +418,6 @@ const MissionDM = () => {
       Alert.alert("Success", result.message);
       setEnteredCode("")
 
-      // if (userDoc.exists() && userDoc.data().code === enteredCode) {
-      //   Alert.alert("Success", "Code accepted!");
-      // } else {
-      //   Alert.alert("Error", "Invalid code. Please try again.");
-      // }
     } catch (error) {
       console.error("Error verifying code:", error);
       Alert.alert("Error", "Failed to verify code. Please try again.");
