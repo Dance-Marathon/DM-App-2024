@@ -29,6 +29,7 @@ import { faCrosshairs } from "@fortawesome/free-solid-svg-icons";
 import { faBullseye } from "@fortawesome/free-solid-svg-icons";
 import { faCircleInfo } from "@fortawesome/free-solid-svg-icons";
 import CrosshairOverImage from "./images/Crosshair Over Image.png";
+import SvgUri from 'react-native-svg-uri';
 
 const MissionDM = () => {
   const [timeLeft, setTimeLeft] = useState({
@@ -425,6 +426,45 @@ const MissionDM = () => {
   };
 
   const [isImageModalVisible, setIsImageModalVisible] = useState(false);
+
+  return (
+    <View
+      style={{
+        flex: 1,
+        alignItems: "center",
+        backgroundColor: "#1F1F1F",
+      }}
+    >
+      <View style={{
+        alignItems:"center",
+        width:"100%",
+        height:"100%"
+        }}>
+        <SvgUri
+          width="300"
+          height="300"
+          source={require('./images/eliminated-icon.svg')}
+        />
+        <Text
+          style={{color: "red", fontSize:28, fontWeight:"bold"}}
+        >
+          You have been eliminated.
+        </Text>
+        <Text style={{color: "red", fontSize:18, fontStyle: "italic", marginTop:5, marginBottom:20}}
+        >
+          Thanks for playing!
+        </Text>
+        <View style={styles.buttonBox}>
+          <TouchableOpacity
+            style={styles.orangeButton}
+            // onPress={}
+          >
+            <Text style={styles.orangeButtonText}>Buy Back In!</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </View>
+  );
 
   return (
     <View
