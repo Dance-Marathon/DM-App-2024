@@ -153,11 +153,11 @@ const MissionDM = () => {
       // First extract the players
       const playersRef = collection(db, "MissionDMPlayers");
       const snapshot = await getDocs(playersRef);
-      
-      if (snapshot.empty) { // JiC there are no players
+
+      if (snapshot.empty) {
         throw new Error("No players found.");
       }
-  
+
       // Extract their info
       const players = snapshot.docs.map((doc) => ({
         id: doc.data().id,
@@ -165,39 +165,40 @@ const MissionDM = () => {
         name: doc.data().name,
         isEliminated: doc.data().isEliminated,
       }));
-  
+
       // Filter out eliminated players
       const activePlayers = players.filter((player) => !player.isEliminated);
-  
-      if (activePlayers.length < 2) { //JiC there aren't enough players
+
+      if (activePlayers.length < 2) {
         throw new Error("Not enough active players to shuffle.");
       }
-  
+
       // Shuffle the active players
       const shuffledPlayers = [...activePlayers];
-      for (let i = shuffledPlayers.length - 1; i > 0; i--) { // Fisher-Yates algorithm (CHAT recommended)
+      for (let i = shuffledPlayers.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
-        [shuffledPlayers[i], shuffledPlayers[j]] = [shuffledPlayers[j], shuffledPlayers[i]];
+        [shuffledPlayers[i], shuffledPlayers[j]] = [
+          shuffledPlayers[j],
+          shuffledPlayers[i],
+        ];
       }
-  
+
       // Assign new targets in a circular pattern
       for (let i = 0; i < shuffledPlayers.length; i++) {
         const currentPlayer = shuffledPlayers[i];
-        const newTarget = shuffledPlayers[(i + 1) % shuffledPlayers.length]; // Circular assignment
-  
+        const newTarget = shuffledPlayers[(i + 1) % shuffledPlayers.length];
+
         await updateDoc(doc(db, "MissionDMPlayers", currentPlayer.uid), {
           targetId: newTarget.id,
         });
       }
-      
-      // Flavor Text
+
       console.log("Targets successfully shuffled.");
-      return { message: "All targets have been shuffled!" };
     } catch (error) {
       console.error("Error in shuffleTargets function:", error);
       throw new Error("Target shuffle failed.");
     }
-  };  
+  };
 
   const getRoundInfo = async () => {
     const col = collection(db, "MissionDMGames");
@@ -244,6 +245,7 @@ const MissionDM = () => {
         (round) => round.round === rounds[0].currentRound
       );
       if (currentRoundData) {
+        setCurrentRound(currentRoundData.round);
         const tempDate = new Date(currentRoundData.start).getTime();
         const tempEnd = new Date(currentRoundData.end).getTime();
 
@@ -403,7 +405,9 @@ const MissionDM = () => {
           currentRound: currentRound + 1,
         });
 
-        console.log(`Round successfully incremented to: ${currentRound + 1}`);
+        shuffleTargets();
+
+        console.log(`Round successfully incremented to: ${currentRound + 1}, targets shuffled.`);
       } else {
         console.error("Game document does not exist.");
       }
@@ -601,6 +605,15 @@ const MissionDM = () => {
           onPress={enrollUser}
         >
           <Text style={styles.enrollButtonText}>Enroll In MissionDM</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[
+            styles.enrollButton,
+            { flex: 1, marginRight: 5, marginTop: 10 },
+          ]}
+          onPress={shuffleTargets}
+        >
+          <Text style={styles.enrollButtonText}>Shuffle Targets</Text>
         </TouchableOpacity>
       </View>
       <Modal
