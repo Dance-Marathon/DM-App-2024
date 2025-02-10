@@ -102,7 +102,10 @@ const MissionDM = () => {
     }
 
     try {
-      const eliminatedQuery = query(collection(db, "MissionDMPlayers"), where("code", "==", code));
+      const eliminatedQuery = query(
+        collection(db, "MissionDMPlayers"),
+        where("code", "==", code)
+      );
       const eliminatedSnapshot = await getDocs(eliminatedQuery);
 
       if (eliminatedSnapshot.empty) {
@@ -120,25 +123,23 @@ const MissionDM = () => {
       console.log("Self Target ID:", selfData.targetId);
       console.log("Eliminated Player ID:", eliminatedData.id);
 
-      if (!selfDoc.exists()){
-          throw new Error("Eliminator does not exist");
+      if (!selfDoc.exists()) {
+        throw new Error("Eliminator does not exist");
       }
 
-      if (selfDoc.data().targetId !== eliminatedData.id){
+      if (selfDoc.data().targetId !== eliminatedData.id) {
         throw new Error("Incorrect target");
       }
 
-      // Update self's target to the eliminated player's target
-    await updateDoc(selfRef, {
-      targetId: eliminatedTargetId,
-    });
+      await updateDoc(selfRef, {
+        targetId: eliminatedTargetId,
+      });
 
-    // Mark eliminated player as eliminated
-    await updateDoc(eliminatedDoc.ref, {
-      isAlive: false,
-      isEliminated: true,
-      targetId: null, // Remove target since they're out
-    });
+      await updateDoc(eliminatedDoc.ref, {
+        isEliminated: true,
+        targetId: null,
+        //id: null,
+      });
 
       return { message: "Elimination verified. New target assigned." };
     } catch (error) {
@@ -405,7 +406,7 @@ const MissionDM = () => {
 
   const handleCodeSubmit = async () => {
     if (!enteredCode) {
-      Alert.alert("Error", "Please enter a code.")
+      Alert.alert("Error", "Please enter a code.");
       return;
     }
     try {
@@ -413,11 +414,13 @@ const MissionDM = () => {
       const userDocRef = doc(db, "MissionDMPlayers", currentUID);
       const userDoc = await getDoc(userDocRef);
 
-      const result = await eliminate({ eliminatorId: currentUID, code: enteredCode});
+      const result = await eliminate({
+        eliminatorId: currentUID,
+        code: enteredCode,
+      });
       await getTargetUserInfo();
       Alert.alert("Success", result.message);
-      setEnteredCode("")
-
+      setEnteredCode("");
     } catch (error) {
       console.error("Error verifying code:", error);
       Alert.alert("Error", "Failed to verify code. Please try again.");
