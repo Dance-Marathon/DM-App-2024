@@ -57,6 +57,7 @@ const MissionDM = () => {
   const [targetRole, setTargetRole] = useState("");
   const [targetTeam, setTargetTeam] = useState("");
   const [enteredCode, setEnteredCode] = useState("");
+  const [userCode, setUserCode] = useState("");
 
   useEffect(() => {
     getUserData()
@@ -436,6 +437,7 @@ const MissionDM = () => {
       const userDocRef = doc(db, "MissionDMPlayers", currentUID);
       const userDoc = await getDoc(userDocRef);
       const targetID = userDoc.data().targetId;
+      setUserCode(userDoc.data().code);
 
       const usersRef = collection(db, "MissionDMPlayers");
       const q = query(usersRef, where("id", "==", targetID));
@@ -671,8 +673,7 @@ const MissionDM = () => {
       >
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>My Code</Text>
-            <Text style={styles.modalText}>Insert code here</Text>
+            <Text style={styles.userCodeText}>{userCode}</Text>
             <TouchableOpacity
               style={styles.closeButton}
               onPress={() => setIsStatsModalVisible(false)}
@@ -1163,6 +1164,12 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 16,
     marginBottom: 10,
+  },
+  userCodeText: {
+    color: "white",
+    fontWeight: "bold",
+    fontSize: 48,
+    marginBottom: 20,
   },
   closeButton: {
     backgroundColor: "#f18221",
