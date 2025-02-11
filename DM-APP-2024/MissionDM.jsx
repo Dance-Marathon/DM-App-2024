@@ -903,10 +903,10 @@ const styles = StyleSheet.create({
   },
   crosshairOverlay: {
     position: "absolute",
-    top: -12,
-    left: -12,
-    width: 125,
-    height: 125,
+    top: -7,
+    left: -7,
+    width: 115,
+    height: 115,
   },
   zoomedImage: {
     width: 300,
