@@ -573,10 +573,10 @@ const MissionDM = () => {
         </View>
         <View style={styles.buttonBox}>
           <TouchableOpacity
-            style={styles.orangeButton}
+            style={[styles.orangeButton, { width: 125 }]}
             onPress={() => setIsStatsModalVisible(true)}
           >
-            <Text style={styles.orangeButtonText}>Game Stats</Text>
+            <Text style={styles.orangeButtonText}>Show My Code</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -624,8 +624,8 @@ const MissionDM = () => {
       >
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Game Stats</Text>
-            <Text style={styles.modalText}>Here are your game stats!</Text>
+            <Text style={styles.modalTitle}>My Code</Text>
+            <Text style={styles.modalText}>Insert code here</Text>
             <TouchableOpacity
               style={styles.closeButton}
               onPress={() => setIsStatsModalVisible(false)}
