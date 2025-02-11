@@ -490,6 +490,47 @@ const MissionDM = () => {
 
   const [isImageModalVisible, setIsImageModalVisible] = useState(false);
 
+
+  // *********THIS IS THE HTML FOR THE ELIMINATION SCREEN **************
+  // return (
+  //   <View
+  //     style={{
+  //       flex: 1,
+  //       justifyContent: "center",
+  //       alignItems: "center",
+  //       backgroundColor: "#1F1F1F",
+  //     }}
+  //   >
+  //     <View style={{ alignItems: "center" }}>
+  //       <Image
+  //         maxWidth="200"
+  //         maxHeight="200"
+  //         style={{ marginBottom: 20 }}
+  //         source={require('./images/eliminated-icon.png')}
+  //       />
+  //       <Text style={{ color: "red", fontSize: 28, fontWeight: "bold" }}>
+  //         You have been eliminated.
+  //       </Text>
+  //       <Text
+  //         style={{
+  //           color: "red",
+  //           fontSize: 18,
+  //           fontStyle: "italic",
+  //           marginTop: 5,
+  //           marginBottom: 20,
+  //         }}
+  //       >
+  //         Thanks for playing!
+  //       </Text>
+  //       <View style={styles.buttonBox}>
+  //         <TouchableOpacity style={styles.orangeButton}>
+  //           <Text style={styles.orangeButtonText}>Buy Back In!</Text>
+  //         </TouchableOpacity>
+  //       </View>
+  //     </View>
+  //   </View>
+  // );
+
   return (
     <View
       style={{
@@ -579,10 +620,10 @@ const MissionDM = () => {
         </View>
         <View style={styles.buttonBox}>
           <TouchableOpacity
-            style={styles.orangeButton}
+            style={[styles.orangeButton, { width: 125 }]}
             onPress={() => setIsStatsModalVisible(true)}
           >
-            <Text style={styles.orangeButtonText}>Game Stats</Text>
+            <Text style={styles.orangeButtonText}>Show My Code</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -630,8 +671,8 @@ const MissionDM = () => {
       >
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Game Stats</Text>
-            <Text style={styles.modalText}>Here are your game stats!</Text>
+            <Text style={styles.modalTitle}>My Code</Text>
+            <Text style={styles.modalText}>Insert code here</Text>
             <TouchableOpacity
               style={styles.closeButton}
               onPress={() => setIsStatsModalVisible(false)}
@@ -853,8 +894,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   imageOverlay: {
-    width: 100,
-    height: 100,
     marginRight: 15,
   },
   avatar: {
@@ -862,18 +901,18 @@ const styles = StyleSheet.create({
     height: 100,
     borderRadius: 50,
   },
+  crosshairOverlay: {
+    position: "absolute",
+    top: -12,
+    left: -12,
+    width: 125,
+    height: 125,
+  },
   zoomedImage: {
     width: 300,
     height: 300,
     marginBottom: 20,
     borderRadius: 10,
-  },
-  crosshairOverlay: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    width: 100,
-    height: 100,
   },
   targetInfoContainer: {
     flexDirection: "row",
