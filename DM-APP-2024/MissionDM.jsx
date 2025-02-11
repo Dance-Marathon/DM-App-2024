@@ -20,6 +20,7 @@ import {
   query,
   where,
   getDoc,
+  arrayUnion,
 } from "firebase/firestore";
 import { getUserInfo } from "./api/index";
 import { getUserData, updateUserData } from "./Firebase/UserManager";
@@ -131,8 +132,13 @@ const MissionDM = () => {
         throw new Error("Incorrect target");
       }
 
+      // if id == eliminatedTargetid
+      // win screen
+      // else update doc 
+
       await updateDoc(selfRef, {
         targetId: eliminatedTargetId,
+        eliminations: arrayUnion(targetName)
       });
 
       await updateDoc(eliminatedDoc.ref, {
