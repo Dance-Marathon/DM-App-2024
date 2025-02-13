@@ -400,16 +400,33 @@ const MissionDM = () => {
     return () => clearInterval(timer);
   }, [startDate, endDate]);
 
-  const roundOver = async () => {
+  const countActivePlayers = async () => {
+    try {
+      const q = query(collection(db, "MissionDMPlayers"), where("isEliminated", "==", false));
+      const querySnapshot = await getDocs(q);
+      return querySnapshot.size;
+    } catch (error) {
+      console.error("Error fetching documents:", error);
+      return 0;
+    }
+  };
+
+  const roundOver = async (roundNumber) => {
     try {
       const gameDocRef = doc(db, "MissionDMGames", "gameStats");
       const gameDoc = await getDoc(gameDocRef);
 
       if (gameDoc.exists()) {
         const currentRound = gameDoc.data().currentRound;
+        const previousPlayers = gameDoc.data().playersRemaining;
+        const activePlayers = await countActivePlayers();
+        const eliminations = previousPlayers - activePlayers;
+        const fieldToUpdate = `round${roundNumber}Eliminations`;
 
         await updateDoc(gameDocRef, {
           currentRound: currentRound + 1,
+          playersRemaining: activePlayers,
+          [fieldToUpdate]: eliminations,
         });
 
         shuffleTargets();
