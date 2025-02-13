@@ -394,6 +394,10 @@ const MissionDM = () => {
   useEffect(() => {
     let roundProcessed = false;
 
+    const gameDocRef = doc(db, "MissionDMGames", "gameStats");
+    const gameDoc = getDoc(gameDocRef);
+    const currentRound = gameDoc.data().currentRound;
+
     const timer = setInterval(async () => {
       const { active, timeLeft } = calculateTimeLeft();
       setGameActive(active);
@@ -408,8 +412,7 @@ const MissionDM = () => {
       } else {
         setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
 
-        // Ensure `roundOver` is called only once
-        if (!roundProcessed) {
+        if (!roundProcessed && currentRound !== 1) {
           roundProcessed = true;
           await roundOver();
         }
@@ -526,7 +529,7 @@ const MissionDM = () => {
     }
   }
 
-  const roundOver = async (roundNumber) => {
+  const roundOver = async () => {
     try {
       const gameDocRef = doc(db, "MissionDMGames", "gameStats");
       const gameDoc = await getDoc(gameDocRef);
