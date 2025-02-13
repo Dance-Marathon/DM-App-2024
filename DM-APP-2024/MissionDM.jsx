@@ -135,11 +135,11 @@ const MissionDM = () => {
 
       // if id == eliminatedTargetid
       // win screen
-      // else update doc 
+      // else update doc
 
       await updateDoc(selfRef, {
         targetId: eliminatedTargetId,
-        eliminations: arrayUnion(targetName)
+        eliminations: arrayUnion(targetName),
       });
 
       await updateDoc(eliminatedDoc.ref, {
@@ -402,7 +402,10 @@ const MissionDM = () => {
 
   const countActivePlayers = async () => {
     try {
-      const q = query(collection(db, "MissionDMPlayers"), where("isEliminated", "==", false));
+      const q = query(
+        collection(db, "MissionDMPlayers"),
+        where("isEliminated", "==", false)
+      );
       const querySnapshot = await getDocs(q);
       return querySnapshot.size;
     } catch (error) {
@@ -410,6 +413,96 @@ const MissionDM = () => {
       return 0;
     }
   };
+
+  const fetchData = async () => {
+    try {
+      const fetchedItems = [];
+
+      const q = query(collection(db, "Users"), where("inMissionDM", "==", true));
+      const querySnapshot = await getDocs(q);
+
+      querySnapshot.forEach((doc) => {
+        const docData = doc.data();
+        fetchedItems.push(docData.notificationToken);
+      });
+
+      return fetchedItems;
+    } catch (error) {
+      console.error("Error fetching events:", error);
+    }
+  };
+
+  async function sendBatch(batch) {
+    if (batch.length === 0) {
+      console.warn("Skipping empty batch.");
+      return;
+    }
+
+    try {
+      console.log(`Sending batch of ${batch.length} notifications...`);
+
+      const response = await fetch("https://exp.host/--/api/v2/push/send", {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Accept-encoding": "gzip, deflate",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(batch),
+      });
+
+      const json = await response.json();
+      console.log("Expo response:", JSON.stringify(json, null, 2));
+
+      if (json.data) {
+        json.data.forEach((result, index) => {
+          if (result.status === "error") {
+            console.error(
+              `Error sending to ${batch[index].to}:`,
+              result.message
+            );
+          }
+        });
+      }
+    } catch (error) {
+      console.error("Error sending notifications:", error);
+    }
+  }
+
+  async function sendPushNotificationToAlivePlayers(
+    expoPushTokens,
+    notification
+  ) {
+    console.log("Sending notifications...");
+
+    const batchSize = 50;
+    let messages = [];
+
+    for (const token of expoPushTokens) {
+      if (!token || token.trim() === "") {
+        console.warn("Skipping empty or invalid token:", token);
+        continue;
+      }
+
+      messages.push({
+        to: token,
+        sound: "default",
+        title: notification.title,
+        body: notification.message,
+      });
+
+      console.log(`Added token: ${token}`);
+
+      if (messages.length >= batchSize) {
+        await sendBatch(messages);
+        messages = [];
+      }
+    }
+
+    if (messages.length > 0) {
+      await sendBatch(messages);
+    }
+  }
 
   const roundOver = async (roundNumber) => {
     try {
@@ -421,7 +514,7 @@ const MissionDM = () => {
         const previousPlayers = gameDoc.data().playersRemaining;
         const activePlayers = await countActivePlayers();
         const eliminations = previousPlayers - activePlayers;
-        const fieldToUpdate = `round${roundNumber}Eliminations`;
+        const fieldToUpdate = `round${currentRound}Eliminations`;
 
         await updateDoc(gameDocRef, {
           currentRound: currentRound + 1,
@@ -429,9 +522,24 @@ const MissionDM = () => {
           [fieldToUpdate]: eliminations,
         });
 
-        shuffleTargets();
+        fetchItems = await fetchData();
 
-        console.log(`Round successfully incremented to: ${currentRound + 1}, targets shuffled.`);
+        await sendPushNotificationToAlivePlayers(fetchItems, {
+          message: `Round ${currentRound} is over. ${eliminations} players were eliminated and ${activePlayers} remain.`,
+          title: `MissionDM - Round ${currentRound} Over`,
+        })
+          .then(() => {
+            console.log("All notifications sent!");
+          })
+          .catch((error) => {
+            console.error("Error sending notifications:", error);
+          });
+
+        await shuffleTargets();
+
+        console.log(
+          `Round successfully incremented to: ${currentRound + 1}, targets shuffled, notifications sent.`
+        );
       } else {
         console.error("Game document does not exist.");
       }
@@ -508,7 +616,6 @@ const MissionDM = () => {
   };
 
   const [isImageModalVisible, setIsImageModalVisible] = useState(false);
-
 
   // *********THIS IS THE HTML FOR THE ELIMINATION SCREEN **************
   // return (
