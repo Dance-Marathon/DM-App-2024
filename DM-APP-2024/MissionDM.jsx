@@ -27,6 +27,7 @@ import { getUserData, updateUserData } from "./Firebase/UserManager";
 import FontAwesome from "react-native-vector-icons/FontAwesome";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 import { faCrosshairs } from "@fortawesome/free-solid-svg-icons";
+import { faUsers } from "@fortawesome/free-solid-svg-icons";
 import { faBullseye } from "@fortawesome/free-solid-svg-icons";
 import { faCircleInfo } from "@fortawesome/free-solid-svg-icons";
 import CrosshairOverImage from "./images/Crosshair Over Image.png";
@@ -533,6 +534,64 @@ const MissionDM = () => {
   //   </View>
   // );
 
+  // *********THIS IS THE HTML FOR THE BETWEEN ROUNDS SCREEN **************
+  // return (
+  //   <View
+  //     style={{
+  //       flex: 1,
+  //       alignItems: "center",
+  //       backgroundColor: "#1F1F1F",
+  //     }}
+  //   >
+  //     <View style={styles.roundBox}>
+  //       <Text style={styles.header}>Congratulations!</Text>
+  //       <Text style={styles.subheader}>You completed round {currentRound - 1} of the Mission.</Text>
+  //     </View>
+  //     <View style={styles.congratsRoundBox}>
+  //       <Text style={[styles.header, {marginBottom: 0}]}>ROUND {currentRound}</Text>
+  //       <Text style={[styles.subheader, {marginBottom:0, marginTop:0}]}>starts in</Text>
+  //       <View style={styles.inGameTimeContainer}>
+  //         <View style={styles.inGameTimeBox}>
+  //           <Text style={styles.inGameTimeValue}>{timeLeft.days}</Text>
+  //         </View>
+  //         <Text style={styles.colon}>:</Text>
+  //         <View style={styles.inGameTimeBox}>
+  //           <Text style={styles.inGameTimeValue}>
+  //             {String(timeLeft.hours).padStart(2, "0")}
+  //           </Text>
+  //         </View>
+  //         <Text style={styles.colon}>:</Text>
+  //         <View style={styles.inGameTimeBox}>
+  //           <Text style={styles.inGameTimeValue}>
+  //             {String(timeLeft.minutes).padStart(2, "0")}
+  //           </Text>
+  //         </View>
+  //         <Text style={styles.colon}>:</Text>
+  //         <View style={styles.inGameTimeBox}>
+  //           <Text style={styles.inGameTimeValue}>
+  //             {String(timeLeft.seconds).padStart(2, "0")}
+  //           </Text>
+  //         </View>
+  //       </View>
+  //     </View>
+
+  //     <View style={styles.userBox}>
+  //       <View style={styles.tileHeader}>
+  //         <FontAwesomeIcon icon={faCircleInfo} color="#f18221" size={18} />
+  //         <Text style={styles.tileTitleText}>ROUND SUMMARY</Text>
+  //       </View>
+  //       <View style={styles.eliminationContainer}>
+  //         <FontAwesomeIcon icon={faCrosshairs} color="#FFFFFF" size={25} />
+  //         <Text style={[styles.eliminationHeader, {fontSize: 20}]}>12 Players were eliminated</Text>
+  //       </View>
+  //       <View style={[styles.eliminationContainer, {marginBottom: 20}]}>
+  //         <FontAwesomeIcon icon={faUsers} color="#FFFFFF" size={25} />
+  //         <Text style={[styles.eliminationHeader, {fontSize: 20}]}>41 players remain</Text>
+  //       </View>
+  //     </View>
+  //   </View>
+  // );
+
   return (
     <View
       style={{
@@ -873,6 +932,14 @@ const styles = StyleSheet.create({
     color: "white",
     textAlign: "center",
   },
+  subheader: {
+    fontSize: 24,
+    fontWeight: 600,
+    marginBottom: 10,
+    marginTop: 0,
+    color: "white",
+    textAlign: "center",
+  },
   tileTitleText: {
     color: "white",
     fontSize: 14,
@@ -1047,6 +1114,20 @@ const styles = StyleSheet.create({
   },
   roundBox: {
     marginTop: 100,
+    borderRadius: 9,
+    backgroundColor: "#233d72",
+    width: "85%",
+    shadowOpacity: 1,
+    elevation: 4,
+    shadowRadius: 4,
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowColor: "rgba(0, 0, 0, 0.25)",
+  },
+  congratsRoundBox: {
+    marginTop: 30,
     borderRadius: 9,
     backgroundColor: "#233d72",
     width: "85%",
