@@ -21,6 +21,7 @@ import {
   where,
   getDoc,
   arrayUnion,
+  onSnapshot
 } from "firebase/firestore";
 import { getUserInfo } from "./api/index";
 import { getUserData, updateUserData } from "./Firebase/UserManager";
@@ -60,6 +61,9 @@ const MissionDM = () => {
   const [enteredCode, setEnteredCode] = useState("");
   const [userCode, setUserCode] = useState("");
 
+  const [isEliminated, setIsEliminated] = useState(false);
+  const [isWinner, setIsWinner] = useState(false);
+
   useEffect(() => {
     getUserData()
       .then((data) => {
@@ -85,6 +89,21 @@ const MissionDM = () => {
         console.error("Error fetching user info:", err);
       });
   }, [userIDState]);
+
+  useEffect(() => {
+    const docRef = doc(db, "MissionDMPlayers", auth.currentUser.uid);
+
+    const unsubscribe = onSnapshot(docRef, (docSnapshot) => {
+      if (docSnapshot.exists()) {
+        setIsEliminated(docSnapshot.data().isEliminated);
+      } else {
+        console.error("Document does not exist!");
+        setIsEliminated(null);
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   function formatToLocalDateTime(date) {
     const year = date.getFullYear();
@@ -134,13 +153,9 @@ const MissionDM = () => {
         throw new Error("Incorrect target");
       }
 
-      // if id == eliminatedTargetid
-      // win screen
-      // else update doc 
-
       await updateDoc(selfRef, {
         targetId: eliminatedTargetId,
-        eliminations: arrayUnion(targetName)
+        eliminations: arrayUnion(targetName),
       });
 
       await updateDoc(eliminatedDoc.ref, {
@@ -148,6 +163,10 @@ const MissionDM = () => {
         targetId: null,
         //id: null,
       });
+
+      if (id == eliminatedTargetId) {
+        setIsWinner(true);
+      }
 
       return { message: "Elimination verified. New target assigned." };
     } catch (error) {
@@ -376,6 +395,10 @@ const MissionDM = () => {
   useEffect(() => {
     let roundProcessed = false;
 
+    const gameDocRef = doc(db, "MissionDMGames", "gameStats");
+    const gameDoc = getDoc(gameDocRef);
+    const currentRound = gameDoc.data().currentRound;
+
     const timer = setInterval(async () => {
       const { active, timeLeft } = calculateTimeLeft();
       setGameActive(active);
@@ -390,8 +413,7 @@ const MissionDM = () => {
       } else {
         setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
 
-        // Ensure `roundOver` is called only once
-        if (!roundProcessed) {
+        if (!roundProcessed && currentRound !== 1) {
           roundProcessed = true;
           await roundOver();
         }
@@ -401,6 +423,113 @@ const MissionDM = () => {
     return () => clearInterval(timer);
   }, [startDate, endDate]);
 
+  const countActivePlayers = async () => {
+    try {
+      const q = query(
+        collection(db, "MissionDMPlayers"),
+        where("isEliminated", "==", false)
+      );
+      const querySnapshot = await getDocs(q);
+      return querySnapshot.size;
+    } catch (error) {
+      console.error("Error fetching documents:", error);
+      return 0;
+    }
+  };
+
+  const fetchData = async () => {
+    try {
+      const fetchedItems = [];
+
+      const q = query(
+        collection(db, "Users"),
+        where("inMissionDM", "==", true)
+      );
+      const querySnapshot = await getDocs(q);
+
+      querySnapshot.forEach((doc) => {
+        const docData = doc.data();
+        fetchedItems.push(docData.notificationToken);
+      });
+
+      return fetchedItems;
+    } catch (error) {
+      console.error("Error fetching events:", error);
+    }
+  };
+
+  async function sendBatch(batch) {
+    if (batch.length === 0) {
+      console.warn("Skipping empty batch.");
+      return;
+    }
+
+    try {
+      console.log(`Sending batch of ${batch.length} notifications...`);
+
+      const response = await fetch("https://exp.host/--/api/v2/push/send", {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Accept-encoding": "gzip, deflate",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(batch),
+      });
+
+      const json = await response.json();
+      console.log("Expo response:", JSON.stringify(json, null, 2));
+
+      if (json.data) {
+        json.data.forEach((result, index) => {
+          if (result.status === "error") {
+            console.error(
+              `Error sending to ${batch[index].to}:`,
+              result.message
+            );
+          }
+        });
+      }
+    } catch (error) {
+      console.error("Error sending notifications:", error);
+    }
+  }
+
+  async function sendPushNotificationToAlivePlayers(
+    expoPushTokens,
+    notification
+  ) {
+    console.log("Sending notifications...");
+
+    const batchSize = 50;
+    let messages = [];
+
+    for (const token of expoPushTokens) {
+      if (!token || token.trim() === "") {
+        console.warn("Skipping empty or invalid token:", token);
+        continue;
+      }
+
+      messages.push({
+        to: token,
+        sound: "default",
+        title: notification.title,
+        body: notification.message,
+      });
+
+      console.log(`Added token: ${token}`);
+
+      if (messages.length >= batchSize) {
+        await sendBatch(messages);
+        messages = [];
+      }
+    }
+
+    if (messages.length > 0) {
+      await sendBatch(messages);
+    }
+  }
+
   const roundOver = async () => {
     try {
       const gameDocRef = doc(db, "MissionDMGames", "gameStats");
@@ -408,14 +537,35 @@ const MissionDM = () => {
 
       if (gameDoc.exists()) {
         const currentRound = gameDoc.data().currentRound;
+        const previousPlayers = gameDoc.data().playersRemaining;
+        const activePlayers = await countActivePlayers();
+        const eliminations = previousPlayers - activePlayers;
+        const fieldToUpdate = `round${currentRound}Eliminations`;
 
         await updateDoc(gameDocRef, {
           currentRound: currentRound + 1,
+          playersRemaining: activePlayers,
+          [fieldToUpdate]: eliminations,
         });
 
-        shuffleTargets();
+        fetchItems = await fetchData();
 
-        console.log(`Round successfully incremented to: ${currentRound + 1}, targets shuffled.`);
+        await sendPushNotificationToAlivePlayers(fetchItems, {
+          message: `Round ${currentRound} is over. ${eliminations} players were eliminated and ${activePlayers} remain.`,
+          title: `MissionDM - Round ${currentRound} Over`,
+        })
+          .then(() => {
+            console.log("All notifications sent!");
+          })
+          .catch((error) => {
+            console.error("Error sending notifications:", error);
+          });
+
+        await shuffleTargets();
+
+        console.log(
+          `Round successfully incremented to: ${currentRound + 1}, targets shuffled, notifications sent.`
+        );
       } else {
         console.error("Game document does not exist.");
       }
@@ -493,6 +643,7 @@ const MissionDM = () => {
 
   const [isImageModalVisible, setIsImageModalVisible] = useState(false);
 
+
   // *********THIS IS THE HTML FOR THE WIN SCREEN **************
   // return (
   //   <View
@@ -527,7 +678,6 @@ const MissionDM = () => {
   //     </View>
   //   </View>
   // );
-
 
   // *********THIS IS THE HTML FOR THE ELIMINATION SCREEN **************
   // return (
@@ -568,6 +718,7 @@ const MissionDM = () => {
   //     </View>
   //   </View>
   // );
+
 
   // *********THIS IS THE HTML FOR THE BETWEEN ROUNDS SCREEN **************
   // return (
@@ -801,7 +952,183 @@ const MissionDM = () => {
     </View>
   );
 
-  if (inGame && gameActive) {
+  if (inGame && gameActive && !isEliminated) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          alignItems: "center",
+          backgroundColor: "#1F1F1F",
+        }}
+      >
+        <View style={styles.roundBox}>
+          <Text style={styles.header}>ROUND {currentRound}</Text>
+          <View style={styles.inGameTimeContainer}>
+            <View style={styles.inGameTimeBox}>
+              <Text style={styles.inGameTimeValue}>{timeLeft.days}</Text>
+            </View>
+            <Text style={styles.colon}>:</Text>
+            <View style={styles.inGameTimeBox}>
+              <Text style={styles.inGameTimeValue}>
+                {String(timeLeft.hours).padStart(2, "0")}
+              </Text>
+            </View>
+            <Text style={styles.colon}>:</Text>
+            <View style={styles.inGameTimeBox}>
+              <Text style={styles.inGameTimeValue}>
+                {String(timeLeft.minutes).padStart(2, "0")}
+              </Text>
+            </View>
+            <Text style={styles.colon}>:</Text>
+            <View style={styles.inGameTimeBox}>
+              <Text style={styles.inGameTimeValue}>
+                {String(timeLeft.seconds).padStart(2, "0")}
+              </Text>
+            </View>
+          </View>
+        </View>
+        <View style={styles.targetBox}>
+          <View style={styles.tileHeader}>
+            <FontAwesomeIcon icon={faBullseye} color="#f18221" size={18} />
+            <Text style={styles.tileTitleText}>TARGET INFO</Text>
+          </View>
+          <View style={styles.targetInfoContainer}>
+            <TouchableOpacity onPress={() => setIsImageModalVisible(true)}>
+              <View style={styles.imageOverlay}>
+                <Image source={{ uri: targetImageURL }} style={styles.avatar} />
+                <Image
+                  source={CrosshairOverImage}
+                  style={styles.crosshairOverlay}
+                />
+              </View>
+            </TouchableOpacity>
+            <View style={styles.targetInfo}>
+              <Text style={styles.targetName}>{targetName}</Text>
+              <View style={styles.tagsContainer}>
+                <View style={styles.section}>
+                  <FontAwesome name="circle" size={15} color="#f18221" />
+                  <Text style={styles.targetTag}>{targetTeam}</Text>
+                </View>
+                <View style={styles.section}>
+                  <FontAwesome name="circle" size={15} color="#f18221" />
+                  <Text style={styles.targetTag}>{targetRole}</Text>
+                </View>
+              </View>
+            </View>
+          </View>
+          <View style={styles.enterCodeContainer}>
+            <Text style={styles.enterCodeText}>
+              If target is eliminated, enter their code here:
+            </Text>
+            <TextInput
+              style={styles.codeInput}
+              placeholder="Enter code"
+              placeholderTextColor="#888"
+              onChangeText={(text) => setEnteredCode(text)}
+              value={enteredCode}
+              onSubmitEditing={handleCodeSubmit}
+            />
+          </View>
+        </View>
+
+        <View style={styles.userBox}>
+          <View style={styles.tileHeader}>
+            <FontAwesomeIcon icon={faCircleInfo} color="#f18221" size={18} />
+            <Text style={styles.tileTitleText}>MY INFO</Text>
+          </View>
+          <View style={styles.eliminationContainer}>
+            <FontAwesomeIcon icon={faCrosshairs} color="#FFFFFF" size={25} />
+            <Text style={styles.eliminationHeader}>12 Eliminations</Text>
+          </View>
+          <View style={styles.buttonBox}>
+            <TouchableOpacity
+              style={[styles.orangeButton, { width: 125 }]}
+              onPress={() => setIsStatsModalVisible(true)}
+            >
+              <Text style={styles.orangeButtonText}>Show My Code</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+            marginTop: 10,
+            width: "95%",
+          }}
+        >
+          <TouchableOpacity
+            style={[
+              styles.enrollButton,
+              { flex: 1, marginRight: 5, marginTop: 10 },
+            ]}
+            onPress={unenrollUser}
+          >
+            <Text style={styles.enrollButtonText}>Leave Game</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.enrollButton,
+              { flex: 1, marginLeft: 5, marginTop: 10 },
+            ]}
+            onPress={enrollUser}
+          >
+            <Text style={styles.enrollButtonText}>Enroll In MissionDM</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.enrollButton,
+              { flex: 1, marginRight: 5, marginTop: 10 },
+            ]}
+            onPress={shuffleTargets}
+          >
+            <Text style={styles.enrollButtonText}>Shuffle Targets</Text>
+          </TouchableOpacity>
+        </View>
+        <Modal
+          animationType="fade"
+          transparent={true}
+          visible={isStatsModalVisible}
+          onRequestClose={() => setIsStatsModalVisible(false)}
+        >
+          <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+              <Text style={styles.userCodeText}>{userCode}</Text>
+              <TouchableOpacity
+                style={styles.closeButton}
+                onPress={() => setIsStatsModalVisible(false)}
+              >
+                <Text style={styles.closeButtonText}>Close</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+        <Modal
+          animationType="fade"
+          transparent={true}
+          visible={isImageModalVisible}
+          onRequestClose={() => setIsImageModalVisible(false)}
+        >
+          <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+              <Image
+                source={{ uri: targetImageURL }}
+                style={styles.zoomedImage}
+              />
+              <TouchableOpacity
+                style={styles.closeButton}
+                onPress={() => setIsImageModalVisible(false)}
+              >
+                <Text style={styles.closeButtonText}>Close</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+      </View>
+    );
+  }
+
+  if (inGame && gameActive && isEliminated) {
     return (
       <View
         style={{
@@ -816,144 +1143,86 @@ const MissionDM = () => {
           resizeMode="contain"
           source={require("./images/PrimaryLogo.png")}
         />
-        <Text style={styles.missiondm}>MissionDM</Text>
-        <View style={styles.interiorBox}>
-          <View style={styles.buttonBox}>
-            <TouchableOpacity
-              style={styles.orangeButton}
-              onPress={() => setIsTargetModalVisible(true)}
-            >
-              <Text style={styles.orangeButtonText}>Target Info</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.orangeButton}
-              onPress={() => setIsStatsModalVisible(true)}
-            >
-              <Text style={styles.orangeButtonText}>Game Stats</Text>
-            </TouchableOpacity>
-          </View>
-          <View style={styles.inGameTimeContainer}>
-            <View style={styles.inGameTimeBox}>
-              <Text style={styles.inGameTimeValue}>{timeLeft.days}</Text>
-              <Text style={styles.timeLabel}>Days</Text>
-            </View>
-            <View style={styles.inGameTimeBox}>
-              <Text style={styles.inGameTimeValue}>
-                {String(timeLeft.hours).padStart(2, "0")}
-              </Text>
-              <Text style={styles.timeLabel}>Hours</Text>
-            </View>
-            <View style={styles.inGameTimeBox}>
-              <Text style={styles.inGameTimeValue}>
-                {String(timeLeft.minutes).padStart(2, "0")}
-              </Text>
-              <Text style={styles.timeLabel}>Minutes</Text>
-            </View>
-            <View style={styles.inGameTimeBox}>
-              <Text style={styles.inGameTimeValue}>
-                {String(timeLeft.seconds).padStart(2, "0")}
-              </Text>
-              <Text style={styles.timeLabel}>Seconds</Text>
-            </View>
-          </View>
-        </View>
-        <Modal
-          animationType="slide"
-          transparent={true}
-          visible={isTargetModalVisible}
-          onRequestClose={() => setIsTargetModalVisible(false)}
-        >
-          <View style={styles.modalContainer}>
-            <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>Target Information</Text>
-              <Text style={styles.modalText}>{targetName}</Text>
-              <Image
-                style={styles.profileImage}
-                resizeMode="contain"
-                source={{ uri: targetImageURL }}
-              />
-              <TouchableOpacity
-                style={styles.closeButton}
-                onPress={() => setIsTargetModalVisible(false)}
-              >
-                <Text style={styles.closeButtonText}>Close</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </Modal>
-
-        <Modal
-          animationType="slide"
-          transparent={true}
-          visible={isStatsModalVisible}
-          onRequestClose={() => setIsStatsModalVisible(false)}
-        >
-          <View style={styles.modalContainer}>
-            <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>Game Stats</Text>
-              <Text style={styles.modalText}>Here are your game stats!</Text>
-              <TouchableOpacity
-                style={styles.closeButton}
-                onPress={() => setIsStatsModalVisible(false)}
-              >
-                <Text style={styles.closeButtonText}>Close</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </Modal>
+        <Text style={styles.missiondm}>YOU ARE ELIMINATED</Text>
       </View>
     );
   }
 
-  return (
-    <View
-      style={{
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-        backgroundColor: "#233563",
-      }}
-    >
-      {inGame && startDate ? (
-        <View style={styles.otherContainer}>
-          <Text style={{ fontSize: 18, color: "green", marginBottom: 8 }}>
-            You are enrolled! The game starts in:
-          </Text>
-          <View style={styles.timeContainer}>
-            <View style={styles.timeBox}>
-              <Text style={styles.timeValue}>{timeLeft.days}</Text>
-              <Text style={styles.timeLabel}>Days</Text>
+  if (inGame && !gameActive) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          justifyContent: "center",
+          alignItems: "center",
+          backgroundColor: "#233563",
+        }}
+      >
+        {inGame && startDate ? (
+          <View style={styles.otherContainer}>
+            <Text style={{ fontSize: 18, color: "green", marginBottom: 8 }}>
+              You are enrolled! The game starts in:
+            </Text>
+            <View style={styles.timeContainer}>
+              <View style={styles.timeBox}>
+                <Text style={styles.timeValue}>{timeLeft.days}</Text>
+                <Text style={styles.timeLabel}>Days</Text>
+              </View>
+              <View style={styles.timeBox}>
+                <Text style={styles.timeValue}>
+                  {String(timeLeft.hours).padStart(2, "0")}
+                </Text>
+                <Text style={styles.timeLabel}>Hours</Text>
+              </View>
+              <View style={styles.timeBox}>
+                <Text style={styles.timeValue}>
+                  {String(timeLeft.minutes).padStart(2, "0")}
+                </Text>
+                <Text style={styles.timeLabel}>Minutes</Text>
+              </View>
+              <View style={styles.timeBox}>
+                <Text style={styles.timeValue}>
+                  {String(timeLeft.seconds).padStart(2, "0")}
+                </Text>
+                <Text style={styles.timeLabel}>Seconds</Text>
+              </View>
             </View>
-            <View style={styles.timeBox}>
-              <Text style={styles.timeValue}>
-                {String(timeLeft.hours).padStart(2, "0")}
-              </Text>
-              <Text style={styles.timeLabel}>Hours</Text>
-            </View>
-            <View style={styles.timeBox}>
-              <Text style={styles.timeValue}>
-                {String(timeLeft.minutes).padStart(2, "0")}
-              </Text>
-              <Text style={styles.timeLabel}>Minutes</Text>
-            </View>
-            <View style={styles.timeBox}>
-              <Text style={styles.timeValue}>
-                {String(timeLeft.seconds).padStart(2, "0")}
-              </Text>
-              <Text style={styles.timeLabel}>Seconds</Text>
-            </View>
+            <TouchableOpacity
+              style={styles.enrollButton}
+              onPress={unenrollUser}
+            >
+              <Text style={styles.enrollButtonText}>Leave Game</Text>
+            </TouchableOpacity>
           </View>
-          <TouchableOpacity style={styles.enrollButton} onPress={unenrollUser}>
-            <Text style={styles.enrollButtonText}>Leave Game</Text>
+        ) : (
+          <TouchableOpacity style={styles.enrollButton} onPress={enrollUser}>
+            <Text style={styles.enrollButtonText}>Enroll In MissionDM</Text>
           </TouchableOpacity>
-        </View>
-      ) : (
-        <TouchableOpacity style={styles.enrollButton} onPress={enrollUser}>
-          <Text style={styles.enrollButtonText}>Enroll In MissionDM</Text>
-        </TouchableOpacity>
-      )}
-    </View>
-  );
+        )}
+      </View>
+    );
+  }
+
+  if (inGame && gameActive && isWinner) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          justifyContent: "center",
+          alignItems: "center",
+          backgroundColor: "#1F1F1F",
+        }}
+      >
+        <Image
+          style={styles.dmlogo}
+          resizeMode="contain"
+          source={require("./images/PrimaryLogo.png")}
+        />
+        <Text style={styles.missiondm}>YOU WON</Text>
+      </View>
+    );
+  }
+
 };
 
 export default MissionDM;
