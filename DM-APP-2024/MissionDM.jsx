@@ -493,6 +493,41 @@ const MissionDM = () => {
 
   const [isImageModalVisible, setIsImageModalVisible] = useState(false);
 
+  // *********THIS IS THE HTML FOR THE WIN SCREEN **************
+  // return (
+  //   <View
+  //     style={{
+  //       flex: 1,
+  //       justifyContent: "center",
+  //       alignItems: "center",
+  //       backgroundColor: "#1F1F1F",
+  //       paddingHorizontal: 20,
+  //     }}
+  //   >
+  //     <View style={{ alignItems: "center" }}>
+  //       <Image
+  //         style={{ marginBottom: 20, width: 250, height: 250, resizeMode: 'contain' }}
+  //         source={require('./images/trophy-icon.png')}
+  //       />
+  //       <Text style={{ color: "#FFC300", fontSize: 28, fontWeight: "bold", textAlign: "center" }}>
+  //         Congratulations you won!
+  //       </Text>
+  //       <Text
+  //         style={{
+  //           color: "#FFC300",
+  //           fontSize: 18,
+  //           fontStyle: "italic",
+  //           marginTop: 5,
+  //           marginBottom: 20,
+  //           textAlign: "center",
+  //         }}
+  //       >
+  //         Thanks for playing!
+  //       </Text>
+  //     </View>
+  //   </View>
+  // );
+
 
   // *********THIS IS THE HTML FOR THE ELIMINATION SCREEN **************
   // return (
