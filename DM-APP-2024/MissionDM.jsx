@@ -64,6 +64,8 @@ const MissionDM = () => {
   const [isEliminated, setIsEliminated] = useState(false);
   const [isWinner, setIsWinner] = useState(false);
 
+  const [eliminationsCount, setEliminationsCount] = useState(0);
+
   useEffect(() => {
     getUserData()
       .then((data) => {
@@ -157,6 +159,10 @@ const MissionDM = () => {
         targetId: eliminatedTargetId,
         eliminations: arrayUnion(targetName),
       });
+
+      const updatedUserDoc = await getDoc(selfRef);
+      const updatedEliminations = updatedUserDoc.data().eliminations || [];
+      setEliminationsCount(updatedEliminations.length);
 
       await updateDoc(eliminatedDoc.ref, {
         isEliminated: true,
@@ -433,6 +439,25 @@ const MissionDM = () => {
       return querySnapshot.size;
     } catch (error) {
       console.error("Error fetching documents:", error);
+      return 0;
+    }
+  };
+
+  const getPlayerEliminations = async () => {
+    try {
+      const currentUID = auth.currentUser.uid;
+      const userDocRef = doc(db, "MissionDMPlayers", currentUID);
+      const userDoc = await getDoc(userDocRef);
+  
+      if (userDoc.exists()) {
+        const eliminations = userDoc.data().eliminations || [];
+        return eliminations.length;
+      } else {
+        console.error("User document does not exist.");
+        return 0;
+      }
+    } catch (error) {
+      console.error("Error fetching player eliminations:", error);
       return 0;
     }
   };
@@ -863,7 +888,7 @@ const MissionDM = () => {
         </View>
         <View style={styles.eliminationContainer}>
           <FontAwesomeIcon icon={faCrosshairs} color="#FFFFFF" size={25} />
-          <Text style={styles.eliminationHeader}>12 Eliminations</Text>
+          <Text style={styles.eliminationHeader}>{eliminationsCount} Eliminations</Text>
         </View>
         <View style={styles.buttonBox}>
           <TouchableOpacity
