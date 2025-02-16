@@ -83,6 +83,12 @@ const MissionDM = () => {
   }, []);
 
   useEffect(() => {
+    if (userIDState) {
+      getPlayerEliminations().then(setEliminationsCount);
+    }
+  }, [userIDState]); 
+
+  useEffect(() => {
     getUserInfo(userIDState)
       .then((data) => {
         setUserInfo(data);
@@ -160,9 +166,7 @@ const MissionDM = () => {
         eliminations: arrayUnion(targetName),
       });
 
-      const updatedUserDoc = await getDoc(selfRef);
-      const updatedEliminations = updatedUserDoc.data().eliminations || [];
-      setEliminationsCount(updatedEliminations.length);
+      setEliminationsCount((prevCount) => prevCount + 1);
 
       await updateDoc(eliminatedDoc.ref, {
         isEliminated: true,
