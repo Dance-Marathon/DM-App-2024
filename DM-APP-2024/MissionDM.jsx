@@ -171,9 +171,19 @@ const MissionDM = () => {
         //id: null,
       });
 
-      if (selfDoc.id == eliminatedTargetId) {
-        setIsWinner(true);
+      const updatedSelfDoc = await getDoc(selfRef);
+      const updatedSelfData = updatedSelfDoc.data();
+
+      console.log("Updated Self ID:", updatedSelfData.id);
+      console.log("Updated Target ID:", updatedSelfData.targetId);
+
+      // Win condition: Compare self's ID to their targetId
+      if (updatedSelfData.id === updatedSelfData.targetId) {
+          setIsWinner(true);
+          console.log("setIsWinner to True");
       }
+
+      console.log(isWinner);
 
       return { message: "Elimination verified. New target assigned." };
     } catch (error) {
@@ -227,6 +237,7 @@ const MissionDM = () => {
         });
       }
 
+      getTargetUserInfo();
       console.log("Targets successfully shuffled.");
     } catch (error) {
       console.error("Error in shuffleTargets function:", error);
