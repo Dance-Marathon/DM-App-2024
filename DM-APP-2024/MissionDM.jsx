@@ -327,7 +327,7 @@ const MissionDM = () => {
           name: userInfo.displayName,
           isEliminated: false,
           code: generateRandomCode(),
-          eliminations: {},
+          eliminations: [],
           id: userid,
           targetId: target,
           imageURL: userInfo.avatarImageURL,
