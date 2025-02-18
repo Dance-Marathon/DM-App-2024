@@ -166,7 +166,7 @@ const MissionDM = () => {
         eliminations: arrayUnion(targetName),
       });
 
-      setEliminationsCount(eliminationsCount + 1);
+      setEliminationsCount();
 
       await updateDoc(eliminatedDoc.ref, {
         isEliminated: true,
@@ -174,7 +174,7 @@ const MissionDM = () => {
         //id: null,
       });
 
-      if (id == eliminatedTargetId) {
+      if (selfDoc.id == eliminatedTargetId) {
         setIsWinner(true);
       }
 
@@ -311,12 +311,6 @@ const MissionDM = () => {
       const count = players.length + 1;
       const userid = count.toString();
 
-      let target = "1";
-      if (players.length > 0) {
-        const lastPlayer = players[players.length - 1];
-        target = lastPlayer.id;
-      }
-
       await setDoc(
         doc(db, "MissionDMPlayers", currentUID),
         {
@@ -325,7 +319,7 @@ const MissionDM = () => {
           code: generateRandomCode(),
           eliminations: [],
           id: userid,
-          targetId: target,
+          targetId: 0,
           imageURL: userInfo.avatarImageURL,
           role: role,
           team: userInfo.teamName,
@@ -455,6 +449,7 @@ const MissionDM = () => {
   
       if (userDoc.exists()) {
         const eliminations = userDoc.data().eliminations || [];
+        console.log("Eliminations: ", eliminations.length);
         return eliminations.length;
       } else {
         console.error("User document does not exist.");
