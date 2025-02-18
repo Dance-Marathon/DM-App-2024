@@ -405,9 +405,9 @@ const MissionDM = () => {
   useEffect(() => {
     let roundProcessed = false;
 
-    const gameDocRef = doc(db, "MissionDMGames", "gameStats");
-    const gameDoc = getDoc(gameDocRef);
-    const currentRound = gameDoc.data().currentRound;
+    // const gameDocRef = doc(db, "MissionDMGames", "gameStats");
+    // const gameDoc = getDoc(gameDocRef);
+    // const currentRound = gameDoc.data().currentRound;
 
     const timer = setInterval(async () => {
       const { active, timeLeft } = calculateTimeLeft();
