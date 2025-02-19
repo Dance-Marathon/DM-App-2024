@@ -75,13 +75,12 @@ const MissionDM = () => {
       })
       .catch((err) => {
         console.error(err);
-        setError(err);
       });
   }, []);
 
   useEffect(() => {
     if (userIDState) {
-      setEliminationsCount(getPlayerEliminations());
+      getPlayerEliminations().then((count) => setEliminationsCount(count));
     }
   }, [userIDState]);
 
@@ -179,8 +178,8 @@ const MissionDM = () => {
 
       // Win condition: Compare self's ID to their targetId
       if (updatedSelfData.id === updatedSelfData.targetId) {
-          setIsWinner(true);
-          console.log("setIsWinner to True");
+        setIsWinner(true);
+        console.log("setIsWinner to True");
       }
 
       console.log(isWinner);
@@ -949,17 +948,17 @@ const MissionDM = () => {
           </View>
         </View>
 
-       <View style={styles.userBox}>
-         <View style={styles.tileHeader}>
-           <FontAwesomeIcon icon={faCircleInfo} color="#f18221" size={18} />
+        <View style={styles.userBox}>
+          <View style={styles.tileHeader}>
+            <FontAwesomeIcon icon={faCircleInfo} color="#f18221" size={18} />
             <Text style={styles.tileTitleText}>MY INFO</Text>
-         </View>
-         <View style={styles.eliminationContainer}>
-           <FontAwesomeIcon icon={faCrosshairs} color="#FFFFFF" size={25} />
-           <Text style={styles.eliminationHeader}>12 Eliminations</Text>
-         </View>
-         <View style={styles.buttonBox}>
-           <TouchableOpacity
+          </View>
+          <View style={styles.eliminationContainer}>
+            <FontAwesomeIcon icon={faCrosshairs} color="#FFFFFF" size={25} />
+            <Text style={styles.eliminationHeader}>12 Eliminations</Text>
+          </View>
+          <View style={styles.buttonBox}>
+            <TouchableOpacity
               style={[styles.orangeButton, { width: 125 }]}
               onPress={() => setIsStatsModalVisible(true)}
             >
@@ -1060,7 +1059,13 @@ const MissionDM = () => {
           source={require("./images/MissionDMAppLogo.png")}
           style={[styles.MissionDMLogo, { marginBottom: 20 }]}
         />
-        <View style={{ justifyContent: "center", alignItems: "center", flexGrow: 0.8 }}>
+        <View
+          style={{
+            justifyContent: "center",
+            alignItems: "center",
+            flexGrow: 0.8,
+          }}
+        >
           <Image
             maxWidth="200"
             maxHeight="200"
@@ -1107,47 +1112,60 @@ const MissionDM = () => {
           source={require("./images/MissionDMAppLogo.png")}
           style={[styles.MissionDMLogo, { marginBottom: 20 }]}
         />
-        <View style={{ justifyContent: "center", alignItems: "center", flexGrow: 0.8 }}>
-        {inGame && startDate ? (
-          <View style={[styles.otherContainer, {alignContent: "center"}]}>
-            <Text style={{ fontSize: 20, fontWeight: "bold", color: "white", marginBottom: 8 }}>
-              You are enrolled! The game starts in:
-            </Text>
-            <View style={styles.inGameTimeContainer}>
-            <View style={styles.inGameTimeBox}>
-              <Text style={styles.inGameTimeValue}>{timeLeft.days}</Text>
-            </View>
-            <Text style={styles.colon}>:</Text>
-            <View style={styles.inGameTimeBox}>
-              <Text style={styles.inGameTimeValue}>
-                {String(timeLeft.hours).padStart(2, "0")}
+        <View
+          style={{
+            justifyContent: "center",
+            alignItems: "center",
+            flexGrow: 0.8,
+          }}
+        >
+          {inGame && startDate ? (
+            <View style={[styles.otherContainer, { alignContent: "center" }]}>
+              <Text
+                style={{
+                  fontSize: 20,
+                  fontWeight: "bold",
+                  color: "white",
+                  marginBottom: 8,
+                }}
+              >
+                You are enrolled! The game starts in:
               </Text>
+              <View style={styles.inGameTimeContainer}>
+                <View style={styles.inGameTimeBox}>
+                  <Text style={styles.inGameTimeValue}>{timeLeft.days}</Text>
+                </View>
+                <Text style={styles.colon}>:</Text>
+                <View style={styles.inGameTimeBox}>
+                  <Text style={styles.inGameTimeValue}>
+                    {String(timeLeft.hours).padStart(2, "0")}
+                  </Text>
+                </View>
+                <Text style={styles.colon}>:</Text>
+                <View style={styles.inGameTimeBox}>
+                  <Text style={styles.inGameTimeValue}>
+                    {String(timeLeft.minutes).padStart(2, "0")}
+                  </Text>
+                </View>
+                <Text style={styles.colon}>:</Text>
+                <View style={styles.inGameTimeBox}>
+                  <Text style={styles.inGameTimeValue}>
+                    {String(timeLeft.seconds).padStart(2, "0")}
+                  </Text>
+                </View>
+              </View>
+              <TouchableOpacity
+                style={[styles.orangeButton, { marginTop: 20 }]}
+                onPress={unenrollUser}
+              >
+                <Text style={styles.orangeButtonText}>Leave Game</Text>
+              </TouchableOpacity>
             </View>
-            <Text style={styles.colon}>:</Text>
-            <View style={styles.inGameTimeBox}>
-              <Text style={styles.inGameTimeValue}>
-                {String(timeLeft.minutes).padStart(2, "0")}
-              </Text>
-            </View>
-            <Text style={styles.colon}>:</Text>
-            <View style={styles.inGameTimeBox}>
-              <Text style={styles.inGameTimeValue}>
-                {String(timeLeft.seconds).padStart(2, "0")}
-              </Text>
-            </View>
-          </View>
-            <TouchableOpacity
-              style={[styles.orangeButton, { marginTop: 20 }]}
-              onPress={unenrollUser}
-            >
-              <Text style={styles.orangeButtonText}>Leave Game</Text>
+          ) : (
+            <TouchableOpacity style={styles.enrollButton} onPress={enrollUser}>
+              <Text style={styles.enrollButtonText}>Enroll In MissionDM</Text>
             </TouchableOpacity>
-          </View>
-        ) : (
-          <TouchableOpacity style={styles.enrollButton} onPress={enrollUser}>
-            <Text style={styles.enrollButtonText}>Enroll In MissionDM</Text>
-          </TouchableOpacity>
-        )}
+          )}
         </View>
       </View>
     );
@@ -1168,7 +1186,13 @@ const MissionDM = () => {
           source={require("./images/MissionDMAppLogo.png")}
           style={[styles.MissionDMLogo, { marginBottom: 20 }]}
         />
-        <View style={{ justifyContent: "center", alignItems: "center", flexGrow: 0.8 }}>
+        <View
+          style={{
+            justifyContent: "center",
+            alignItems: "center",
+            flexGrow: 0.8,
+          }}
+        >
           <Image
             style={{
               marginBottom: 20,
@@ -1274,6 +1298,28 @@ const MissionDM = () => {
             </Text>
           </View>
         </View>
+      </View>
+    );
+  }
+
+  // Fallback render if none of the conditions match
+  if (
+    !inGame &&
+    !gameActive &&
+    !isEliminated &&
+    !isWinner &&
+    !inBetweenRounds
+  ) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          justifyContent: "center",
+          alignItems: "center",
+          backgroundColor: "#1F1F1F",
+        }}
+      >
+        <Text style={{ color: "white", fontSize: 18 }}>Loading...</Text>
       </View>
     );
   }
