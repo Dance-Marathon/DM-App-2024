@@ -32,6 +32,7 @@ import { faUsers } from "@fortawesome/free-solid-svg-icons";
 import { faBullseye } from "@fortawesome/free-solid-svg-icons";
 import { faCircleInfo } from "@fortawesome/free-solid-svg-icons";
 import CrosshairOverImage from "./images/Crosshair Over Image.png";
+import { use } from "react";
 
 const MissionDM = () => {
   const [timeLeft, setTimeLeft] = useState({
@@ -110,6 +111,20 @@ const MissionDM = () => {
 
     return () => unsubscribe();
   }, []);
+
+  useEffect(() => {
+    async function checkWinner() {
+      const selfRef = doc(db, "MissionDMPlayers", auth.currentUser.uid);
+      const updatedSelfDoc = await getDoc(selfRef);
+      if (updatedSelfDoc.exists()) {
+        const updatedSelfData = updatedSelfDoc.data();
+        if (updatedSelfData.id === updatedSelfData.targetId) {
+          setIsWinner(true);
+        }
+      }
+    }
+    checkWinner();
+  }, []);  
 
   function formatToLocalDateTime(date) {
     const year = date.getFullYear();
@@ -333,7 +348,7 @@ const MissionDM = () => {
           code: generateRandomCode(),
           eliminations: [],
           id: userid,
-          targetId: '0',
+          targetId: "0",
           imageURL: userInfo.avatarImageURL,
           role: role,
           team: userInfo.teamName,
