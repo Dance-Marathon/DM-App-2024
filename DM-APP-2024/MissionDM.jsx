@@ -50,7 +50,7 @@ const MissionDM = () => {
   const [hasFetchedTarget, setHasFetchedTarget] = useState(false);
   const [currentRound, setCurrentRound] = useState(1);
   const [role, setRole] = useState("");
-  const [inBetweenRounds, setInBetweenRounds] = useState(false);
+  //const [inBetweenRounds, setInBetweenRounds] = useState(false);
   const [isStatsModalVisible, setIsStatsModalVisible] = useState(false);
   const [targetName, setTargetName] = useState("");
   const [targetImageURL, setTargetImageURL] = useState("");
@@ -62,13 +62,16 @@ const MissionDM = () => {
   const [isWinner, setIsWinner] = useState(false);
   const [eliminationsCount, setEliminationsCount] = useState(0);
   const [isImageModalVisible, setIsImageModalVisible] = useState(false);
+  const [firstRoundStart, setFirstRoundStart] = useState(null);
+  const [lastRoundEnd, setLastRoundEnd] = useState(null);
 
   useEffect(() => {
     getUserData()
       .then((data) => {
-        //console.log("Fetched User Data:", data);
+        console.log("Fetched User Data:", data);
         setUserIDState(data.donorID);
         setRole(data.role);
+        setInGame(data.inGame);
       })
       .catch((err) => {
         console.error(err);
@@ -287,6 +290,13 @@ const MissionDM = () => {
 
     rounds.sort((a, b) => a.round - b.round);
 
+    const validRounds = rounds.filter((round) => round.start && round.end);
+
+    if (validRounds.length > 0) {
+      setFirstRoundStart(validRounds[0].start);
+      setLastRoundEnd(validRounds[validRounds.length - 1].end);
+    }
+
     console.log("Rounds:", rounds);
     setRounds(rounds);
   };
@@ -315,11 +325,11 @@ const MissionDM = () => {
         }
       }
 
-      if (startDate > Date.now()) {
-        setInBetweenRounds(true);
-      } else {
-        setInBetweenRounds(false);
-      }
+      // if (startDate > Date.now()) {
+      //   setInBetweenRounds(true);
+      // } else {
+      //   setInBetweenRounds(false);
+      // }
     }
   }, [rounds, rounds[0]?.currentRound]);
 
@@ -352,15 +362,15 @@ const MissionDM = () => {
         { merge: true }
       );
 
-      await updateUserData();
-
-      Alert.alert("Success", "You have been enrolled in the game!");
       setInGame(true);
 
       const docRef = doc(db, "Users", currentUID);
       await updateDoc(docRef, {
         inGame: true,
       });
+
+      await updateUserData();
+      Alert.alert("Success", "You have been enrolled in the game!");
     } catch (error) {
       console.error("Error enrolling user:", error);
       Alert.alert("Error", "Failed to enroll. Please try again.");
@@ -373,15 +383,16 @@ const MissionDM = () => {
       const userDoc = doc(db, "MissionDMPlayers", currentUID);
       await deleteDoc(userDoc);
 
-      await updateUserData();
-
-      Alert.alert("Success", "You have been unenrolled from the game!");
       setInGame(false);
 
       const docRef = doc(db, "Users", currentUID);
       await updateDoc(docRef, {
         inGame: false,
       });
+
+      await updateUserData();
+
+      Alert.alert("Success", "You have been unenrolled from the game!");
     } catch (error) {
       console.error("Error unenrolling user:", error);
       Alert.alert("Error", "Failed to unenroll. Please try again.");
@@ -707,27 +718,14 @@ const MissionDM = () => {
   //   <Text style={{ color: "#fff", fontSize: 10 }}>gameActive: {String(gameActive)}</Text>
   //   <Text style={{ color: "#fff", fontSize: 10 }}>isEliminated: {String(isEliminated)}</Text>
   //   <Text style={{ color: "#fff", fontSize: 10 }}>isWinner: {String(isWinner)}</Text>
-  //   <Text style={{ color: "#fff", fontSize: 10 }}>inBetweenRounds: {String(inBetweenRounds)}</Text>
+
   // </View>
-  // <TouchableOpacity
-  //           style={[
-  //             styles.enrollButton,
-  //             { flex: 1, marginLeft: 5, marginTop: 10 },
-  //           ]}
-  //           onPress={enrollUser}
-  //         >
-  //           <Text style={styles.enrollButtonText}>Enroll In MissionDM</Text>
-  //         </TouchableOpacity>
   //     </View>
   // )
 
+  // Player has clicked the enroll button. Their profile is created
   if (inGame) {
-    if (
-      gameActive &&
-      !inBetweenRounds &&
-      !isEliminated &&
-      !isWinner
-    ) {
+    if (gameActive && !isEliminated && !isWinner) {
       return (
         <View
           style={{
@@ -1023,7 +1021,7 @@ const MissionDM = () => {
       );
     }
 
-    if (gameActive && inBetweenRounds) {
+    if (!gameActive) {
       return (
         <View
           style={{
@@ -1095,7 +1093,10 @@ const MissionDM = () => {
         </View>
       );
     }
-  } else {
+  }
+
+  // Player has not enrolled in the game yet
+  else {
     return (
       <View
         style={{
@@ -1108,41 +1109,41 @@ const MissionDM = () => {
           source={require("./images/MissionDMAppLogo.png")}
           style={[styles.MissionDMLogo, { marginBottom: 20 }]}
         />
-          <View style={[styles.targetBox, { alignItems: "center" }]}>
-            <Text style={styles.header}>Please Enroll:</Text>
-            <TouchableOpacity style={styles.enrollButton} onPress={enrollUser}>
-              <Text style={styles.enrollButtonText}>Create My Account!</Text>
-            </TouchableOpacity>
-          </View>
-          <View style={[styles.targetBox, { padding: 10 }]}>
-            <Text style={[styles.header, { marginBottom: 5 }]}>
-              The game starts in:
-            </Text>
-            <View style={styles.inGameTimeContainer}>
-              <View style={styles.inGameTimeBox}>
-                <Text style={styles.inGameTimeValue}>{timeLeft.days}</Text>
-              </View>
-              <Text style={styles.colon}>:</Text>
-              <View style={styles.inGameTimeBox}>
-                <Text style={styles.inGameTimeValue}>
-                  {String(timeLeft.hours).padStart(2, "0")}
-                </Text>
-              </View>
-              <Text style={styles.colon}>:</Text>
-              <View style={styles.inGameTimeBox}>
-                <Text style={styles.inGameTimeValue}>
-                  {String(timeLeft.minutes).padStart(2, "0")}
-                </Text>
-              </View>
-              <Text style={styles.colon}>:</Text>
-              <View style={styles.inGameTimeBox}>
-                <Text style={styles.inGameTimeValue}>
-                  {String(timeLeft.seconds).padStart(2, "0")}
-                </Text>
-              </View>
+        <View style={[styles.targetBox, { alignItems: "center" }]}>
+          <Text style={styles.header}>Please Enroll:</Text>
+          <TouchableOpacity style={styles.enrollButton} onPress={enrollUser}>
+            <Text style={styles.enrollButtonText}>Create My Account!</Text>
+          </TouchableOpacity>
+        </View>
+        <View style={[styles.targetBox, { padding: 10 }]}>
+          <Text style={[styles.header, { marginBottom: 5 }]}>
+            The game starts in:
+          </Text>
+          <View style={styles.inGameTimeContainer}>
+            <View style={styles.inGameTimeBox}>
+              <Text style={styles.inGameTimeValue}>{timeLeft.days}</Text>
+            </View>
+            <Text style={styles.colon}>:</Text>
+            <View style={styles.inGameTimeBox}>
+              <Text style={styles.inGameTimeValue}>
+                {String(timeLeft.hours).padStart(2, "0")}
+              </Text>
+            </View>
+            <Text style={styles.colon}>:</Text>
+            <View style={styles.inGameTimeBox}>
+              <Text style={styles.inGameTimeValue}>
+                {String(timeLeft.minutes).padStart(2, "0")}
+              </Text>
+            </View>
+            <Text style={styles.colon}>:</Text>
+            <View style={styles.inGameTimeBox}>
+              <Text style={styles.inGameTimeValue}>
+                {String(timeLeft.seconds).padStart(2, "0")}
+              </Text>
             </View>
           </View>
         </View>
+      </View>
     );
   }
 
@@ -1151,8 +1152,7 @@ const MissionDM = () => {
     !inGame &&
     !gameActive &&
     !isEliminated &&
-    !isWinner &&
-    !inBetweenRounds
+    !isWinner
   ) {
     return (
       <View
