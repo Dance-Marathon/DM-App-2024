@@ -32,7 +32,6 @@ import { faUsers } from "@fortawesome/free-solid-svg-icons";
 import { faBullseye } from "@fortawesome/free-solid-svg-icons";
 import { faCircleInfo } from "@fortawesome/free-solid-svg-icons";
 import CrosshairOverImage from "./images/Crosshair Over Image.png";
-import { use } from "react";
 
 const MissionDM = () => {
   const [timeLeft, setTimeLeft] = useState({
@@ -67,12 +66,9 @@ const MissionDM = () => {
   useEffect(() => {
     getUserData()
       .then((data) => {
-        console.log("Fetched User Data:", data);
+        //console.log("Fetched User Data:", data);
         setUserIDState(data.donorID);
         setRole(data.role);
-        if (data.inMissionDM) {
-          setInGame(true);
-        }
       })
       .catch((err) => {
         console.error(err);
@@ -124,7 +120,7 @@ const MissionDM = () => {
       }
     }
     checkWinner();
-  }, []);  
+  }, []);
 
   function formatToLocalDateTime(date) {
     const year = date.getFullYear();
@@ -356,15 +352,15 @@ const MissionDM = () => {
         { merge: true }
       );
 
-      // const docRef = doc(db, "Users", currentUID);
-      // await updateDoc(docRef, {
-      //   inMissionDM: true,
-      // });
-
       await updateUserData();
 
       Alert.alert("Success", "You have been enrolled in the game!");
       setInGame(true);
+
+      const docRef = doc(db, "Users", currentUID);
+      await updateDoc(docRef, {
+        inGame: true,
+      });
     } catch (error) {
       console.error("Error enrolling user:", error);
       Alert.alert("Error", "Failed to enroll. Please try again.");
@@ -377,15 +373,15 @@ const MissionDM = () => {
       const userDoc = doc(db, "MissionDMPlayers", currentUID);
       await deleteDoc(userDoc);
 
-      const docRef = doc(db, "Users", currentUID);
-      await updateDoc(docRef, {
-        inMissionDM: false,
-      });
-
       await updateUserData();
 
       Alert.alert("Success", "You have been unenrolled from the game!");
       setInGame(false);
+
+      const docRef = doc(db, "Users", currentUID);
+      await updateDoc(docRef, {
+        inGame: false,
+      });
     } catch (error) {
       console.error("Error unenrolling user:", error);
       Alert.alert("Error", "Failed to unenroll. Please try again.");
@@ -725,243 +721,381 @@ const MissionDM = () => {
   //     </View>
   // )
 
-  if (inGame && gameActive && !inBetweenRounds && !isEliminated && !isWinner) {
-    return (
-      <View
-        style={{
-          flex: 1,
-          alignItems: "center",
-          backgroundColor: "#1F1F1F",
-        }}
-      >
-        <Image
-          source={require("./images/MissionDMAppLogo.png")}
-          style={styles.MissionDMLogo}
-        />
-        <View style={styles.roundBox}>
-          <Text style={styles.header}>ROUND {currentRound}</Text>
-          <View style={styles.inGameTimeContainer}>
-            <View style={styles.inGameTimeBox}>
-              <Text style={styles.inGameTimeValue}>{timeLeft.days}</Text>
-            </View>
-            <Text style={styles.colon}>:</Text>
-            <View style={styles.inGameTimeBox}>
-              <Text style={styles.inGameTimeValue}>
-                {String(timeLeft.hours).padStart(2, "0")}
-              </Text>
-            </View>
-            <Text style={styles.colon}>:</Text>
-            <View style={styles.inGameTimeBox}>
-              <Text style={styles.inGameTimeValue}>
-                {String(timeLeft.minutes).padStart(2, "0")}
-              </Text>
-            </View>
-            <Text style={styles.colon}>:</Text>
-            <View style={styles.inGameTimeBox}>
-              <Text style={styles.inGameTimeValue}>
-                {String(timeLeft.seconds).padStart(2, "0")}
-              </Text>
-            </View>
-          </View>
-        </View>
-        <View style={styles.targetBox}>
-          <View style={styles.tileHeader}>
-            <FontAwesomeIcon icon={faBullseye} color="#f18221" size={18} />
-            <Text style={styles.tileTitleText}>TARGET INFO</Text>
-          </View>
-          <View style={styles.targetInfoContainer}>
-            <TouchableOpacity onPress={() => setIsImageModalVisible(true)}>
-              <View style={styles.imageOverlay}>
-                <Image source={{ uri: targetImageURL }} style={styles.avatar} />
-                <Image
-                  source={CrosshairOverImage}
-                  style={styles.crosshairOverlay}
-                />
-              </View>
-            </TouchableOpacity>
-            <View style={styles.targetInfo}>
-              <Text style={styles.targetName}>{targetName}</Text>
-              <View style={styles.tagsContainer}>
-                <View style={styles.section}>
-                  <FontAwesome name="circle" size={15} color="#f18221" />
-                  <Text style={styles.targetTag}>{targetTeam}</Text>
-                </View>
-                <View style={styles.section}>
-                  <FontAwesome name="circle" size={15} color="#f18221" />
-                  <Text style={styles.targetTag}>{targetRole}</Text>
-                </View>
-              </View>
-            </View>
-          </View>
-          <View style={styles.enterCodeContainer}>
-            <Text style={styles.enterCodeText}>
-              If target is eliminated, enter their code here:
-            </Text>
-            <TextInput
-              style={styles.codeInput}
-              placeholder="Enter code"
-              placeholderTextColor="#888"
-              onChangeText={(text) => setEnteredCode(text)}
-              value={enteredCode}
-              onSubmitEditing={handleCodeSubmit}
-            />
-          </View>
-        </View>
-
-        <View style={styles.userBox}>
-          <View style={styles.tileHeader}>
-            <FontAwesomeIcon icon={faCircleInfo} color="#f18221" size={18} />
-            <Text style={styles.tileTitleText}>MY INFO</Text>
-          </View>
-          <View style={styles.eliminationContainer}>
-            <FontAwesomeIcon icon={faCrosshairs} color="#FFFFFF" size={25} />
-            <Text style={styles.eliminationHeader}>
-              {eliminationsCount} Eliminations
-            </Text>
-          </View>
-          <View style={styles.buttonBox}>
-            <TouchableOpacity
-              style={[styles.orangeButton, { width: 125 }]}
-              onPress={() => setIsStatsModalVisible(true)}
-            >
-              <Text style={styles.orangeButtonText}>Show My Code</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+  if (inGame) {
+    if (
+      gameActive &&
+      !inBetweenRounds &&
+      !isEliminated &&
+      !isWinner
+    ) {
+      return (
         <View
           style={{
-            flexDirection: "row",
-            justifyContent: "space-between",
-            marginTop: 10,
-            width: "95%",
-          }}
-        >
-          <TouchableOpacity
-            style={[
-              styles.enrollButton,
-              { flex: 1, marginRight: 5, marginTop: 10 },
-            ]}
-            onPress={unenrollUser}
-          >
-            <Text style={styles.enrollButtonText}>Leave Game</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[
-              styles.enrollButton,
-              { flex: 1, marginLeft: 5, marginTop: 10 },
-            ]}
-            onPress={enrollUser}
-          >
-            <Text style={styles.enrollButtonText}>Enroll In MissionDM</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[
-              styles.enrollButton,
-              { flex: 1, marginRight: 5, marginTop: 10 },
-            ]}
-            onPress={shuffleTargets}
-          >
-            <Text style={styles.enrollButtonText}>Shuffle Targets</Text>
-          </TouchableOpacity>
-        </View>
-        <Modal
-          animationType="fade"
-          transparent={true}
-          visible={isStatsModalVisible}
-          onRequestClose={() => setIsStatsModalVisible(false)}
-        >
-          <View style={styles.modalContainer}>
-            <View style={styles.modalContent}>
-              <Text style={styles.userCodeText}>{userCode}</Text>
-              <TouchableOpacity
-                style={styles.closeButton}
-                onPress={() => setIsStatsModalVisible(false)}
-              >
-                <Text style={styles.closeButtonText}>Close</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </Modal>
-        <Modal
-          animationType="fade"
-          transparent={true}
-          visible={isImageModalVisible}
-          onRequestClose={() => setIsImageModalVisible(false)}
-        >
-          <View style={styles.modalContainer}>
-            <View style={styles.modalContent}>
-              <Image
-                source={{ uri: targetImageURL }}
-                style={styles.zoomedImage}
-              />
-              <TouchableOpacity
-                style={styles.closeButton}
-                onPress={() => setIsImageModalVisible(false)}
-              >
-                <Text style={styles.closeButtonText}>Close</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </Modal>
-      </View>
-    );
-  }
-
-  // Eliminated screen
-  if (inGame && gameActive && isEliminated) {
-    return (
-      <View
-        style={{
-          flex: 1,
-          alignItems: "center",
-          backgroundColor: "#1F1F1F",
-        }}
-      >
-        <Image
-          source={require("./images/MissionDMAppLogo.png")}
-          style={[styles.MissionDMLogo, { marginBottom: 20 }]}
-        />
-        <View
-          style={{
-            justifyContent: "center",
+            flex: 1,
             alignItems: "center",
-            flexGrow: 0.8,
+            backgroundColor: "#1F1F1F",
           }}
         >
           <Image
-            maxWidth="200"
-            maxHeight="200"
-            style={{ marginBottom: 20 }}
-            source={require("./images/eliminated-icon.png")}
+            source={require("./images/MissionDMAppLogo.png")}
+            style={styles.MissionDMLogo}
           />
-          <Text style={{ color: "red", fontSize: 28, fontWeight: "bold" }}>
-            You have been eliminated.
-          </Text>
-          <Text
-            style={{
-              color: "red",
-              fontSize: 18,
-              fontStyle: "italic",
-              marginTop: 5,
-              marginBottom: 20,
-            }}
-          >
-            Thanks for playing!
-          </Text>
-          {currentRound <= 1 && (
+          <View style={styles.roundBox}>
+            <Text style={styles.header}>ROUND {currentRound}</Text>
+            <View style={styles.inGameTimeContainer}>
+              <View style={styles.inGameTimeBox}>
+                <Text style={styles.inGameTimeValue}>{timeLeft.days}</Text>
+              </View>
+              <Text style={styles.colon}>:</Text>
+              <View style={styles.inGameTimeBox}>
+                <Text style={styles.inGameTimeValue}>
+                  {String(timeLeft.hours).padStart(2, "0")}
+                </Text>
+              </View>
+              <Text style={styles.colon}>:</Text>
+              <View style={styles.inGameTimeBox}>
+                <Text style={styles.inGameTimeValue}>
+                  {String(timeLeft.minutes).padStart(2, "0")}
+                </Text>
+              </View>
+              <Text style={styles.colon}>:</Text>
+              <View style={styles.inGameTimeBox}>
+                <Text style={styles.inGameTimeValue}>
+                  {String(timeLeft.seconds).padStart(2, "0")}
+                </Text>
+              </View>
+            </View>
+          </View>
+          <View style={styles.targetBox}>
+            <View style={styles.tileHeader}>
+              <FontAwesomeIcon icon={faBullseye} color="#f18221" size={18} />
+              <Text style={styles.tileTitleText}>TARGET INFO</Text>
+            </View>
+            <View style={styles.targetInfoContainer}>
+              <TouchableOpacity onPress={() => setIsImageModalVisible(true)}>
+                <View style={styles.imageOverlay}>
+                  <Image
+                    source={{ uri: targetImageURL }}
+                    style={styles.avatar}
+                  />
+                  <Image
+                    source={CrosshairOverImage}
+                    style={styles.crosshairOverlay}
+                  />
+                </View>
+              </TouchableOpacity>
+              <View style={styles.targetInfo}>
+                <Text style={styles.targetName}>{targetName}</Text>
+                <View style={styles.tagsContainer}>
+                  <View style={styles.section}>
+                    <FontAwesome name="circle" size={15} color="#f18221" />
+                    <Text style={styles.targetTag}>{targetTeam}</Text>
+                  </View>
+                  <View style={styles.section}>
+                    <FontAwesome name="circle" size={15} color="#f18221" />
+                    <Text style={styles.targetTag}>{targetRole}</Text>
+                  </View>
+                </View>
+              </View>
+            </View>
+            <View style={styles.enterCodeContainer}>
+              <Text style={styles.enterCodeText}>
+                If target is eliminated, enter their code here:
+              </Text>
+              <TextInput
+                style={styles.codeInput}
+                placeholder="Enter code"
+                placeholderTextColor="#888"
+                onChangeText={(text) => setEnteredCode(text)}
+                value={enteredCode}
+                onSubmitEditing={handleCodeSubmit}
+              />
+            </View>
+          </View>
+
+          <View style={styles.userBox}>
+            <View style={styles.tileHeader}>
+              <FontAwesomeIcon icon={faCircleInfo} color="#f18221" size={18} />
+              <Text style={styles.tileTitleText}>MY INFO</Text>
+            </View>
+            <View style={styles.eliminationContainer}>
+              <FontAwesomeIcon icon={faCrosshairs} color="#FFFFFF" size={25} />
+              <Text style={styles.eliminationHeader}>
+                {eliminationsCount} Eliminations
+              </Text>
+            </View>
             <View style={styles.buttonBox}>
-              <TouchableOpacity style={styles.orangeButton}>
-                <Text style={styles.orangeButtonText}>Buy Back In!</Text>
+              <TouchableOpacity
+                style={[styles.orangeButton, { width: 125 }]}
+                onPress={() => setIsStatsModalVisible(true)}
+              >
+                <Text style={styles.orangeButtonText}>Show My Code</Text>
               </TouchableOpacity>
             </View>
-          )}
+          </View>
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              marginTop: 10,
+              width: "95%",
+            }}
+          >
+            <TouchableOpacity
+              style={[
+                styles.enrollButton,
+                { flex: 1, marginRight: 5, marginTop: 10 },
+              ]}
+              onPress={unenrollUser}
+            >
+              <Text style={styles.enrollButtonText}>Leave Game</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.enrollButton,
+                { flex: 1, marginLeft: 5, marginTop: 10 },
+              ]}
+              onPress={enrollUser}
+            >
+              <Text style={styles.enrollButtonText}>Enroll In MissionDM</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.enrollButton,
+                { flex: 1, marginRight: 5, marginTop: 10 },
+              ]}
+              onPress={shuffleTargets}
+            >
+              <Text style={styles.enrollButtonText}>Shuffle Targets</Text>
+            </TouchableOpacity>
+          </View>
+          <Modal
+            animationType="fade"
+            transparent={true}
+            visible={isStatsModalVisible}
+            onRequestClose={() => setIsStatsModalVisible(false)}
+          >
+            <View style={styles.modalContainer}>
+              <View style={styles.modalContent}>
+                <Text style={styles.userCodeText}>{userCode}</Text>
+                <TouchableOpacity
+                  style={styles.closeButton}
+                  onPress={() => setIsStatsModalVisible(false)}
+                >
+                  <Text style={styles.closeButtonText}>Close</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </Modal>
+          <Modal
+            animationType="fade"
+            transparent={true}
+            visible={isImageModalVisible}
+            onRequestClose={() => setIsImageModalVisible(false)}
+          >
+            <View style={styles.modalContainer}>
+              <View style={styles.modalContent}>
+                <Image
+                  source={{ uri: targetImageURL }}
+                  style={styles.zoomedImage}
+                />
+                <TouchableOpacity
+                  style={styles.closeButton}
+                  onPress={() => setIsImageModalVisible(false)}
+                >
+                  <Text style={styles.closeButtonText}>Close</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </Modal>
         </View>
-      </View>
-    );
-  }
+      );
+    }
 
-  // Before first round screen
-  if (inGame && !gameActive) {
+    // Eliminated screen
+    if (gameActive && isEliminated) {
+      return (
+        <View
+          style={{
+            flex: 1,
+            alignItems: "center",
+            backgroundColor: "#1F1F1F",
+          }}
+        >
+          <Image
+            source={require("./images/MissionDMAppLogo.png")}
+            style={[styles.MissionDMLogo, { marginBottom: 20 }]}
+          />
+          <View
+            style={{
+              justifyContent: "center",
+              alignItems: "center",
+              flexGrow: 0.8,
+            }}
+          >
+            <Image
+              maxWidth="200"
+              maxHeight="200"
+              style={{ marginBottom: 20 }}
+              source={require("./images/eliminated-icon.png")}
+            />
+            <Text style={{ color: "red", fontSize: 28, fontWeight: "bold" }}>
+              You have been eliminated.
+            </Text>
+            <Text
+              style={{
+                color: "red",
+                fontSize: 18,
+                fontStyle: "italic",
+                marginTop: 5,
+                marginBottom: 20,
+              }}
+            >
+              Thanks for playing!
+            </Text>
+            {currentRound <= 1 && (
+              <View style={styles.buttonBox}>
+                <TouchableOpacity style={styles.orangeButton}>
+                  <Text style={styles.orangeButtonText}>Buy Back In!</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+        </View>
+      );
+    }
+
+    // Winner screen
+    if (gameActive && isWinner) {
+      return (
+        <View
+          style={{
+            flex: 1,
+            alignItems: "center",
+            backgroundColor: "#1F1F1F",
+            paddingHorizontal: 20,
+          }}
+        >
+          <Image
+            source={require("./images/MissionDMAppLogo.png")}
+            style={[styles.MissionDMLogo, { marginBottom: 20 }]}
+          />
+          <View
+            style={{
+              justifyContent: "center",
+              alignItems: "center",
+              flexGrow: 0.8,
+            }}
+          >
+            <Image
+              style={{
+                marginBottom: 20,
+                width: 250,
+                height: 250,
+                resizeMode: "contain",
+              }}
+              source={require("./images/trophy-icon.png")}
+            />
+            <Text
+              style={{
+                color: "#FFC300",
+                fontSize: 28,
+                fontWeight: "bold",
+                textAlign: "center",
+              }}
+            >
+              Congratulations you won!
+            </Text>
+            <Text
+              style={{
+                color: "#FFC300",
+                fontSize: 18,
+                fontStyle: "italic",
+                marginTop: 5,
+                marginBottom: 20,
+                textAlign: "center",
+              }}
+            >
+              Thanks for playing!
+            </Text>
+          </View>
+        </View>
+      );
+    }
+
+    if (gameActive && inBetweenRounds) {
+      return (
+        <View
+          style={{
+            flex: 1,
+            alignItems: "center",
+            backgroundColor: "#1F1F1F",
+          }}
+        >
+          <Image
+            source={require("./images/MissionDMAppLogo.png")}
+            style={[styles.MissionDMLogo, { marginBottom: 20 }]}
+          />
+          <View style={styles.roundBox}>
+            <Text style={styles.header}>Congratulations!</Text>
+            <Text style={styles.subheader}>
+              You completed round {currentRound - 1} of the Mission.
+            </Text>
+          </View>
+          <View style={styles.congratsRoundBox}>
+            <Text style={[styles.header, { marginBottom: 0 }]}>
+              ROUND {currentRound}
+            </Text>
+            <Text style={[styles.subheader, { marginBottom: 0, marginTop: 0 }]}>
+              starts in
+            </Text>
+            <View style={styles.inGameTimeContainer}>
+              <View style={styles.inGameTimeBox}>
+                <Text style={styles.inGameTimeValue}>{timeLeft.days}</Text>
+              </View>
+              <Text style={styles.colon}>:</Text>
+              <View style={styles.inGameTimeBox}>
+                <Text style={styles.inGameTimeValue}>
+                  {String(timeLeft.hours).padStart(2, "0")}
+                </Text>
+              </View>
+              <Text style={styles.colon}>:</Text>
+              <View style={styles.inGameTimeBox}>
+                <Text style={styles.inGameTimeValue}>
+                  {String(timeLeft.minutes).padStart(2, "0")}
+                </Text>
+              </View>
+              <Text style={styles.colon}>:</Text>
+              <View style={styles.inGameTimeBox}>
+                <Text style={styles.inGameTimeValue}>
+                  {String(timeLeft.seconds).padStart(2, "0")}
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          <View style={styles.userBox}>
+            <View style={styles.tileHeader}>
+              <FontAwesomeIcon icon={faCircleInfo} color="#f18221" size={18} />
+              <Text style={styles.tileTitleText}>ROUND SUMMARY</Text>
+            </View>
+            <View style={styles.eliminationContainer}>
+              <FontAwesomeIcon icon={faCrosshairs} color="#FFFFFF" size={25} />
+              <Text style={[styles.eliminationHeader, { fontSize: 20 }]}>
+                12 Players were eliminated
+              </Text>
+            </View>
+            <View style={[styles.eliminationContainer, { marginBottom: 20 }]}>
+              <FontAwesomeIcon icon={faUsers} color="#FFFFFF" size={25} />
+              <Text style={[styles.eliminationHeader, { fontSize: 20 }]}>
+                41 players remain
+              </Text>
+            </View>
+          </View>
+        </View>
+      );
+    }
+  } else {
     return (
       <View
         style={{
@@ -974,193 +1108,41 @@ const MissionDM = () => {
           source={require("./images/MissionDMAppLogo.png")}
           style={[styles.MissionDMLogo, { marginBottom: 20 }]}
         />
-        <View
-          style={{
-            justifyContent: "center",
-            alignItems: "center",
-            flexGrow: 0.8,
-          }}
-        >
-          {inGame && startDate ? (
-            <View style={[styles.otherContainer, { alignContent: "center" }]}>
-              <Text
-                style={{
-                  fontSize: 20,
-                  fontWeight: "bold",
-                  color: "white",
-                  marginBottom: 8,
-                }}
-              >
-                You are enrolled! The game starts in:
-              </Text>
-              <View style={styles.inGameTimeContainer}>
-                <View style={styles.inGameTimeBox}>
-                  <Text style={styles.inGameTimeValue}>{timeLeft.days}</Text>
-                </View>
-                <Text style={styles.colon}>:</Text>
-                <View style={styles.inGameTimeBox}>
-                  <Text style={styles.inGameTimeValue}>
-                    {String(timeLeft.hours).padStart(2, "0")}
-                  </Text>
-                </View>
-                <Text style={styles.colon}>:</Text>
-                <View style={styles.inGameTimeBox}>
-                  <Text style={styles.inGameTimeValue}>
-                    {String(timeLeft.minutes).padStart(2, "0")}
-                  </Text>
-                </View>
-                <Text style={styles.colon}>:</Text>
-                <View style={styles.inGameTimeBox}>
-                  <Text style={styles.inGameTimeValue}>
-                    {String(timeLeft.seconds).padStart(2, "0")}
-                  </Text>
-                </View>
-              </View>
-              <TouchableOpacity
-                style={[styles.orangeButton, { marginTop: 20 }]}
-                onPress={unenrollUser}
-              >
-                <Text style={styles.orangeButtonText}>Leave Game</Text>
-              </TouchableOpacity>
-            </View>
-          ) : (
+          <View style={[styles.targetBox, { alignItems: "center" }]}>
+            <Text style={styles.header}>Please Enroll:</Text>
             <TouchableOpacity style={styles.enrollButton} onPress={enrollUser}>
-              <Text style={styles.enrollButtonText}>Enroll In MissionDM</Text>
+              <Text style={styles.enrollButtonText}>Create My Account!</Text>
             </TouchableOpacity>
-          )}
-        </View>
-      </View>
-    );
-  }
-
-  // Winner screen
-  if (inGame && gameActive && isWinner) {
-    return (
-      <View
-        style={{
-          flex: 1,
-          alignItems: "center",
-          backgroundColor: "#1F1F1F",
-          paddingHorizontal: 20,
-        }}
-      >
-        <Image
-          source={require("./images/MissionDMAppLogo.png")}
-          style={[styles.MissionDMLogo, { marginBottom: 20 }]}
-        />
-        <View
-          style={{
-            justifyContent: "center",
-            alignItems: "center",
-            flexGrow: 0.8,
-          }}
-        >
-          <Image
-            style={{
-              marginBottom: 20,
-              width: 250,
-              height: 250,
-              resizeMode: "contain",
-            }}
-            source={require("./images/trophy-icon.png")}
-          />
-          <Text
-            style={{
-              color: "#FFC300",
-              fontSize: 28,
-              fontWeight: "bold",
-              textAlign: "center",
-            }}
-          >
-            Congratulations you won!
-          </Text>
-          <Text
-            style={{
-              color: "#FFC300",
-              fontSize: 18,
-              fontStyle: "italic",
-              marginTop: 5,
-              marginBottom: 20,
-              textAlign: "center",
-            }}
-          >
-            Thanks for playing!
-          </Text>
-        </View>
-      </View>
-    );
-  }
-
-  if (inGame && gameActive && inBetweenRounds) {
-    return (
-      <View
-        style={{
-          flex: 1,
-          alignItems: "center",
-          backgroundColor: "#1F1F1F",
-        }}
-      >
-        <Image
-          source={require("./images/MissionDMAppLogo.png")}
-          style={[styles.MissionDMLogo, { marginBottom: 20 }]}
-        />
-        <View style={styles.roundBox}>
-          <Text style={styles.header}>Congratulations!</Text>
-          <Text style={styles.subheader}>
-            You completed round {currentRound - 1} of the Mission.
-          </Text>
-        </View>
-        <View style={styles.congratsRoundBox}>
-          <Text style={[styles.header, { marginBottom: 0 }]}>
-            ROUND {currentRound}
-          </Text>
-          <Text style={[styles.subheader, { marginBottom: 0, marginTop: 0 }]}>
-            starts in
-          </Text>
-          <View style={styles.inGameTimeContainer}>
-            <View style={styles.inGameTimeBox}>
-              <Text style={styles.inGameTimeValue}>{timeLeft.days}</Text>
-            </View>
-            <Text style={styles.colon}>:</Text>
-            <View style={styles.inGameTimeBox}>
-              <Text style={styles.inGameTimeValue}>
-                {String(timeLeft.hours).padStart(2, "0")}
-              </Text>
-            </View>
-            <Text style={styles.colon}>:</Text>
-            <View style={styles.inGameTimeBox}>
-              <Text style={styles.inGameTimeValue}>
-                {String(timeLeft.minutes).padStart(2, "0")}
-              </Text>
-            </View>
-            <Text style={styles.colon}>:</Text>
-            <View style={styles.inGameTimeBox}>
-              <Text style={styles.inGameTimeValue}>
-                {String(timeLeft.seconds).padStart(2, "0")}
-              </Text>
-            </View>
           </View>
-        </View>
-
-        <View style={styles.userBox}>
-          <View style={styles.tileHeader}>
-            <FontAwesomeIcon icon={faCircleInfo} color="#f18221" size={18} />
-            <Text style={styles.tileTitleText}>ROUND SUMMARY</Text>
-          </View>
-          <View style={styles.eliminationContainer}>
-            <FontAwesomeIcon icon={faCrosshairs} color="#FFFFFF" size={25} />
-            <Text style={[styles.eliminationHeader, { fontSize: 20 }]}>
-              12 Players were eliminated
+          <View style={[styles.targetBox, { padding: 10 }]}>
+            <Text style={[styles.header, { marginBottom: 5 }]}>
+              The game starts in:
             </Text>
-          </View>
-          <View style={[styles.eliminationContainer, { marginBottom: 20 }]}>
-            <FontAwesomeIcon icon={faUsers} color="#FFFFFF" size={25} />
-            <Text style={[styles.eliminationHeader, { fontSize: 20 }]}>
-              41 players remain
-            </Text>
+            <View style={styles.inGameTimeContainer}>
+              <View style={styles.inGameTimeBox}>
+                <Text style={styles.inGameTimeValue}>{timeLeft.days}</Text>
+              </View>
+              <Text style={styles.colon}>:</Text>
+              <View style={styles.inGameTimeBox}>
+                <Text style={styles.inGameTimeValue}>
+                  {String(timeLeft.hours).padStart(2, "0")}
+                </Text>
+              </View>
+              <Text style={styles.colon}>:</Text>
+              <View style={styles.inGameTimeBox}>
+                <Text style={styles.inGameTimeValue}>
+                  {String(timeLeft.minutes).padStart(2, "0")}
+                </Text>
+              </View>
+              <Text style={styles.colon}>:</Text>
+              <View style={styles.inGameTimeBox}>
+                <Text style={styles.inGameTimeValue}>
+                  {String(timeLeft.seconds).padStart(2, "0")}
+                </Text>
+              </View>
+            </View>
           </View>
         </View>
-      </View>
     );
   }
 
@@ -1321,10 +1303,9 @@ const styles = StyleSheet.create({
     backgroundColor: "#E2883C",
     padding: 10,
     height: 45,
-    width: "55%",
     borderRadius: 5,
-    marginBottom: 10,
-    marginTop: 85,
+    marginBottom: 20,
+    marginTop: 10,
   },
   enrollButtonText: {
     color: "white",
