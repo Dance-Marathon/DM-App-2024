@@ -44,6 +44,7 @@ import checkForUpdate from "./AppUpdateCheck";
 import EventDetails from "./EventDetails";
 import AllNotifications from "./AllNotifications";
 import FAQ from "./FAQpage";
+import MissionDM from "./MissionDM";
 
 import { addUserExpoPushToken } from "./Firebase/AuthManager";
 
@@ -126,6 +127,7 @@ const App = () => {
   const [userIDState, setUserIDState] = useState("");
   const [userInfo, setUserInfo] = useState({});
   //const previousActivityRef = useRef(null);
+  const [enrolled, setEnrolled] = useState(false);
 
   const [scannerPermissions, setScannerPermissions] = useState({
     allowedRoles: [],
@@ -143,6 +145,7 @@ const App = () => {
         const data = docSnap.data();
         setUserIDState(data.donorID);
         setRole(data.role);
+        setEnrolled(data.inMissionDM);
       } else {
         console.log("Document does not exist");
       }
@@ -431,6 +434,18 @@ const App = () => {
                   ),
                 }}
               />
+              {enrolled && (
+                <Tab.Screen
+                  name="MissionDM"
+                  component={MissionDM}
+                  options={{
+                    headerShown: false,
+                    tabBarIcon: ({ color, size }) => (
+                      <Icon name="rocket" type="font-awesome" color={color} />
+                    ),
+                  }}
+                />
+              )}
               {/* {scannerVisible && (
                 <Tab.Screen
                   name="Scanner"
