@@ -821,7 +821,7 @@ const MissionDM = () => {
             <View style={styles.eliminationContainer}>
               <FontAwesomeIcon icon={faCrosshairs} color="#FFFFFF" size={25} />
               <Text style={styles.eliminationHeader}>
-                {eliminationsCount} Eliminations
+              {Number(eliminationsCount)} {Number(eliminationsCount) === 1 ? "Elimination" : "Eliminations"}
               </Text>
             </View>
             <View style={styles.buttonBox}>
