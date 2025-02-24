@@ -118,16 +118,13 @@ const MissionDM = () => {
   
     const unsubscribe = onSnapshot(gameDocRef, (docSnapshot) => {
       if (docSnapshot.exists()) {
-        const gameData = docSnapshot.data();
-        console.log("Firestore gameActive updated:", gameData.gameActive);
-  
-        setGameActive(gameData.gameActive);
+        setGameActive(docSnapshot.data().gameActive);
       } else {
         console.error("gameStats document not found in Firestore.");
       }
     });
   
-    return () => unsubscribe(); // Cleanup listener on unmount
+    return () => unsubscribe();
   }, []);
 
   useEffect(() => {
@@ -490,8 +487,8 @@ const MissionDM = () => {
   
     const timer = setInterval(async () => {
       const now = Date.now();
-      console.log("⏱ Checking round start time:", now, "vs", firstRoundStart);
-      console.log("📌 Current Round:", currentRound);
+      console.log("Checking round start time:", now, "vs", firstRoundStart);
+      console.log("Current Round:", currentRound);
   
       const { active, timeLeft } = calculateTimeLeft();
       setInRound(active);
@@ -509,7 +506,7 @@ const MissionDM = () => {
   
       // ✅ Only start round when time is up and it's still round 0
       if (currentRound === 0 && now >= firstRoundStart) {
-        console.log("✅ Round 1 should now start! Running roundOver().");
+        console.log("Round 1 should now start! Running roundOver().");
         await roundOver();
         clearInterval(timer);
       }
