@@ -21,6 +21,7 @@ import {
   where,
   getDoc,
   arrayUnion,
+  increment,
   onSnapshot,
 } from "firebase/firestore";
 import { getUserInfo } from "./api/index";
@@ -176,6 +177,7 @@ const MissionDM = () => {
       await updateDoc(selfRef, {
         targetId: eliminatedTargetId.toString(),
         eliminations: arrayUnion(targetName),
+        roundElims: increment(1),
       });
 
       setEliminationsCount(getPlayerEliminations());
@@ -353,6 +355,7 @@ const MissionDM = () => {
           isEliminated: false,
           code: generateRandomCode(),
           eliminations: [],
+          roundElims: 0,
           id: userid,
           targetId: "0",
           imageURL: userInfo.avatarImageURL,
@@ -475,6 +478,45 @@ const MissionDM = () => {
     } catch (error) {
       console.error("Error fetching documents:", error);
       return 0;
+    }
+  };
+
+  const resetRoundElims = async () => {
+    try {
+      const playersRef = collection(db, "MissionDMPlayers");
+      const querySnapshot = await getDocs(playersRef);
+  
+      const batch = querySnapshot.docs.map(async (playerDoc) => {
+        return updateDoc(doc(db, "MissionDMPlayers", playerDoc.id), {
+          roundElims: 0,
+        });
+      });
+  
+      await Promise.all(batch);
+      console.log("Reset round eliminations for all players.");
+    } catch (error) {
+      console.error("Error resetting round eliminations:", error);
+    }
+  };
+
+  const eliminateZeroElimsPlayers = async () => {
+    try {
+      const playersRef = collection(db, "MissionDMPlayers");
+      const querySnapshot = await getDocs(playersRef);
+  
+      const batch = querySnapshot.docs.map(async (playerDoc) => {
+        const playerData = playerDoc.data();
+        if (playerData.roundElims === 0) {
+          return updateDoc(doc(db, "MissionDMPlayers", playerDoc.id), {
+            isEliminated: true,
+          });
+        }
+      });
+  
+      await Promise.all(batch);
+      console.log("Eliminated those losers.");
+    } catch (error) {
+      console.error("Error eliminating players with 0 eliminations:", error);
     }
   };
 
@@ -609,6 +651,9 @@ const MissionDM = () => {
           playersRemaining: activePlayers,
           [fieldToUpdate]: eliminations,
         });
+
+        await eliminateZeroElimsPlayers();
+        await resetRoundElims();
 
         if (gameDoc.data().currentRound !== 0) {
           fetchItems = await fetchData();
