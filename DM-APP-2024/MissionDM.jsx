@@ -63,6 +63,7 @@ const MissionDM = () => {
   const [isWinner, setIsWinner] = useState(false);
   const [eliminationsCount, setEliminationsCount] = useState(0);
   const [isImageModalVisible, setIsImageModalVisible] = useState(false);
+  const [inRound, setInRound] = useState(false);
   const [firstRoundStart, setFirstRoundStart] = useState(null);
   const [lastRoundEnd, setLastRoundEnd] = useState(null);
 
@@ -262,44 +263,63 @@ const MissionDM = () => {
 
   const getRoundInfo = async () => {
     const col = collection(db, "MissionDMGames");
-    // const col = collection(db, "MissionDMTestRounds");
     const snap = await getDocs(col);
 
     const rounds = [];
+    let firstStart = null;
+    let lastEnd = null;
 
     snap.forEach((doc) => {
       const docData = doc.data();
-      console.log("Doc Data:", docData);
+      console.log("Raw Firestore Data:", docData);
+
       if (docData.round !== 0) {
-        const start = new Date(
-          docData.start.seconds * 1000 + docData.start.nanoseconds / 1e6
-        );
-        const end = new Date(
-          docData.end.seconds * 1000 + docData.end.nanoseconds / 1e6
-        );
+        let start, end;
+
+        if (docData.start && docData.start.seconds) {
+          start = new Date(docData.start.seconds * 1000);
+        }
+
+        if (docData.end && docData.end.seconds) {
+          end = new Date(docData.end.seconds * 1000);
+        }
+
         rounds.push({
           round: docData.round,
-          start: formatToLocalDateTime(start),
-          end: formatToLocalDateTime(end),
+          start: start ? start.getTime() : null,
+          end: end ? end.getTime() : null,
         });
-      } else {
-        rounds.push({
-          round: docData.round,
-          currentRound: docData.currentRound,
-        });
+
+        if (docData.round === 1 && start) {
+          firstStart = start.getTime(); // Convert to milliseconds
+        }
+
+        if (docData.round === 4 && end) {
+          lastEnd = end.getTime();
+        }
       }
     });
 
     rounds.sort((a, b) => a.round - b.round);
 
-    const validRounds = rounds.filter((round) => round.start && round.end);
+    if (firstStart && lastEnd) {
+      // Convert to local time
+      const localFirstRoundStart = new Date(firstStart).toLocaleString(
+        "en-US",
+        { timeZone: "America/New_York" }
+      );
+      setFirstRoundStart(firstStart); // Store UTC time for correct comparisons
+      setLastRoundEnd(lastEnd);
 
-    if (validRounds.length > 0) {
-      setFirstRoundStart(validRounds[0].start);
-      setLastRoundEnd(validRounds[validRounds.length - 1].end);
+      console.log(
+        "First Round Start (UTC):",
+        new Date(firstStart).toISOString()
+      );
+      console.log("First Round Start (Local Time):", localFirstRoundStart);
+    } else {
+      console.error("Could not retrieve first round start time.");
     }
 
-    console.log("Rounds:", rounds);
     setRounds(rounds);
   };
 
@@ -308,32 +328,40 @@ const MissionDM = () => {
   }, []);
 
   useEffect(() => {
-    if (rounds.length > 0 && rounds[0].currentRound !== undefined) {
-      const currentRoundData = rounds.find(
-        (round) => round.round === rounds[0].currentRound
-      );
-      if (currentRoundData) {
-        setCurrentRound(currentRoundData.round);
-        const tempDate = new Date(currentRoundData.start).getTime();
-        const tempEnd = new Date(currentRoundData.end).getTime();
-
-        if (tempDate !== startDate || tempEnd !== endDate) {
-          setStartDate(tempDate);
-          setEndDate(tempEnd);
-          console.log("Updated Start and End Times:", {
-            start: tempDate,
-            end: tempEnd,
-          });
+    const fetchGameStats = async () => {
+      const gameDocRef = doc(db, "MissionDMGames", "gameStats");
+      const gameDoc = await getDoc(gameDocRef);
+  
+      if (gameDoc.exists()) {
+        const gameData = gameDoc.data();
+        console.log("Firestore currentRound:", gameData.currentRound);
+  
+        setCurrentRound(gameData.currentRound);
+  
+        // Now find the round info based on Firestore currentRound
+        const currentRoundData = rounds.find((round) => round.round === gameData.currentRound);
+        if (currentRoundData) {
+          const tempDate = new Date(currentRoundData.start).getTime();
+          const tempEnd = new Date(currentRoundData.end).getTime();
+  
+          if (tempDate !== startDate || tempEnd !== endDate) {
+            setStartDate(tempDate);
+            setEndDate(tempEnd);
+            console.log("Updated Start and End Times:", {
+              start: tempDate,
+              end: tempEnd,
+            });
+          }
         }
+      } else {
+        console.error("gameStats document not found in Firestore.");
       }
-
-      // if (startDate > Date.now()) {
-      //   setInBetweenRounds(true);
-      // } else {
-      //   setInBetweenRounds(false);
-      // }
+    };
+  
+    if (rounds.length > 0) {
+      fetchGameStats();
     }
-  }, [rounds, rounds[0]?.currentRound]);
+  }, [rounds]);
 
   const enrollUser = async () => {
     try {
@@ -436,17 +464,21 @@ const MissionDM = () => {
   };
 
   useEffect(() => {
-    let roundProcessed = false;
-
-    //const gameDocRef = doc(db, "MissionDMGames", "gameStats");
-    //const gameDocRef = doc(db, "MissionDMTestRounds", "gameStats");
-    //const gameDoc = getDoc(gameDocRef);
-    //const currentRound = gameDoc.data().currentRound;
-
+    if (!firstRoundStart) {
+      console.log("⏳ Waiting for firstRoundStart to be set...");
+      return;
+    }
+  
+    console.log("🔥 firstRoundStart detected:", new Date(firstRoundStart).toISOString());
+  
     const timer = setInterval(async () => {
+      const now = Date.now();
+      console.log("⏱ Checking round start time:", now, "vs", firstRoundStart);
+      console.log("📌 Current Round:", currentRound);
+  
       const { active, timeLeft } = calculateTimeLeft();
-      setGameActive(active);
-
+      setInRound(active);
+  
       if (timeLeft > 0) {
         setTimeLeft({
           days: Math.floor(timeLeft / (1000 * 60 * 60 * 24)),
@@ -456,16 +488,18 @@ const MissionDM = () => {
         });
       } else {
         setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
-
-        if (!roundProcessed) {
-          roundProcessed = true;
-          await roundOver();
-        }
+      }
+  
+      // ✅ Only start round when time is up and it's still round 0
+      if (currentRound === 0 && now >= firstRoundStart) {
+        console.log("✅ Round 1 should now start! Running roundOver().");
+        await roundOver();
+        clearInterval(timer);
       }
     }, 1000);
-
+  
     return () => clearInterval(timer);
-  }, [startDate, endDate]);
+  }, [firstRoundStart, currentRound, startDate, endDate]);   
 
   const countActivePlayers = async () => {
     try {
@@ -485,13 +519,13 @@ const MissionDM = () => {
     try {
       const playersRef = collection(db, "MissionDMPlayers");
       const querySnapshot = await getDocs(playersRef);
-  
+
       const batch = querySnapshot.docs.map(async (playerDoc) => {
         return updateDoc(doc(db, "MissionDMPlayers", playerDoc.id), {
           roundElims: 0,
         });
       });
-  
+
       await Promise.all(batch);
       console.log("Reset round eliminations for all players.");
     } catch (error) {
@@ -503,7 +537,7 @@ const MissionDM = () => {
     try {
       const playersRef = collection(db, "MissionDMPlayers");
       const querySnapshot = await getDocs(playersRef);
-  
+
       const batch = querySnapshot.docs.map(async (playerDoc) => {
         const playerData = playerDoc.data();
         if (playerData.roundElims === 0) {
@@ -512,7 +546,7 @@ const MissionDM = () => {
           });
         }
       });
-  
+
       await Promise.all(batch);
       console.log("Eliminated those losers.");
     } catch (error) {
@@ -639,45 +673,56 @@ const MissionDM = () => {
       // const gameDocRef = doc(db, "MissionDMTestRounds", "gameStats");
       const gameDoc = await getDoc(gameDocRef);
 
-      if (gameDoc.exists()) {
-        const currentRound = gameDoc.data().currentRound;
-        const previousPlayers = gameDoc.data().playersRemaining;
-        const activePlayers = await countActivePlayers();
-        const eliminations = previousPlayers - activePlayers;
-        const fieldToUpdate = `round${currentRound}Eliminations`;
-
-        await updateDoc(gameDocRef, {
-          currentRound: currentRound + 1,
-          playersRemaining: activePlayers,
-          [fieldToUpdate]: eliminations,
-        });
-
-        await eliminateZeroElimsPlayers();
-        await resetRoundElims();
-
-        if (gameDoc.data().currentRound !== 0) {
-          fetchItems = await fetchData();
-
-          // await sendPushNotificationToAlivePlayers(fetchItems, {
-          //   message: `Round ${currentRound} is over. ${eliminations} players were eliminated and ${activePlayers} remain.`,
-          //   title: `MissionDM - Round ${currentRound} Over`,
-          // })
-          //   .then(() => {
-          //     console.log("All notifications sent!");
-          //   })
-          //   .catch((error) => {
-          //     console.error("Error sending notifications:", error);
-          //   });
-        }
-
-        await shuffleTargets();
-
-        console.log(
-          `Round successfully incremented to: ${currentRound + 1}, targets shuffled, notifications sent.`
-        );
-      } else {
+      if (!gameDoc.exists()) {
         console.error("Game document does not exist.");
+        return;
       }
+
+      const currentRound = gameDoc.data().currentRound;
+      const previousPlayers = gameDoc.data().playersRemaining;
+      const activePlayers = await countActivePlayers();
+      const eliminations = previousPlayers - activePlayers;
+      const fieldToUpdate = `round${currentRound}Eliminations`;
+
+      if (currentRound === 0 && Date.now() >= firstRoundStart) {
+        await updateDoc(gameDocRef, {
+          currentRound: 1,
+        });
+        setCurrentRound(1);
+        setGameActive(true);
+        setInRound(true);
+        return;
+      }
+
+      await eliminateZeroElimsPlayers();
+      await resetRoundElims();
+
+      await updateDoc(gameDocRef, {
+        currentRound: currentRound + 1,
+        playersRemaining: activePlayers,
+        [fieldToUpdate]: eliminations,
+      });
+
+      //fetchItems = await fetchData();
+
+      // await sendPushNotificationToAlivePlayers(fetchItems, {
+      //   message: `Round ${currentRound} is over. ${eliminations} players were eliminated and ${activePlayers} remain.`,
+      //   title: `MissionDM - Round ${currentRound} Over`,
+      // })
+      //   .then(() => {
+      //     console.log("All notifications sent!");
+      //   })
+      //   .catch((error) => {
+      //     console.error("Error sending notifications:", error);
+      //   });
+
+      //await shuffleTargets();
+
+      setInRound(true);
+
+      console.log(
+        `Round successfully incremented to: ${currentRound + 1}, targets shuffled, notifications sent.`
+      );
     } catch (error) {
       console.error("Error incrementing round:", error);
     }
@@ -763,6 +808,7 @@ const MissionDM = () => {
   //   <Text style={{ color: "#fff", fontSize: 10 }}>gameActive: {String(gameActive)}</Text>
   //   <Text style={{ color: "#fff", fontSize: 10 }}>isEliminated: {String(isEliminated)}</Text>
   //   <Text style={{ color: "#fff", fontSize: 10 }}>isWinner: {String(isWinner)}</Text>
+  //   <Text style={{ color: "#fff", fontSize: 10 }}>inRound: {String(inRound)}</Text>
 
   // </View>
   //     </View>
@@ -770,327 +816,413 @@ const MissionDM = () => {
 
   // Player has clicked the enroll button. Their profile is created
   if (inGame) {
-    if (gameActive && !isEliminated && !isWinner) {
-      return (
-        <View
-          style={{
-            flex: 1,
-            alignItems: "center",
-            backgroundColor: "#1F1F1F",
-          }}
-        >
-          <Image
-            source={require("./images/MissionDMAppLogo.png")}
-            style={styles.MissionDMLogo}
-          />
-          <View style={styles.roundBox}>
-            <Text style={styles.header}>ROUND {currentRound}</Text>
-            <View style={styles.inGameTimeContainer}>
-              <View style={styles.inGameTimeBox}>
-                <Text style={styles.inGameTimeValue}>{timeLeft.days}</Text>
-              </View>
-              <Text style={styles.colon}>:</Text>
-              <View style={styles.inGameTimeBox}>
-                <Text style={styles.inGameTimeValue}>
-                  {String(timeLeft.hours).padStart(2, "0")}
-                </Text>
-              </View>
-              <Text style={styles.colon}>:</Text>
-              <View style={styles.inGameTimeBox}>
-                <Text style={styles.inGameTimeValue}>
-                  {String(timeLeft.minutes).padStart(2, "0")}
-                </Text>
-              </View>
-              <Text style={styles.colon}>:</Text>
-              <View style={styles.inGameTimeBox}>
-                <Text style={styles.inGameTimeValue}>
-                  {String(timeLeft.seconds).padStart(2, "0")}
-                </Text>
+    // The game has started and has not ended yet
+    if (gameActive) {
+      // Player is still alive and has not won
+      if (inRound && !isEliminated && !isWinner) {
+        return (
+          <View
+            style={{
+              flex: 1,
+              alignItems: "center",
+              backgroundColor: "#1F1F1F",
+            }}
+          >
+            <Image
+              source={require("./images/MissionDMAppLogo.png")}
+              style={styles.MissionDMLogo}
+            />
+            <View style={styles.roundBox}>
+              <Text style={styles.header}>ROUND {currentRound}</Text>
+              <View style={styles.inGameTimeContainer}>
+                <View style={styles.inGameTimeBox}>
+                  <Text style={styles.inGameTimeValue}>{timeLeft.days}</Text>
+                </View>
+                <Text style={styles.colon}>:</Text>
+                <View style={styles.inGameTimeBox}>
+                  <Text style={styles.inGameTimeValue}>
+                    {String(timeLeft.hours).padStart(2, "0")}
+                  </Text>
+                </View>
+                <Text style={styles.colon}>:</Text>
+                <View style={styles.inGameTimeBox}>
+                  <Text style={styles.inGameTimeValue}>
+                    {String(timeLeft.minutes).padStart(2, "0")}
+                  </Text>
+                </View>
+                <Text style={styles.colon}>:</Text>
+                <View style={styles.inGameTimeBox}>
+                  <Text style={styles.inGameTimeValue}>
+                    {String(timeLeft.seconds).padStart(2, "0")}
+                  </Text>
+                </View>
               </View>
             </View>
-          </View>
-          <View style={styles.targetBox}>
-            <View style={styles.tileHeader}>
-              <FontAwesomeIcon icon={faBullseye} color="#f18221" size={18} />
-              <Text style={styles.tileTitleText}>TARGET INFO</Text>
+            <View style={styles.targetBox}>
+              <View style={styles.tileHeader}>
+                <FontAwesomeIcon icon={faBullseye} color="#f18221" size={18} />
+                <Text style={styles.tileTitleText}>TARGET INFO</Text>
+              </View>
+              <View style={styles.targetInfoContainer}>
+                <TouchableOpacity onPress={() => setIsImageModalVisible(true)}>
+                  <View style={styles.imageOverlay}>
+                    <Image
+                      source={{ uri: targetImageURL }}
+                      style={styles.avatar}
+                    />
+                    <Image
+                      source={CrosshairOverImage}
+                      style={styles.crosshairOverlay}
+                    />
+                  </View>
+                </TouchableOpacity>
+                <View style={styles.targetInfo}>
+                  <Text style={styles.targetName}>{targetName}</Text>
+                  <View style={styles.tagsContainer}>
+                    <View style={styles.section}>
+                      <FontAwesome name="circle" size={15} color="#f18221" />
+                      <Text style={styles.targetTag}>{targetTeam}</Text>
+                    </View>
+                    <View style={styles.section}>
+                      <FontAwesome name="circle" size={15} color="#f18221" />
+                      <Text style={styles.targetTag}>{targetRole}</Text>
+                    </View>
+                  </View>
+                </View>
+              </View>
+              <View style={styles.enterCodeContainer}>
+                <Text style={styles.enterCodeText}>
+                  If target is eliminated, enter their code here:
+                </Text>
+                <TextInput
+                  style={styles.codeInput}
+                  placeholder="Enter code"
+                  placeholderTextColor="#888"
+                  onChangeText={(text) => setEnteredCode(text)}
+                  value={enteredCode}
+                  onSubmitEditing={handleCodeSubmit}
+                />
+              </View>
             </View>
-            <View style={styles.targetInfoContainer}>
-              <TouchableOpacity onPress={() => setIsImageModalVisible(true)}>
-                <View style={styles.imageOverlay}>
+
+            <View style={styles.userBox}>
+              <View style={styles.tileHeader}>
+                <FontAwesomeIcon
+                  icon={faCircleInfo}
+                  color="#f18221"
+                  size={18}
+                />
+                <Text style={styles.tileTitleText}>MY INFO</Text>
+              </View>
+              <View style={styles.eliminationContainer}>
+                <FontAwesomeIcon
+                  icon={faCrosshairs}
+                  color="#FFFFFF"
+                  size={25}
+                />
+                <Text style={styles.eliminationHeader}>
+                  {Number(eliminationsCount)}{" "}
+                  {Number(eliminationsCount) === 1
+                    ? "Elimination"
+                    : "Eliminations"}
+                </Text>
+              </View>
+              <View style={styles.buttonBox}>
+                <TouchableOpacity
+                  style={[styles.orangeButton, { width: 125 }]}
+                  onPress={() => setIsStatsModalVisible(true)}
+                >
+                  <Text style={styles.orangeButtonText}>Show My Code</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                marginTop: 10,
+                width: "95%",
+              }}
+            >
+              <TouchableOpacity
+                style={[
+                  styles.enrollButton,
+                  { flex: 1, marginRight: 5, marginTop: 10 },
+                ]}
+                onPress={unenrollUser}
+              >
+                <Text style={styles.enrollButtonText}>Leave Game</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.enrollButton,
+                  { flex: 1, marginLeft: 5, marginTop: 10 },
+                ]}
+                onPress={enrollUser}
+              >
+                <Text style={styles.enrollButtonText}>Enroll In MissionDM</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.enrollButton,
+                  { flex: 1, marginRight: 5, marginTop: 10 },
+                ]}
+                onPress={shuffleTargets}
+              >
+                <Text style={styles.enrollButtonText}>Shuffle Targets</Text>
+              </TouchableOpacity>
+            </View>
+            <Modal
+              animationType="fade"
+              transparent={true}
+              visible={isStatsModalVisible}
+              onRequestClose={() => setIsStatsModalVisible(false)}
+            >
+              <View style={styles.modalContainer}>
+                <View style={styles.modalContent}>
+                  <Text style={styles.userCodeText}>{userCode}</Text>
+                  <TouchableOpacity
+                    style={styles.closeButton}
+                    onPress={() => setIsStatsModalVisible(false)}
+                  >
+                    <Text style={styles.closeButtonText}>Close</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </Modal>
+            <Modal
+              animationType="fade"
+              transparent={true}
+              visible={isImageModalVisible}
+              onRequestClose={() => setIsImageModalVisible(false)}
+            >
+              <View style={styles.modalContainer}>
+                <View style={styles.modalContent}>
                   <Image
                     source={{ uri: targetImageURL }}
-                    style={styles.avatar}
+                    style={styles.zoomedImage}
                   />
-                  <Image
-                    source={CrosshairOverImage}
-                    style={styles.crosshairOverlay}
-                  />
-                </View>
-              </TouchableOpacity>
-              <View style={styles.targetInfo}>
-                <Text style={styles.targetName}>{targetName}</Text>
-                <View style={styles.tagsContainer}>
-                  <View style={styles.section}>
-                    <FontAwesome name="circle" size={15} color="#f18221" />
-                    <Text style={styles.targetTag}>{targetTeam}</Text>
-                  </View>
-                  <View style={styles.section}>
-                    <FontAwesome name="circle" size={15} color="#f18221" />
-                    <Text style={styles.targetTag}>{targetRole}</Text>
-                  </View>
+                  <TouchableOpacity
+                    style={styles.closeButton}
+                    onPress={() => setIsImageModalVisible(false)}
+                  >
+                    <Text style={styles.closeButtonText}>Close</Text>
+                  </TouchableOpacity>
                 </View>
               </View>
-            </View>
-            <View style={styles.enterCodeContainer}>
-              <Text style={styles.enterCodeText}>
-                If target is eliminated, enter their code here:
-              </Text>
-              <TextInput
-                style={styles.codeInput}
-                placeholder="Enter code"
-                placeholderTextColor="#888"
-                onChangeText={(text) => setEnteredCode(text)}
-                value={enteredCode}
-                onSubmitEditing={handleCodeSubmit}
+            </Modal>
+          </View>
+        );
+      }
+      // Player eliminated
+      else if (isEliminated) {
+        return (
+          <View
+            style={{
+              flex: 1,
+              alignItems: "center",
+              backgroundColor: "#1F1F1F",
+            }}
+          >
+            <Image
+              source={require("./images/MissionDMAppLogo.png")}
+              style={[styles.MissionDMLogo, { marginBottom: 20 }]}
+            />
+            <View
+              style={{
+                justifyContent: "center",
+                alignItems: "center",
+                flexGrow: 0.8,
+              }}
+            >
+              <Image
+                maxWidth="200"
+                maxHeight="200"
+                style={{ marginBottom: 20 }}
+                source={require("./images/eliminated-icon.png")}
               />
+              <Text style={{ color: "red", fontSize: 28, fontWeight: "bold" }}>
+                You have been eliminated.
+              </Text>
+              <Text
+                style={{
+                  color: "red",
+                  fontSize: 18,
+                  fontStyle: "italic",
+                  marginTop: 5,
+                  marginBottom: 20,
+                }}
+              >
+                Thanks for playing!
+              </Text>
+              {currentRound <= 1 && (
+                <View style={styles.buttonBox}>
+                  <TouchableOpacity style={styles.orangeButton}>
+                    <Text style={styles.orangeButtonText}>Buy Back In!</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
             </View>
           </View>
-
-          <View style={styles.userBox}>
-            <View style={styles.tileHeader}>
-              <FontAwesomeIcon icon={faCircleInfo} color="#f18221" size={18} />
-              <Text style={styles.tileTitleText}>MY INFO</Text>
-            </View>
-            <View style={styles.eliminationContainer}>
-              <FontAwesomeIcon icon={faCrosshairs} color="#FFFFFF" size={25} />
-              <Text style={styles.eliminationHeader}>
-              {Number(eliminationsCount)} {Number(eliminationsCount) === 1 ? "Elimination" : "Eliminations"}
+        );
+      }
+      // Player has won
+      else if (isWinner) {
+        return (
+          <View
+            style={{
+              flex: 1,
+              alignItems: "center",
+              backgroundColor: "#1F1F1F",
+              paddingHorizontal: 20,
+            }}
+          >
+            <Image
+              source={require("./images/MissionDMAppLogo.png")}
+              style={[styles.MissionDMLogo, { marginBottom: 20 }]}
+            />
+            <View
+              style={{
+                justifyContent: "center",
+                alignItems: "center",
+                flexGrow: 0.8,
+              }}
+            >
+              <Image
+                style={{
+                  marginBottom: 20,
+                  width: 250,
+                  height: 250,
+                  resizeMode: "contain",
+                }}
+                source={require("./images/trophy-icon.png")}
+              />
+              <Text
+                style={{
+                  color: "#FFC300",
+                  fontSize: 28,
+                  fontWeight: "bold",
+                  textAlign: "center",
+                }}
+              >
+                Congratulations you won!
+              </Text>
+              <Text
+                style={{
+                  color: "#FFC300",
+                  fontSize: 18,
+                  fontStyle: "italic",
+                  marginTop: 5,
+                  marginBottom: 20,
+                  textAlign: "center",
+                }}
+              >
+                Thanks for playing!
               </Text>
             </View>
-            <View style={styles.buttonBox}>
-              <TouchableOpacity
-                style={[styles.orangeButton, { width: 125 }]}
-                onPress={() => setIsStatsModalVisible(true)}
+          </View>
+        );
+      } else if (!inRound) {
+        return (
+          <View
+            style={{
+              flex: 1,
+              alignItems: "center",
+              backgroundColor: "#1F1F1F",
+            }}
+          >
+            <Image
+              source={require("./images/MissionDMAppLogo.png")}
+              style={[styles.MissionDMLogo, { marginBottom: 20 }]}
+            />
+            <View style={styles.roundBox}>
+              <Text style={styles.header}>Congratulations!</Text>
+              <Text style={styles.subheader}>
+                You completed round {currentRound - 1} of the Mission.
+              </Text>
+            </View>
+            <View style={styles.congratsRoundBox}>
+              <Text style={[styles.header, { marginBottom: 0 }]}>
+                ROUND {currentRound}
+              </Text>
+              <Text
+                style={[styles.subheader, { marginBottom: 0, marginTop: 0 }]}
               >
-                <Text style={styles.orangeButtonText}>Show My Code</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-          <View
-            style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
-              marginTop: 10,
-              width: "95%",
-            }}
-          >
-            <TouchableOpacity
-              style={[
-                styles.enrollButton,
-                { flex: 1, marginRight: 5, marginTop: 10 },
-              ]}
-              onPress={unenrollUser}
-            >
-              <Text style={styles.enrollButtonText}>Leave Game</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.enrollButton,
-                { flex: 1, marginLeft: 5, marginTop: 10 },
-              ]}
-              onPress={enrollUser}
-            >
-              <Text style={styles.enrollButtonText}>Enroll In MissionDM</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.enrollButton,
-                { flex: 1, marginRight: 5, marginTop: 10 },
-              ]}
-              onPress={shuffleTargets}
-            >
-              <Text style={styles.enrollButtonText}>Shuffle Targets</Text>
-            </TouchableOpacity>
-          </View>
-          <Modal
-            animationType="fade"
-            transparent={true}
-            visible={isStatsModalVisible}
-            onRequestClose={() => setIsStatsModalVisible(false)}
-          >
-            <View style={styles.modalContainer}>
-              <View style={styles.modalContent}>
-                <Text style={styles.userCodeText}>{userCode}</Text>
-                <TouchableOpacity
-                  style={styles.closeButton}
-                  onPress={() => setIsStatsModalVisible(false)}
-                >
-                  <Text style={styles.closeButtonText}>Close</Text>
-                </TouchableOpacity>
+                starts in
+              </Text>
+              <View style={styles.inGameTimeContainer}>
+                <View style={styles.inGameTimeBox}>
+                  <Text style={styles.inGameTimeValue}>{timeLeft.days}</Text>
+                </View>
+                <Text style={styles.colon}>:</Text>
+                <View style={styles.inGameTimeBox}>
+                  <Text style={styles.inGameTimeValue}>
+                    {String(timeLeft.hours).padStart(2, "0")}
+                  </Text>
+                </View>
+                <Text style={styles.colon}>:</Text>
+                <View style={styles.inGameTimeBox}>
+                  <Text style={styles.inGameTimeValue}>
+                    {String(timeLeft.minutes).padStart(2, "0")}
+                  </Text>
+                </View>
+                <Text style={styles.colon}>:</Text>
+                <View style={styles.inGameTimeBox}>
+                  <Text style={styles.inGameTimeValue}>
+                    {String(timeLeft.seconds).padStart(2, "0")}
+                  </Text>
+                </View>
               </View>
             </View>
-          </Modal>
-          <Modal
-            animationType="fade"
-            transparent={true}
-            visible={isImageModalVisible}
-            onRequestClose={() => setIsImageModalVisible(false)}
-          >
-            <View style={styles.modalContainer}>
-              <View style={styles.modalContent}>
-                <Image
-                  source={{ uri: targetImageURL }}
-                  style={styles.zoomedImage}
+
+            <View style={styles.userBox}>
+              <View style={styles.tileHeader}>
+                <FontAwesomeIcon
+                  icon={faCircleInfo}
+                  color="#f18221"
+                  size={18}
                 />
-                <TouchableOpacity
-                  style={styles.closeButton}
-                  onPress={() => setIsImageModalVisible(false)}
-                >
-                  <Text style={styles.closeButtonText}>Close</Text>
-                </TouchableOpacity>
+                <Text style={styles.tileTitleText}>ROUND SUMMARY</Text>
+              </View>
+              <View style={styles.eliminationContainer}>
+                <FontAwesomeIcon
+                  icon={faCrosshairs}
+                  color="#FFFFFF"
+                  size={25}
+                />
+                <Text style={[styles.eliminationHeader, { fontSize: 20 }]}>
+                  12 Players were eliminated
+                </Text>
+              </View>
+              <View style={[styles.eliminationContainer, { marginBottom: 20 }]}>
+                <FontAwesomeIcon icon={faUsers} color="#FFFFFF" size={25} />
+                <Text style={[styles.eliminationHeader, { fontSize: 20 }]}>
+                  41 players remain
+                </Text>
               </View>
             </View>
-          </Modal>
-        </View>
-      );
+          </View>
+        );
+      }
     }
-
-    // Eliminated screen
-    if (gameActive && isEliminated) {
+    // The game has not started yet
+    else {
       return (
         <View
           style={{
             flex: 1,
             alignItems: "center",
-            backgroundColor: "#1F1F1F",
+            backgroundColor: "#1f1f1f",
           }}
         >
           <Image
             source={require("./images/MissionDMAppLogo.png")}
             style={[styles.MissionDMLogo, { marginBottom: 20 }]}
           />
-          <View
-            style={{
-              justifyContent: "center",
-              alignItems: "center",
-              flexGrow: 0.8,
-            }}
-          >
-            <Image
-              maxWidth="200"
-              maxHeight="200"
-              style={{ marginBottom: 20 }}
-              source={require("./images/eliminated-icon.png")}
-            />
-            <Text style={{ color: "red", fontSize: 28, fontWeight: "bold" }}>
-              You have been eliminated.
-            </Text>
-            <Text
-              style={{
-                color: "red",
-                fontSize: 18,
-                fontStyle: "italic",
-                marginTop: 5,
-                marginBottom: 20,
-              }}
-            >
-              Thanks for playing!
-            </Text>
-            {currentRound <= 1 && (
-              <View style={styles.buttonBox}>
-                <TouchableOpacity style={styles.orangeButton}>
-                  <Text style={styles.orangeButtonText}>Buy Back In!</Text>
-                </TouchableOpacity>
-              </View>
-            )}
-          </View>
-        </View>
-      );
-    }
-
-    // Winner screen
-    if (gameActive && isWinner) {
-      return (
-        <View
-          style={{
-            flex: 1,
-            alignItems: "center",
-            backgroundColor: "#1F1F1F",
-            paddingHorizontal: 20,
-          }}
-        >
-          <Image
-            source={require("./images/MissionDMAppLogo.png")}
-            style={[styles.MissionDMLogo, { marginBottom: 20 }]}
-          />
-          <View
-            style={{
-              justifyContent: "center",
-              alignItems: "center",
-              flexGrow: 0.8,
-            }}
-          >
-            <Image
-              style={{
-                marginBottom: 20,
-                width: 250,
-                height: 250,
-                resizeMode: "contain",
-              }}
-              source={require("./images/trophy-icon.png")}
-            />
-            <Text
-              style={{
-                color: "#FFC300",
-                fontSize: 28,
-                fontWeight: "bold",
-                textAlign: "center",
-              }}
-            >
-              Congratulations you won!
-            </Text>
-            <Text
-              style={{
-                color: "#FFC300",
-                fontSize: 18,
-                fontStyle: "italic",
-                marginTop: 5,
-                marginBottom: 20,
-                textAlign: "center",
-              }}
-            >
-              Thanks for playing!
-            </Text>
-          </View>
-        </View>
-      );
-    }
-
-    if (!gameActive) {
-      return (
-        <View
-          style={{
-            flex: 1,
-            alignItems: "center",
-            backgroundColor: "#1F1F1F",
-          }}
-        >
-          <Image
-            source={require("./images/MissionDMAppLogo.png")}
-            style={[styles.MissionDMLogo, { marginBottom: 20 }]}
-          />
-          <View style={styles.roundBox}>
-            <Text style={styles.header}>Congratulations!</Text>
-            <Text style={styles.subheader}>
-              You completed round {currentRound - 1} of the Mission.
-            </Text>
-          </View>
-          <View style={styles.congratsRoundBox}>
-            <Text style={[styles.header, { marginBottom: 0 }]}>
-              ROUND {currentRound}
-            </Text>
-            <Text style={[styles.subheader, { marginBottom: 0, marginTop: 0 }]}>
-              starts in
+          <Text style={styles.header}>Thank you for Enrolling!</Text>
+          <View style={[styles.targetBox, { padding: 10 }]}>
+            <Text style={[styles.header, { marginBottom: 5 }]}>
+              The game starts in:
             </Text>
             <View style={styles.inGameTimeContainer}>
               <View style={styles.inGameTimeBox}>
@@ -1114,25 +1246,6 @@ const MissionDM = () => {
                   {String(timeLeft.seconds).padStart(2, "0")}
                 </Text>
               </View>
-            </View>
-          </View>
-
-          <View style={styles.userBox}>
-            <View style={styles.tileHeader}>
-              <FontAwesomeIcon icon={faCircleInfo} color="#f18221" size={18} />
-              <Text style={styles.tileTitleText}>ROUND SUMMARY</Text>
-            </View>
-            <View style={styles.eliminationContainer}>
-              <FontAwesomeIcon icon={faCrosshairs} color="#FFFFFF" size={25} />
-              <Text style={[styles.eliminationHeader, { fontSize: 20 }]}>
-                12 Players were eliminated
-              </Text>
-            </View>
-            <View style={[styles.eliminationContainer, { marginBottom: 20 }]}>
-              <FontAwesomeIcon icon={faUsers} color="#FFFFFF" size={25} />
-              <Text style={[styles.eliminationHeader, { fontSize: 20 }]}>
-                41 players remain
-              </Text>
             </View>
           </View>
         </View>
@@ -1193,12 +1306,7 @@ const MissionDM = () => {
   }
 
   // Fallback render if none of the conditions match
-  if (
-    !inGame &&
-    !gameActive &&
-    !isEliminated &&
-    !isWinner
-  ) {
+  if (!inGame && !gameActive && !isEliminated && !isWinner) {
     return (
       <View
         style={{
