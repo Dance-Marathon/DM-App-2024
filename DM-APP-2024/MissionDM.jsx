@@ -114,6 +114,23 @@ const MissionDM = () => {
   }, []);
 
   useEffect(() => {
+    const gameDocRef = doc(db, "MissionDMGames", "gameStats");
+  
+    const unsubscribe = onSnapshot(gameDocRef, (docSnapshot) => {
+      if (docSnapshot.exists()) {
+        const gameData = docSnapshot.data();
+        console.log("Firestore gameActive updated:", gameData.gameActive);
+  
+        setGameActive(gameData.gameActive);
+      } else {
+        console.error("gameStats document not found in Firestore.");
+      }
+    });
+  
+    return () => unsubscribe(); // Cleanup listener on unmount
+  }, []);
+
+  useEffect(() => {
     async function checkWinner() {
       const selfRef = doc(db, "MissionDMPlayers", auth.currentUser.uid);
       const updatedSelfDoc = await getDoc(selfRef);
@@ -687,6 +704,7 @@ const MissionDM = () => {
       if (currentRound === 0 && Date.now() >= firstRoundStart) {
         await updateDoc(gameDocRef, {
           currentRound: 1,
+          gameActive: true,
         });
         setCurrentRound(1);
         setGameActive(true);
