@@ -32,6 +32,7 @@ import { faCrosshairs } from "@fortawesome/free-solid-svg-icons";
 import { faUsers } from "@fortawesome/free-solid-svg-icons";
 import { faBullseye } from "@fortawesome/free-solid-svg-icons";
 import { faCircleInfo } from "@fortawesome/free-solid-svg-icons";
+import { faTriangleExclamation } from "@fortawesome/free-solid-svg-icons";
 import CrosshairOverImage from "./images/Crosshair Over Image.png";
 
 const MissionDM = () => {
@@ -66,6 +67,8 @@ const MissionDM = () => {
   const [inRound, setInRound] = useState(false);
   const [firstRoundStart, setFirstRoundStart] = useState(null);
   const [lastRoundEnd, setLastRoundEnd] = useState(null);
+  const [purgeActive, setPurgeActive] = useState(false);
+  const [prePurgeCount, setPrePurgeCount] = useState(null);
 
   useEffect(() => {
     getUserData()
@@ -115,7 +118,7 @@ const MissionDM = () => {
 
   useEffect(() => {
     const gameDocRef = doc(db, "MissionDMGames", "gameStats");
-  
+
     const unsubscribe = onSnapshot(gameDocRef, (docSnapshot) => {
       if (docSnapshot.exists()) {
         setGameActive(docSnapshot.data().gameActive);
@@ -123,9 +126,64 @@ const MissionDM = () => {
         console.error("gameStats document not found in Firestore.");
       }
     });
-  
+
     return () => unsubscribe();
   }, []);
+
+  useEffect(() => {
+    const gameDocRef = doc(db, "MissionDMGames", "gameStats");
+    const unsubscribePurge = onSnapshot(gameDocRef, (docSnapshot) => {
+      async function handlePurge() {
+        if (docSnapshot.exists()) {
+          const purgeFlag = docSnapshot.data().purge;
+          if (purgeFlag) {
+            const fetchItems = await fetchData();
+            if (!purgeActive) {
+              setPurgeActive(true);
+              console.log("Purge activated");
+              const countBefore = await countActivePlayers();
+              setPrePurgeCount(countBefore);
+              // const fetchItems = await fetchData();
+              // try {
+              //   await sendPushNotificationToAlivePlayers(fetchItems, {
+              //     message: `A purge has been initiated. Any player can be eliminatead. Immuninity is not valid. Good luck.`,
+              //     title: `MissionDM - PURGE ACTIVE`,
+              //   });
+              //   console.log("All notifications sent!");
+              // } catch (error) {
+              //   console.error("Error sending notifications:", error);
+              // }
+            }
+          } else {
+            if (purgeActive) {
+              setPurgeActive(false);
+              const countAfter = await countActivePlayers();
+              console.log("Purge deactivated - shuffling targets now");
+              let eliminatedDuringPurge = 0;
+              if (prePurgeCount !== null) {
+                eliminatedDuringPurge = prePurgeCount - countAfter;
+                await updateDoc(gameDocRef, { playersRemaining: countAfter });
+              }
+              setPrePurgeCount(null);
+              shuffleTargets();
+              // const fetchItems = await fetchData();
+              // try {
+              //   await sendPushNotificationToAlivePlayers(fetchItems, {
+              //     message: `The purge is over. ${eliminatedDuringPurge} targets were eliminated. ${countAfter} players remain. Immuninity is now valid unless otherwise noted.`,
+              //     title: `MissionDM - PURGE OVER`,
+              //   });
+              //   console.log("All notifications sent!");
+              // } catch (error) {
+              //   console.error("Error sending notifications:", error);
+              // }
+            }
+          }
+        }
+      }
+      handlePurge();
+    });
+    return () => unsubscribePurge();
+  }, [purgeActive]);
 
   useEffect(() => {
     async function checkWinner() {
@@ -345,19 +403,21 @@ const MissionDM = () => {
     const fetchGameStats = async () => {
       const gameDocRef = doc(db, "MissionDMGames", "gameStats");
       const gameDoc = await getDoc(gameDocRef);
-  
+
       if (gameDoc.exists()) {
         const gameData = gameDoc.data();
         console.log("Firestore currentRound:", gameData.currentRound);
-  
+
         setCurrentRound(gameData.currentRound);
-  
+
         // Now find the round info based on Firestore currentRound
-        const currentRoundData = rounds.find((round) => round.round === gameData.currentRound);
+        const currentRoundData = rounds.find(
+          (round) => round.round === gameData.currentRound
+        );
         if (currentRoundData) {
           const tempDate = new Date(currentRoundData.start).getTime();
           const tempEnd = new Date(currentRoundData.end).getTime();
-  
+
           if (tempDate !== currentRoundStart || tempEnd !== currentRoundEnd) {
             setCurrentRoundStart(tempDate);
             setCurrentRoundEnd(tempEnd);
@@ -371,7 +431,7 @@ const MissionDM = () => {
         console.error("gameStats document not found in Firestore.");
       }
     };
-  
+
     if (rounds.length > 0) {
       fetchGameStats();
     }
@@ -483,17 +543,20 @@ const MissionDM = () => {
       console.log("Waiting for firstRoundStart to be set...");
       return;
     }
-  
-    console.log("firstRoundStart detected:", new Date(firstRoundStart).toISOString());
-  
+
+    console.log(
+      "firstRoundStart detected:",
+      new Date(firstRoundStart).toISOString()
+    );
+
     const timer = setInterval(async () => {
       const now = Date.now();
       console.log("Checking round start time:", now, "vs", firstRoundStart);
       console.log("Current Round:", currentRound);
-  
+
       const { active, timeLeft } = calculateTimeLeft();
       setInRound(active);
-  
+
       if (timeLeft > 0) {
         setTimeLeft({
           days: Math.floor(timeLeft / (1000 * 60 * 60 * 24)),
@@ -504,16 +567,16 @@ const MissionDM = () => {
       } else {
         setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
       }
-  
+
       if (timeLeft === 0 && now >= firstRoundStart) {
         console.log("Round 1 should now start! Running roundOver().");
         await roundOver();
         clearInterval(timer);
       }
     }, 1000);
-  
+
     return () => clearInterval(timer);
-  }, [firstRoundStart, currentRound, currentRoundStart, currentRoundEnd]);   
+  }, [firstRoundStart, currentRound, currentRoundStart, currentRoundEnd]);
 
   const countActivePlayers = async () => {
     try {
@@ -794,15 +857,31 @@ const MissionDM = () => {
     }
     try {
       const currentUID = auth.currentUser.uid;
-      const userDocRef = doc(db, "MissionDMPlayers", currentUID);
-      const userDoc = await getDoc(userDocRef);
-
-      const result = await eliminate({
-        eliminatorId: currentUID,
-        code: enteredCode,
-      });
-      await getTargetUserInfo();
-      Alert.alert("Success", result.message);
+      if (purgeActive) {
+        // In purge mode, any valid code eliminates the corresponding player.
+        const eliminatedQuery = query(
+          collection(db, "MissionDMPlayers"),
+          where("code", "==", enteredCode)
+        );
+        const eliminatedSnapshot = await getDocs(eliminatedQuery);
+        if (eliminatedSnapshot.empty) {
+          throw new Error("Invalid code.");
+        }
+        const eliminatedDoc = eliminatedSnapshot.docs[0];
+        await updateDoc(eliminatedDoc.ref, {
+          isEliminated: true,
+          targetId: null,
+        });
+        Alert.alert("Success", "Player eliminated during purge.");
+      } else {
+        // Otherwise, use the standard elimination flow.
+        const result = await eliminate({
+          eliminatorId: currentUID,
+          code: enteredCode,
+        });
+        await getTargetUserInfo();
+        Alert.alert("Success", result.message);
+      }
       setEnteredCode("");
     } catch (error) {
       console.error("Error verifying code:", error);
@@ -876,35 +955,54 @@ const MissionDM = () => {
             <View style={styles.targetBox}>
               <View style={styles.tileHeader}>
                 <FontAwesomeIcon icon={faBullseye} color="#f18221" size={18} />
-                <Text style={styles.tileTitleText}>TARGET INFO</Text>
+                <Text style={styles.tileTitleText}>
+                  {purgeActive ? "ELIMINATE ANYONE" : "TARGET INFO"}
+                </Text>
               </View>
-              <View style={styles.targetInfoContainer}>
-                <TouchableOpacity onPress={() => setIsImageModalVisible(true)}>
-                  <View style={styles.imageOverlay}>
-                    <Image
-                      source={{ uri: targetImageURL }}
-                      style={styles.avatar}
-                    />
-                    <Image
-                      source={CrosshairOverImage}
-                      style={styles.crosshairOverlay}
-                    />
-                  </View>
-                </TouchableOpacity>
-                <View style={styles.targetInfo}>
-                  <Text style={styles.targetName}>{targetName}</Text>
-                  <View style={styles.tagsContainer}>
-                    <View style={styles.section}>
-                      <FontAwesome name="circle" size={15} color="#f18221" />
-                      <Text style={styles.targetTag}>{targetTeam}</Text>
+              {purgeActive ? (
+                <View style={{ alignItems: "center", padding: 20 }}>
+                  <FontAwesomeIcon
+                    icon={faTriangleExclamation}
+                    color="red"
+                    size={48}
+                  />
+                  <Text
+                    style={{ fontSize: 24, color: "red", fontWeight: "bold" }}
+                  >
+                    PURGE ACTIVE
+                  </Text>
+                </View>
+              ) : (
+                <View style={styles.targetInfoContainer}>
+                  <TouchableOpacity
+                    onPress={() => setIsImageModalVisible(true)}
+                  >
+                    <View style={styles.imageOverlay}>
+                      <Image
+                        source={{ uri: targetImageURL }}
+                        style={styles.avatar}
+                      />
+                      <Image
+                        source={CrosshairOverImage}
+                        style={styles.crosshairOverlay}
+                      />
                     </View>
-                    <View style={styles.section}>
-                      <FontAwesome name="circle" size={15} color="#f18221" />
-                      <Text style={styles.targetTag}>{targetRole}</Text>
+                  </TouchableOpacity>
+                  <View style={styles.targetInfo}>
+                    <Text style={styles.targetName}>{targetName}</Text>
+                    <View style={styles.tagsContainer}>
+                      <View style={styles.section}>
+                        <FontAwesome name="circle" size={15} color="#f18221" />
+                        <Text style={styles.targetTag}>{targetTeam}</Text>
+                      </View>
+                      <View style={styles.section}>
+                        <FontAwesome name="circle" size={15} color="#f18221" />
+                        <Text style={styles.targetTag}>{targetRole}</Text>
+                      </View>
                     </View>
                   </View>
                 </View>
-              </View>
+              )}
               <View style={styles.enterCodeContainer}>
                 <Text style={styles.enterCodeText}>
                   If target is eliminated, enter their code here:
