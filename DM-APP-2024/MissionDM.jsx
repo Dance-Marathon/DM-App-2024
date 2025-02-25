@@ -45,8 +45,8 @@ const MissionDM = () => {
   const [userIDState, setUserIDState] = useState("");
   const [userInfo, setUserInfo] = useState({});
   const [rounds, setRounds] = useState([]);
-  const [startDate, setStartDate] = useState(null);
-  const [endDate, setEndDate] = useState(null);
+  const [currentRoundStart, setCurrentRoundStart] = useState(null);
+  const [currentRoundEnd, setCurrentRoundEnd] = useState(null);
   const [gameActive, setGameActive] = useState(false);
   const [hasFetchedTarget, setHasFetchedTarget] = useState(false);
   const [currentRound, setCurrentRound] = useState(1);
@@ -195,7 +195,7 @@ const MissionDM = () => {
         roundElims: increment(1),
       });
 
-      setEliminationsCount(getPlayerEliminations());
+      getPlayerEliminations().then((count) => setEliminationsCount(count));
 
       await updateDoc(eliminatedDoc.ref, {
         isEliminated: true,
@@ -358,9 +358,9 @@ const MissionDM = () => {
           const tempDate = new Date(currentRoundData.start).getTime();
           const tempEnd = new Date(currentRoundData.end).getTime();
   
-          if (tempDate !== startDate || tempEnd !== endDate) {
-            setStartDate(tempDate);
-            setEndDate(tempEnd);
+          if (tempDate !== currentRoundStart || tempEnd !== currentRoundEnd) {
+            setCurrentRoundStart(tempDate);
+            setCurrentRoundEnd(tempEnd);
             console.log("Updated Start and End Times:", {
               start: tempDate,
               end: tempEnd,
@@ -403,6 +403,7 @@ const MissionDM = () => {
           imageURL: userInfo.avatarImageURL,
           role: role,
           team: userInfo.teamName,
+          donorID: userIDState,
         },
         { merge: true }
       );
@@ -459,15 +460,15 @@ const MissionDM = () => {
   const calculateTimeLeft = () => {
     const now = Date.now();
 
-    if (now < startDate) {
+    if (now < currentRoundStart) {
       return {
         active: false,
-        timeLeft: startDate - now,
+        timeLeft: currentRoundStart - now,
       };
-    } else if (now >= startDate && now < endDate) {
+    } else if (now >= currentRoundStart && now < currentRoundEnd) {
       return {
         active: true,
-        timeLeft: endDate - now,
+        timeLeft: currentRoundEnd - now,
       };
     } else {
       return {
@@ -479,11 +480,11 @@ const MissionDM = () => {
 
   useEffect(() => {
     if (!firstRoundStart) {
-      console.log("⏳ Waiting for firstRoundStart to be set...");
+      console.log("Waiting for firstRoundStart to be set...");
       return;
     }
   
-    console.log("🔥 firstRoundStart detected:", new Date(firstRoundStart).toISOString());
+    console.log("firstRoundStart detected:", new Date(firstRoundStart).toISOString());
   
     const timer = setInterval(async () => {
       const now = Date.now();
@@ -504,8 +505,7 @@ const MissionDM = () => {
         setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
       }
   
-      // ✅ Only start round when time is up and it's still round 0
-      if (currentRound === 0 && now >= firstRoundStart) {
+      if (timeLeft === 0 && now >= firstRoundStart) {
         console.log("Round 1 should now start! Running roundOver().");
         await roundOver();
         clearInterval(timer);
@@ -513,7 +513,7 @@ const MissionDM = () => {
     }, 1000);
   
     return () => clearInterval(timer);
-  }, [firstRoundStart, currentRound, startDate, endDate]);   
+  }, [firstRoundStart, currentRound, currentRoundStart, currentRoundEnd]);   
 
   const countActivePlayers = async () => {
     try {
