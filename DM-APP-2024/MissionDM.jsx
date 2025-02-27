@@ -869,6 +869,25 @@ const MissionDM = () => {
           isEliminated: true,
           targetId: null,
         });
+
+        const selfRef = doc(db, "MissionDMPlayers", auth.currentUser.uid);
+
+        await updateDoc(selfRef, {
+          eliminations: arrayUnion(eliminatedDoc.data().name),
+          roundElims: increment(1),
+        });
+
+        getPlayerEliminations().then((count) => setEliminationsCount(count));
+
+        const updatedSelfDoc = await getDoc(selfRef);
+        const updatedSelfData = updatedSelfDoc.data();
+
+        // Win condition: Compare self's ID to their targetId
+        if (updatedSelfData.id === updatedSelfData.targetId) {
+          setIsWinner(true);
+          console.log("setIsWinner to True");
+        }
+
         Alert.alert("Success", "Player eliminated during purge.");
       } else {
         // Otherwise, use the standard elimination flow.
