@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   Image,
   Modal,
   TextInput,
+  ScrollView,
 } from "react-native";
 import { auth, db } from "./Firebase/AuthManager";
 import {
@@ -61,6 +62,7 @@ const MissionDM = () => {
   const [enteredCode, setEnteredCode] = useState("");
   const [userCode, setUserCode] = useState("");
   const [isEliminated, setIsEliminated] = useState(false);
+  const [isRulesModalVisible, setIsRulesModalVisible] = useState(false);
   const [isWinner, setIsWinner] = useState(false);
   const [eliminationsCount, setEliminationsCount] = useState(0);
   const [isImageModalVisible, setIsImageModalVisible] = useState(false);
@@ -69,6 +71,7 @@ const MissionDM = () => {
   const [lastRoundEnd, setLastRoundEnd] = useState(null);
   const [purgeActive, setPurgeActive] = useState(false);
   const [prePurgeCount, setPrePurgeCount] = useState(null);
+  const roundOverCalledRef = useRef(false);
 
   useEffect(() => {
     getUserData()
@@ -407,24 +410,22 @@ const MissionDM = () => {
       if (gameDoc.exists()) {
         const gameData = gameDoc.data();
         console.log("Firestore currentRound:", gameData.currentRound);
-
         setCurrentRound(gameData.currentRound);
 
-        // Now find the round info based on Firestore currentRound
-        const currentRoundData = rounds.find(
-          (round) => round.round === gameData.currentRound
-        );
-        if (currentRoundData) {
-          const tempDate = new Date(currentRoundData.start).getTime();
-          const tempEnd = new Date(currentRoundData.end).getTime();
-
-          if (tempDate !== currentRoundStart || tempEnd !== currentRoundEnd) {
-            setCurrentRoundStart(tempDate);
-            setCurrentRoundEnd(tempEnd);
-            console.log("Updated Start and End Times:", {
-              start: tempDate,
-              end: tempEnd,
-            });
+        if (gameData.currentRound === 0) {
+          if (firstRoundStart && rounds[0] && rounds[0].end) {
+            setCurrentRoundStart(firstRoundStart);
+            setCurrentRoundEnd(rounds[0].end);
+          } else {
+            console.error("Missing round 1 start or end time.");
+          }
+        } else {
+          const currentRoundData = rounds.find(
+            (round) => round.round === gameData.currentRound
+          );
+          if (currentRoundData) {
+            setCurrentRoundStart(currentRoundData.start);
+            setCurrentRoundEnd(currentRoundData.end);
           }
         }
       } else {
@@ -539,15 +540,10 @@ const MissionDM = () => {
   };
 
   useEffect(() => {
-    if (!firstRoundStart) {
-      console.log("Waiting for firstRoundStart to be set...");
+    if (!currentRoundStart || !currentRoundEnd) {
+      console.log("Waiting for current round times to be set...");
       return;
     }
-
-    console.log(
-      "firstRoundStart detected:",
-      new Date(firstRoundStart).toISOString()
-    );
 
     const timer = setInterval(async () => {
       const now = Date.now();
@@ -568,7 +564,8 @@ const MissionDM = () => {
         setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
       }
 
-      if (timeLeft === 0 && now >= firstRoundStart) {
+      if (timeLeft === 0 && !roundOverCalledRef.current) {
+        roundOverCalledRef.current = true;
         console.log("Round 1 should now start! Running roundOver().");
         await roundOver();
         clearInterval(timer);
@@ -576,7 +573,7 @@ const MissionDM = () => {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [firstRoundStart, currentRound, currentRoundStart, currentRoundEnd]);
+  }, [currentRoundStart, currentRoundEnd]);
 
   const countActivePlayers = async () => {
     try {
@@ -927,7 +924,19 @@ const MissionDM = () => {
               style={styles.MissionDMLogo}
             />
             <View style={styles.roundBox}>
-              <Text style={styles.header}>ROUND {currentRound}</Text>
+              <View>
+                <Text style={styles.header}>ROUND {currentRound}</Text>
+                <TouchableOpacity
+                  onPress={() => setIsRulesModalVisible(true)}
+                  style={styles.infoButton}
+                >
+                  <FontAwesomeIcon
+                    icon={faCircleInfo}
+                    color="white"
+                    size={24}
+                  />
+                </TouchableOpacity>
+              </View>
               <View style={styles.inGameTimeContainer}>
                 <View style={styles.inGameTimeBox}>
                   <Text style={styles.inGameTimeValue}>{timeLeft.days}</Text>
@@ -1088,15 +1097,96 @@ const MissionDM = () => {
             <Modal
               animationType="fade"
               transparent={true}
-              visible={isStatsModalVisible}
-              onRequestClose={() => setIsStatsModalVisible(false)}
+              visible={isRulesModalVisible}
+              onRequestClose={() => setIsRulesModalVisible(false)}
             >
               <View style={styles.modalContainer}>
-                <View style={styles.modalContent}>
-                  <Text style={styles.userCodeText}>{userCode}</Text>
+                <View style={styles.rulesModalContent}>
+                  <Text style={styles.modalTitle}>MissionDM Rules</Text>
+                  <ScrollView>
+                    <Text style={styles.modalText}>
+                      1. The game will play March 24th - April 4th.
+                    </Text>
+
+                    <Text style={styles.modalText}>
+                      2. Any elimination occurring at a safe zone will be
+                      discounted, and could result in your removal from
+                      MissionDM, future Dance Marathon events, or removal from
+                      the organization entirely. All of these locations are
+                      considered safe zones:
+                    </Text>
+
+                    <View style={styles.bulletList}>
+                      <Text style={styles.bulletItem}>
+                        • UF classrooms and/or inside campus buildings
+                      </Text>
+                      <Text style={styles.bulletItem}>
+                        • UF Health Shands and all hospital buildings
+                      </Text>
+                      <Text style={styles.bulletItem}>
+                        • Inside sorority and fraternity houses
+                      </Text>
+                      <Text style={styles.bulletItem}>
+                        • Mini Marathons (during and inside the event)
+                      </Text>
+                    </View>
+
+                    <Text style={styles.modalText}>
+                      4. Respect people’s privacy, respect those around you,
+                      respect property, and treat others as you would like to be
+                      treated.
+                    </Text>
+                    <Text style={styles.modalText}>
+                      5. You must upload a proper picture of your face and
+                      maintain your real name on your DonorDrive profile.
+                    </Text>
+                    <Text style={styles.modalText}>
+                      6. Each round will last 3 days, with each round starting
+                      at 8am and ending at 12am.
+                    </Text>
+                    <Text style={styles.modalText}>
+                      7. To move on to the next round, you must eliminate at
+                      least one target. If you do not eliminate your target by
+                      the end of the round, you are eliminated.
+                    </Text>
+                    <Text style={styles.modalText}>
+                      8. You will receive a new target at the start of each
+                      round.
+                    </Text>
+                    <Text style={styles.modalText}>
+                      9. When you are eliminated, you must give your code to the
+                      agent that eliminated you.
+                    </Text>
+                    <Text style={styles.modalText}>
+                      10. Immunity is granted by wearing a party hat on your
+                      head. Immunity does not count on the last day of each
+                      round, during the entirety of round 4, or during purges.
+                    </Text>
+                    <Text style={styles.modalText}>
+                      11. The gamemakers hold the right to announce purges at
+                      any time. During a purge, there will be a notification
+                      sent and it will display on the screen a purge is active.
+                      No one is safe during a purge. Any agent may eliminate any
+                      other agent at this time. The purge is over once another
+                      notification is sent signifying the end of the purge.
+                    </Text>
+                    <Text style={styles.modalText}>
+                      12. The gamemakers hold the right to announce times where
+                      the immunity party hat does not count. This will be
+                      announce through a notification.
+                    </Text>
+                    <Text style={styles.modalText}>
+                      If any agents are being difficult once eliminated, please
+                      contact Sydney Wall at swall@floridadm.org.
+                    </Text>
+                    <Text style={styles.modalText}>
+                      If any technical difficulties arise, please contact
+                      Zachary Grosswirth at zgrosswirth@ufl.edu.
+                    </Text>
+                  </ScrollView>
                   <TouchableOpacity
                     style={styles.closeButton}
-                    onPress={() => setIsStatsModalVisible(false)}
+                    onPress={() => setIsRulesModalVisible(false)}
                   >
                     <Text style={styles.closeButtonText}>Close</Text>
                   </TouchableOpacity>
@@ -1742,11 +1832,25 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "bold",
   },
+  infoButton: {
+    position: "absolute",
+    top: 13,
+    right: 13,
+    padding: 5,
+  },
   modalContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "rgba(0, 0, 0, 0.5)",
+  },
+  rulesModalContent: {
+    backgroundColor: "#233d72",
+    padding: 20,
+    borderRadius: 10,
+    width: "80%",
+    alignItems: "center",
+    height: "80%",
   },
   modalContent: {
     backgroundColor: "#233d72",
@@ -1789,5 +1893,14 @@ const styles = StyleSheet.create({
     height: 100,
     borderRadius: 10,
     marginBottom: 10,
+  },
+  bulletList: {
+    marginLeft: 20,
+    marginBottom: 10,
+  },
+  bulletItem: {
+    fontSize: 16,
+    lineHeight: 24,
+    color: "white",
   },
 });
