@@ -4,6 +4,8 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
+  TouchableWithoutFeedback,
+  Keyboard,
   Alert,
   Image,
   Modal,
@@ -952,6 +954,7 @@ const MissionDM = () => {
       // Player is still alive and has not won
       if (inRound && !isEliminated && !isWinner) {
         return (
+          <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
           <View
             style={{
               flex: 1,
@@ -1013,11 +1016,11 @@ const MissionDM = () => {
                 <View style={{ alignItems: "center", padding: 20 }}>
                   <FontAwesomeIcon
                     icon={faTriangleExclamation}
-                    color="red"
+                    color="#C22126"
                     size={48}
                   />
                   <Text
-                    style={{ fontSize: 24, color: "red", fontWeight: "bold" }}
+                    style={{ fontSize: 24, color: "#C22126", fontWeight: "bold" }}
                   >
                     PURGE ACTIVE
                   </Text>
@@ -1057,14 +1060,16 @@ const MissionDM = () => {
                 <Text style={styles.enterCodeText}>
                   If target is eliminated, enter their code here:
                 </Text>
-                <TextInput
-                  style={styles.codeInput}
-                  placeholder="Enter code"
-                  placeholderTextColor="#888"
-                  onChangeText={(text) => setEnteredCode(text)}
-                  value={enteredCode}
-                  onSubmitEditing={handleCodeSubmit}
-                />
+                
+                  <TextInput
+                    style={styles.codeInput}
+                    placeholder="Enter code"
+                    placeholderTextColor="#888"
+                    onChangeText={(text) => setEnteredCode(text.toUpperCase())}
+                    value={enteredCode}
+                    onSubmitEditing={handleCodeSubmit}
+                  />
+                
               </View>
             </View>
 
@@ -1257,6 +1262,7 @@ const MissionDM = () => {
               </View>
             </Modal>
           </View>
+          </TouchableWithoutFeedback>
         );
       }
       // Player eliminated
@@ -1408,7 +1414,7 @@ const MissionDM = () => {
               </Text>
               <View style={styles.inGameTimeContainer}>
                 <View style={styles.inGameTimeBox}>
-                  <Text style={styles.inGameTimeValue}>{timeLeft.days}</Text>
+                  <Text style={styles.inGameTimeValue}>{String(timeLeft.days).padStart(2, "0")}</Text>
                 </View>
                 <Text style={styles.colon}>:</Text>
                 <View style={styles.inGameTimeBox}>
@@ -1482,7 +1488,7 @@ const MissionDM = () => {
             </Text>
             <View style={styles.inGameTimeContainer}>
               <View style={styles.inGameTimeBox}>
-                <Text style={styles.inGameTimeValue}>{timeLeft.days}</Text>
+                <Text style={styles.inGameTimeValue}>{String(timeLeft.days).padStart(2, "0")}</Text>
               </View>
               <Text style={styles.colon}>:</Text>
               <View style={styles.inGameTimeBox}>
@@ -1535,7 +1541,7 @@ const MissionDM = () => {
           </Text>
           <View style={styles.inGameTimeContainer}>
             <View style={styles.inGameTimeBox}>
-              <Text style={styles.inGameTimeValue}>{timeLeft.days}</Text>
+              <Text style={styles.inGameTimeValue}>{String(timeLeft.days).padStart(2, "0")}</Text>
             </View>
             <Text style={styles.colon}>:</Text>
             <View style={styles.inGameTimeBox}>
