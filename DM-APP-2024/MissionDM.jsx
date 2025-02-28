@@ -958,7 +958,7 @@ const MissionDM = () => {
               </View>
               <View style={styles.inGameTimeContainer}>
                 <View style={styles.inGameTimeBox}>
-                  <Text style={styles.inGameTimeValue}>{timeLeft.days}</Text>
+                  <Text style={styles.inGameTimeValue}>{String(timeLeft.days).padStart(2, "0")}</Text>
                 </View>
                 <Text style={styles.colon}>:</Text>
                 <View style={styles.inGameTimeBox}>
