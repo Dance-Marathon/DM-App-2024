@@ -24,6 +24,7 @@ import {
   arrayUnion,
   increment,
   onSnapshot,
+  terminate,
 } from "firebase/firestore";
 import { getUserInfo } from "./api/index";
 import { getUserData, updateUserData } from "./Firebase/UserManager";
@@ -72,6 +73,7 @@ const MissionDM = () => {
   const [purgeActive, setPurgeActive] = useState(false);
   const [prePurgeCount, setPrePurgeCount] = useState(null);
   const roundOverCalledRef = useRef(false);
+  const [ranking, setRanking] = useState("");
 
   useEffect(() => {
     getUserData()
@@ -258,10 +260,14 @@ const MissionDM = () => {
 
       getPlayerEliminations().then((count) => setEliminationsCount(count));
 
+      const tempRanking = await countActivePlayers();
+      console.log("tempRanking: ", tempRanking);
+      setRanking(tempRanking);
+
       await updateDoc(eliminatedDoc.ref, {
+        ranking: Number(tempRanking),
         isEliminated: true,
         targetId: null,
-        //id: null,
       });
 
       const updatedSelfDoc = await getDoc(selfRef);
@@ -465,6 +471,7 @@ const MissionDM = () => {
           role: role,
           team: userInfo.teamName,
           donorID: userIDState,
+          ranking: 0,
         },
         { merge: true }
       );
@@ -612,13 +619,18 @@ const MissionDM = () => {
       const playersRef = collection(db, "MissionDMPlayers");
       const querySnapshot = await getDocs(playersRef);
 
+      let x = 0;
+      const remaining = await countActivePlayers();
+
       const batch = querySnapshot.docs.map(async (playerDoc) => {
         const playerData = playerDoc.data();
         if (playerData.roundElims === 0) {
           return updateDoc(doc(db, "MissionDMPlayers", playerDoc.id), {
+            ranking: remaining - x,
             isEliminated: true,
           });
         }
+        x += 1;
       });
 
       await Promise.all(batch);
@@ -864,8 +876,14 @@ const MissionDM = () => {
         if (eliminatedSnapshot.empty) {
           throw new Error("Invalid code.");
         }
+
+        const tempRanking = await countActivePlayers();
+        console.log("tempRanking: ", tempRanking);
+        setRanking(tempRanking);
+
         const eliminatedDoc = eliminatedSnapshot.docs[0];
         await updateDoc(eliminatedDoc.ref, {
+          ranking: tempRanking,
           isEliminated: true,
           targetId: null,
         });
@@ -1272,6 +1290,17 @@ const MissionDM = () => {
                   fontSize: 18,
                   fontStyle: "italic",
                   marginTop: 5,
+                }}
+              >
+                You came in {ranking}
+                {ranking === 1 ? "st" : ranking === 2 ? "nd" : "th"} place.
+              </Text>
+              <Text
+                style={{
+                  color: "white",
+                  fontSize: 18,
+                  fontStyle: "italic",
+                  marginTop: 5,
                   marginBottom: 20,
                 }}
               >
@@ -1331,7 +1360,7 @@ const MissionDM = () => {
               </Text>
               <Text
                 style={{
-                  color: "#FFC300",
+                  color: "white",
                   fontSize: 18,
                   fontStyle: "italic",
                   marginTop: 5,
