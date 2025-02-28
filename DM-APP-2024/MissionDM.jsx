@@ -74,6 +74,7 @@ const MissionDM = () => {
   const [prePurgeCount, setPrePurgeCount] = useState(null);
   const roundOverCalledRef = useRef(false);
   const [ranking, setRanking] = useState("");
+  const [roundPlayersEliminated, setRoundPlayersEliminated] = useState(0);
 
   useEffect(() => {
     getUserData()
@@ -768,6 +769,7 @@ const MissionDM = () => {
       const previousPlayers = gameDoc.data().playersRemaining;
       const activePlayers = await countActivePlayers();
       const eliminations = previousPlayers - activePlayers;
+      setRoundPlayersEliminated(eliminations);
       const fieldToUpdate = `round${currentRound}Eliminations`;
 
       if (currentRound === 0 && Date.now() >= firstRoundStart) {
@@ -1445,7 +1447,7 @@ const MissionDM = () => {
                   size={25}
                 />
                 <Text style={[styles.eliminationHeader, { fontSize: 20 }]}>
-                  12 Players were eliminated
+                  {roundPlayersEliminated} Players were eliminated
                 </Text>
               </View>
               <View style={[styles.eliminationContainer, { marginBottom: 20 }]}>
