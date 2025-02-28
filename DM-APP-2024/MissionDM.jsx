@@ -265,7 +265,7 @@ const MissionDM = () => {
       setRanking(tempRanking);
 
       await updateDoc(eliminatedDoc.ref, {
-        ranking: Number(tempRanking),
+        ranking: tempRanking,
         isEliminated: true,
         targetId: null,
       });
@@ -1450,7 +1450,7 @@ const MissionDM = () => {
               <View style={[styles.eliminationContainer, { marginBottom: 20 }]}>
                 <FontAwesomeIcon icon={faUsers} color="#FFFFFF" size={25} />
                 <Text style={[styles.eliminationHeader, { fontSize: 20 }]}>
-                  41 players remain
+                  {countActivePlayers()} players remain
                 </Text>
               </View>
             </View>
