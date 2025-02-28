@@ -402,37 +402,37 @@ const MissionDM = () => {
     getRoundInfo();
   }, []);
 
-  useEffect(() => {
-    const fetchGameStats = async () => {
-      const gameDocRef = doc(db, "MissionDMGames", "gameStats");
-      const gameDoc = await getDoc(gameDocRef);
+  const fetchGameStats = async () => {
+    const gameDocRef = doc(db, "MissionDMGames", "gameStats");
+    const gameDoc = await getDoc(gameDocRef);
 
-      if (gameDoc.exists()) {
-        const gameData = gameDoc.data();
-        console.log("Firestore currentRound:", gameData.currentRound);
-        setCurrentRound(gameData.currentRound);
+    if (gameDoc.exists()) {
+      const gameData = gameDoc.data();
+      console.log("Firestore currentRound:", gameData.currentRound);
+      setCurrentRound(gameData.currentRound);
 
-        if (gameData.currentRound === 0) {
-          if (firstRoundStart && rounds[0] && rounds[0].end) {
-            setCurrentRoundStart(firstRoundStart);
-            setCurrentRoundEnd(rounds[0].end);
-          } else {
-            console.error("Missing round 1 start or end time.");
-          }
+      if (gameData.currentRound === 0) {
+        if (firstRoundStart && rounds[0] && rounds[0].end) {
+          setCurrentRoundStart(firstRoundStart);
+          setCurrentRoundEnd(rounds[0].end);
         } else {
-          const currentRoundData = rounds.find(
-            (round) => round.round === gameData.currentRound
-          );
-          if (currentRoundData) {
-            setCurrentRoundStart(currentRoundData.start);
-            setCurrentRoundEnd(currentRoundData.end);
-          }
+          console.error("Missing round 1 start or end time.");
         }
       } else {
-        console.error("gameStats document not found in Firestore.");
+        const currentRoundData = rounds.find(
+          (round) => round.round === gameData.currentRound
+        );
+        if (currentRoundData) {
+          setCurrentRoundStart(currentRoundData.start);
+          setCurrentRoundEnd(currentRoundData.end);
+        }
       }
-    };
+    } else {
+      console.error("gameStats document not found in Firestore.");
+    }
+  };
 
+  useEffect(() => {
     if (rounds.length > 0) {
       fetchGameStats();
     }
@@ -566,7 +566,7 @@ const MissionDM = () => {
 
       if (timeLeft === 0 && !roundOverCalledRef.current) {
         roundOverCalledRef.current = true;
-        console.log("Round 1 should now start! Running roundOver().");
+        console.log("Round should now end! Running roundOver().");
         await roundOver();
         clearInterval(timer);
       }
@@ -766,34 +766,35 @@ const MissionDM = () => {
         setCurrentRound(1);
         setGameActive(true);
         setInRound(true);
-        return;
+      } else {
+        await eliminateZeroElimsPlayers();
+        await resetRoundElims();
+        await updateDoc(gameDocRef, {
+          currentRound: currentRound + 1,
+          playersRemaining: activePlayers,
+          [fieldToUpdate]: eliminations,
+        });
+        //fetchItems = await fetchData();
+
+        // await sendPushNotificationToAlivePlayers(fetchItems, {
+        //   message: `Round ${currentRound} is over. ${eliminations} players were eliminated and ${activePlayers} remain.`,
+        //   title: `MissionDM - Round ${currentRound} Over`,
+        // })
+        //   .then(() => {
+        //     console.log("All notifications sent!");
+        //   })
+        //   .catch((error) => {
+        //     console.error("Error sending notifications:", error);
+        //   });
+
+        //await shuffleTargets();
+        setCurrentRound(currentRound + 1);
+        setInRound(false);
       }
 
-      await eliminateZeroElimsPlayers();
-      await resetRoundElims();
+      await fetchGameStats();
 
-      await updateDoc(gameDocRef, {
-        currentRound: currentRound + 1,
-        playersRemaining: activePlayers,
-        [fieldToUpdate]: eliminations,
-      });
-
-      //fetchItems = await fetchData();
-
-      // await sendPushNotificationToAlivePlayers(fetchItems, {
-      //   message: `Round ${currentRound} is over. ${eliminations} players were eliminated and ${activePlayers} remain.`,
-      //   title: `MissionDM - Round ${currentRound} Over`,
-      // })
-      //   .then(() => {
-      //     console.log("All notifications sent!");
-      //   })
-      //   .catch((error) => {
-      //     console.error("Error sending notifications:", error);
-      //   });
-
-      //await shuffleTargets();
-
-      setInRound(true);
+      roundOverCalledRef.current = false;
 
       console.log(
         `Round successfully incremented to: ${currentRound + 1}, targets shuffled, notifications sent.`
@@ -1277,7 +1278,7 @@ const MissionDM = () => {
               >
                 Thanks for playing!
               </Text>
-              {currentRound <= 1 && (
+              {currentRound <= 2 && (
                 <View style={styles.buttonBox}>
                   <TouchableOpacity style={styles.orangeButton}>
                     <Text style={styles.orangeButtonText}>Buy Back In!</Text>
