@@ -56,7 +56,6 @@ const MissionDM = () => {
   const [hasFetchedTarget, setHasFetchedTarget] = useState(false);
   const [currentRound, setCurrentRound] = useState(1);
   const [role, setRole] = useState("");
-  //const [inBetweenRounds, setInBetweenRounds] = useState(false);
   const [isStatsModalVisible, setIsStatsModalVisible] = useState(false);
   const [targetName, setTargetName] = useState("");
   const [targetImageURL, setTargetImageURL] = useState("");
@@ -1258,6 +1257,24 @@ const MissionDM = () => {
                   <TouchableOpacity
                     style={styles.closeButton}
                     onPress={() => setIsImageModalVisible(false)}
+                  >
+                    <Text style={styles.closeButtonText}>Close</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </Modal>
+            <Modal
+              animationType="fade"
+              transparent={true}
+              visible={isStatsModalVisible}
+              onRequestClose={() => setIsStatsModalVisible(false)}
+            >
+              <View style={styles.modalContainer}>
+                <View style={styles.modalContent}>
+                  <Text style={styles.userCodeText}>{userCode}</Text>
+                  <TouchableOpacity
+                    style={styles.closeButton}
+                    onPress={() => setIsStatsModalVisible(false)}
                   >
                     <Text style={styles.closeButtonText}>Close</Text>
                   </TouchableOpacity>
