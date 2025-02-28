@@ -56,19 +56,19 @@ const AllNotifications = ({ route }) => {
           <View style={styles.modalContent}>
             {selectedNotification && (
               <>
-                <Text style={styles.modalTitle}>
+                <Text style={[styles.notificationTitle, { marginTop: 0, fontSize: 20 }]}>
                   {selectedNotification.title}
                 </Text>
-                <Text style={styles.modalDateTime}>
+                <Text style={styles.dateTime}>
                   {selectedNotification.date} at {selectedNotification.time}
                 </Text>
-                <Text style={styles.modalMessage}>
+                <Text style={styles.description}>
                   {selectedNotification.message}
                 </Text>
               </>
             )}
             <TouchableOpacity
-              style={styles.closeButton}
+              style={[styles.closeButton, { marginTop: 10, marginBottom: 0 }]}
               onPress={() => setNotificationModalVisible(false)}
             >
               <Text style={styles.closeButtonText}>Close</Text>
@@ -142,11 +142,12 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0, 0, 0, 0.5)",
   },
   modalContent: {
-    backgroundColor: "white",
-    borderRadius: 10,
+    backgroundColor: "#233d72",
     padding: 20,
+    paddingBottom: 10,
+    borderRadius: 10,
+    width: "85%",
     alignItems: "center",
-    width: "80%",
   },
   modalText: {
     fontSize: 16,
@@ -154,6 +155,13 @@ const styles = StyleSheet.create({
   },
   eventsList: {
     paddingTop: 10,
+  },
+  closeButton: {
+    backgroundColor: "#f18221",
+    padding: 10,
+    borderRadius: 10,
+    width: 80,
+    alignItems: "center",
   },
 });
 
