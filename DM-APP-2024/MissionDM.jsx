@@ -1263,12 +1263,12 @@ const MissionDM = () => {
                 style={{ marginBottom: 20 }}
                 source={require("./images/eliminated-icon.png")}
               />
-              <Text style={{ color: "red", fontSize: 28, fontWeight: "bold" }}>
+              <Text style={{ color: "white", fontSize: 28, fontWeight: "bold" }}>
                 You have been eliminated.
               </Text>
               <Text
                 style={{
-                  color: "red",
+                  color: "white",
                   fontSize: 18,
                   fontStyle: "italic",
                   marginTop: 5,
