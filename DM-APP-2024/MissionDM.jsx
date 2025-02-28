@@ -952,7 +952,8 @@ const MissionDM = () => {
                   <FontAwesomeIcon
                     icon={faCircleInfo}
                     color="white"
-                    size={24}
+                    size={20}
+                    style={{ top: -7, right: -7}}
                   />
                 </TouchableOpacity>
               </View>
@@ -1122,7 +1123,7 @@ const MissionDM = () => {
               <View style={styles.modalContainer}>
                 <View style={styles.rulesModalContent}>
                   <Text style={styles.modalTitle}>MissionDM Rules</Text>
-                  <ScrollView>
+                  <ScrollView style={{ paddingRight: 7 }}>
                     <Text style={styles.modalText}>
                       1. The game will play March 24th - April 4th.
                     </Text>
@@ -1202,9 +1203,10 @@ const MissionDM = () => {
                       If any technical difficulties arise, please contact
                       Zachary Grosswirth at zgrosswirth@ufl.edu.
                     </Text>
+          
                   </ScrollView>
                   <TouchableOpacity
-                    style={styles.closeButton}
+                    style={[styles.closeButton, { marginTop: 10, marginBottom: 0 }]}
                     onPress={() => setIsRulesModalVisible(false)}
                   >
                     <Text style={styles.closeButtonText}>Close</Text>
@@ -1866,8 +1868,9 @@ const styles = StyleSheet.create({
   rulesModalContent: {
     backgroundColor: "#233d72",
     padding: 20,
+    paddingBottom: 10,
     borderRadius: 10,
-    width: "80%",
+    width: "90%",
     alignItems: "center",
     height: "80%",
   },
