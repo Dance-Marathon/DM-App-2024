@@ -200,6 +200,9 @@ const MissionDM = () => {
         if (updatedSelfData.id === updatedSelfData.targetId) {
           setIsWinner(true);
         }
+        if (updatedSelfData.isEliminated === true) {
+          setRanking(updatedSelfData.ranking.toString());
+        }
       }
     }
     checkWinner();
@@ -1298,7 +1301,7 @@ const MissionDM = () => {
                 }}
               >
                 You came in {ranking}
-                {ranking === 1 ? "st" : ranking === 2 ? "nd" : "th"} place.
+                {ranking.toString().slice(-1) === '1' ? "st" : ranking.toString().slice(-1) === '2' ? "nd" : ranking.toString().slice(-1) === '3' ? "rd" : "th"} place.
               </Text>
               <Text
                 style={{
