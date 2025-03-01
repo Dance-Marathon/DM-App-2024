@@ -956,113 +956,134 @@ const MissionDM = () => {
       // Player is still alive and has not won
       if (inRound && !isEliminated && !isWinner) {
         return (
-          <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-          <View
-            style={{
-              flex: 1,
-              alignItems: "center",
-              backgroundColor: "#1F1F1F",
-            }}
+          <TouchableWithoutFeedback
+            onPress={Keyboard.dismiss}
+            accessible={false}
           >
-            <Image
-              source={require("./images/MissionDMAppLogo.png")}
-              style={styles.MissionDMLogo}
-            />
-            <View style={styles.roundBox}>
-              <View>
-                <Text style={styles.header}>ROUND {currentRound}</Text>
-                <TouchableOpacity
-                  onPress={() => setIsRulesModalVisible(true)}
-                  style={styles.infoButton}
-                >
-                  <FontAwesomeIcon
-                    icon={faCircleInfo}
-                    color="white"
-                    size={20}
-                    style={{ top: -7, right: -7}}
-                  />
-                </TouchableOpacity>
-              </View>
-              <View style={styles.inGameTimeContainer}>
-                <View style={styles.inGameTimeBox}>
-                  <Text style={styles.inGameTimeValue}>{String(timeLeft.days).padStart(2, "0")}</Text>
-                </View>
-                <Text style={styles.colon}>:</Text>
-                <View style={styles.inGameTimeBox}>
-                  <Text style={styles.inGameTimeValue}>
-                    {String(timeLeft.hours).padStart(2, "0")}
-                  </Text>
-                </View>
-                <Text style={styles.colon}>:</Text>
-                <View style={styles.inGameTimeBox}>
-                  <Text style={styles.inGameTimeValue}>
-                    {String(timeLeft.minutes).padStart(2, "0")}
-                  </Text>
-                </View>
-                <Text style={styles.colon}>:</Text>
-                <View style={styles.inGameTimeBox}>
-                  <Text style={styles.inGameTimeValue}>
-                    {String(timeLeft.seconds).padStart(2, "0")}
-                  </Text>
-                </View>
-              </View>
-            </View>
-            <View style={styles.targetBox}>
-              <View style={styles.tileHeader}>
-                <FontAwesomeIcon icon={faBullseye} color="#f18221" size={18} />
-                <Text style={styles.tileTitleText}>
-                  {purgeActive ? "ELIMINATE ANYONE" : "TARGET INFO"}
-                </Text>
-              </View>
-              {purgeActive ? (
-                <View style={{ alignItems: "center", padding: 20 }}>
-                  <FontAwesomeIcon
-                    icon={faTriangleExclamation}
-                    color="#C22126"
-                    size={48}
-                  />
-                  <Text
-                    style={{ fontSize: 24, color: "#C22126", fontWeight: "bold" }}
-                  >
-                    PURGE ACTIVE
-                  </Text>
-                </View>
-              ) : (
-                <View style={styles.targetInfoContainer}>
+            <View
+              style={{
+                flex: 1,
+                alignItems: "center",
+                backgroundColor: "#1F1F1F",
+              }}
+            >
+              <Image
+                source={require("./images/MissionDMAppLogo.png")}
+                style={styles.MissionDMLogo}
+              />
+              <View style={styles.roundBox}>
+                <View>
+                  <Text style={styles.header}>ROUND {currentRound}</Text>
                   <TouchableOpacity
-                    onPress={() => setIsImageModalVisible(true)}
+                    onPress={() => setIsRulesModalVisible(true)}
+                    style={styles.infoButton}
                   >
-                    <View style={styles.imageOverlay}>
-                      <Image
-                        source={{ uri: targetImageURL }}
-                        style={styles.avatar}
-                      />
-                      <Image
-                        source={CrosshairOverImage}
-                        style={styles.crosshairOverlay}
-                      />
-                    </View>
+                    <FontAwesomeIcon
+                      icon={faCircleInfo}
+                      color="white"
+                      size={20}
+                      style={{ top: -7, right: -7 }}
+                    />
                   </TouchableOpacity>
-                  <View style={styles.targetInfo}>
-                    <Text style={styles.targetName}>{targetName}</Text>
-                    <View style={styles.tagsContainer}>
-                      <View style={styles.section}>
-                        <FontAwesome name="circle" size={15} color="#f18221" />
-                        <Text style={styles.targetTag}>{targetTeam}</Text>
+                </View>
+                <View style={styles.inGameTimeContainer}>
+                  <View style={styles.inGameTimeBox}>
+                    <Text style={styles.inGameTimeValue}>
+                      {String(timeLeft.days).padStart(2, "0")}
+                    </Text>
+                  </View>
+                  <Text style={styles.colon}>:</Text>
+                  <View style={styles.inGameTimeBox}>
+                    <Text style={styles.inGameTimeValue}>
+                      {String(timeLeft.hours).padStart(2, "0")}
+                    </Text>
+                  </View>
+                  <Text style={styles.colon}>:</Text>
+                  <View style={styles.inGameTimeBox}>
+                    <Text style={styles.inGameTimeValue}>
+                      {String(timeLeft.minutes).padStart(2, "0")}
+                    </Text>
+                  </View>
+                  <Text style={styles.colon}>:</Text>
+                  <View style={styles.inGameTimeBox}>
+                    <Text style={styles.inGameTimeValue}>
+                      {String(timeLeft.seconds).padStart(2, "0")}
+                    </Text>
+                  </View>
+                </View>
+              </View>
+              <View style={styles.targetBox}>
+                <View style={styles.tileHeader}>
+                  <FontAwesomeIcon
+                    icon={faBullseye}
+                    color="#f18221"
+                    size={18}
+                  />
+                  <Text style={styles.tileTitleText}>
+                    {purgeActive ? "ELIMINATE ANYONE" : "TARGET INFO"}
+                  </Text>
+                </View>
+                {purgeActive ? (
+                  <View style={{ alignItems: "center", padding: 20 }}>
+                    <FontAwesomeIcon
+                      icon={faTriangleExclamation}
+                      color="#C22126"
+                      size={48}
+                    />
+                    <Text
+                      style={{
+                        fontSize: 24,
+                        color: "#C22126",
+                        fontWeight: "bold",
+                      }}
+                    >
+                      PURGE ACTIVE
+                    </Text>
+                  </View>
+                ) : (
+                  <View style={styles.targetInfoContainer}>
+                    <TouchableOpacity
+                      onPress={() => setIsImageModalVisible(true)}
+                    >
+                      <View style={styles.imageOverlay}>
+                        <Image
+                          source={{ uri: targetImageURL }}
+                          style={styles.avatar}
+                        />
+                        <Image
+                          source={CrosshairOverImage}
+                          style={styles.crosshairOverlay}
+                        />
                       </View>
-                      <View style={styles.section}>
-                        <FontAwesome name="circle" size={15} color="#f18221" />
-                        <Text style={styles.targetTag}>{targetRole}</Text>
+                    </TouchableOpacity>
+                    <View style={styles.targetInfo}>
+                      <Text style={styles.targetName}>{targetName}</Text>
+                      <View style={styles.tagsContainer}>
+                        <View style={styles.section}>
+                          <FontAwesome
+                            name="circle"
+                            size={15}
+                            color="#f18221"
+                          />
+                          <Text style={styles.targetTag}>{targetTeam}</Text>
+                        </View>
+                        <View style={styles.section}>
+                          <FontAwesome
+                            name="circle"
+                            size={15}
+                            color="#f18221"
+                          />
+                          <Text style={styles.targetTag}>{targetRole}</Text>
+                        </View>
                       </View>
                     </View>
                   </View>
-                </View>
-              )}
-              <View style={styles.enterCodeContainer}>
-                <Text style={styles.enterCodeText}>
-                  If target is eliminated, enter their code here:
-                </Text>
-                
+                )}
+                <View style={styles.enterCodeContainer}>
+                  <Text style={styles.enterCodeText}>
+                    If target is eliminated, enter their code here:
+                  </Text>
+
                   <TextInput
                     style={styles.codeInput}
                     placeholder="Enter code"
@@ -1071,217 +1092,225 @@ const MissionDM = () => {
                     value={enteredCode}
                     onSubmitEditing={handleCodeSubmit}
                   />
-                
+                </View>
               </View>
-            </View>
 
-            <View style={styles.userBox}>
-              <View style={styles.tileHeader}>
-                <FontAwesomeIcon
-                  icon={faCircleInfo}
-                  color="#f18221"
-                  size={18}
-                />
-                <Text style={styles.tileTitleText}>MY INFO</Text>
+              <View style={styles.userBox}>
+                <View style={styles.tileHeader}>
+                  <FontAwesomeIcon
+                    icon={faCircleInfo}
+                    color="#f18221"
+                    size={18}
+                  />
+                  <Text style={styles.tileTitleText}>MY INFO</Text>
+                </View>
+                <View style={styles.eliminationContainer}>
+                  <FontAwesomeIcon
+                    icon={faCrosshairs}
+                    color="#FFFFFF"
+                    size={25}
+                  />
+                  <Text style={styles.eliminationHeader}>
+                    {Number(eliminationsCount)}{" "}
+                    {Number(eliminationsCount) === 1
+                      ? "Elimination"
+                      : "Eliminations"}
+                  </Text>
+                </View>
+                <View style={styles.buttonBox}>
+                  <TouchableOpacity
+                    style={[styles.orangeButton, { width: 125 }]}
+                    onPress={() => setIsStatsModalVisible(true)}
+                  >
+                    <Text style={styles.orangeButtonText}>Show My Code</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
-              <View style={styles.eliminationContainer}>
-                <FontAwesomeIcon
-                  icon={faCrosshairs}
-                  color="#FFFFFF"
-                  size={25}
-                />
-                <Text style={styles.eliminationHeader}>
-                  {Number(eliminationsCount)}{" "}
-                  {Number(eliminationsCount) === 1
-                    ? "Elimination"
-                    : "Eliminations"}
-                </Text>
-              </View>
-              <View style={styles.buttonBox}>
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  marginTop: 10,
+                  width: "95%",
+                }}
+              >
                 <TouchableOpacity
-                  style={[styles.orangeButton, { width: 125 }]}
-                  onPress={() => setIsStatsModalVisible(true)}
+                  style={[
+                    styles.enrollButton,
+                    { flex: 1, marginRight: 5, marginTop: 10 },
+                  ]}
+                  onPress={unenrollUser}
                 >
-                  <Text style={styles.orangeButtonText}>Show My Code</Text>
+                  <Text style={styles.enrollButtonText}>Leave Game</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.enrollButton,
+                    { flex: 1, marginLeft: 5, marginTop: 10 },
+                  ]}
+                  onPress={enrollUser}
+                >
+                  <Text style={styles.enrollButtonText}>
+                    Enroll In MissionDM
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.enrollButton,
+                    { flex: 1, marginRight: 5, marginTop: 10 },
+                  ]}
+                  onPress={shuffleTargets}
+                >
+                  <Text style={styles.enrollButtonText}>Shuffle Targets</Text>
                 </TouchableOpacity>
               </View>
+              <Modal
+                animationType="fade"
+                transparent={true}
+                visible={isRulesModalVisible}
+                onRequestClose={() => setIsRulesModalVisible(false)}
+              >
+                <View style={styles.modalContainer}>
+                  <View style={styles.rulesModalContent}>
+                    <Text style={styles.modalTitle}>MissionDM Rules</Text>
+                    <ScrollView style={{ paddingRight: 7 }}>
+                      <Text style={styles.modalText}>
+                        1. The game will be played March 24th - April 4th.
+                      </Text>
+
+                      <Text style={styles.modalText}>
+                        2. Any elimination occurring at a safe zone will be
+                        discounted and could result in your removal from
+                        MissionDM, future Dance Marathon events, or removal from
+                        the organization entirely. All of these locations are
+                        considered safe zones:
+                      </Text>
+
+                      <View style={styles.bulletList}>
+                        <Text style={styles.bulletItem}>
+                          • UF classrooms and/or inside campus buildings
+                        </Text>
+                        <Text style={styles.bulletItem}>
+                          • UF Health Shands and all hospital buildings
+                        </Text>
+                        <Text style={styles.bulletItem}>
+                          • Inside sorority and fraternity houses
+                        </Text>
+                        <Text style={styles.bulletItem}>
+                          • Mini Marathons (during and inside the event)
+                        </Text>
+                      </View>
+
+                      <Text style={styles.modalText}>
+                        4. Respect people’s privacy, respect those around you,
+                        respect property, and treat others as you would like to
+                        be treated.
+                      </Text>
+                      <Text style={styles.modalText}>
+                        5. You must upload a proper picture of your face and
+                        maintain your real name on your DonorDrive profile.
+                      </Text>
+                      <Text style={styles.modalText}>
+                        6. Each round will last 3 days with each round starting
+                        at 8am and ending at 12am.
+                      </Text>
+                      <Text style={styles.modalText}>
+                        7. You must eliminate at least one target in order to
+                        move on to the next round. If you do not eliminate your
+                        target by the end of the round, you are eliminated.
+                      </Text>
+                      <Text style={styles.modalText}>
+                        8. You will receive a new target at the start of each
+                        round.
+                      </Text>
+                      <Text style={styles.modalText}>
+                        9. When you are eliminated, you must give your code to
+                        the agent that eliminated you.
+                      </Text>
+                      <Text style={styles.modalText}>
+                        10. Immunity is granted by wearing a party hat on your
+                        head. Immunity does not count on the last day of each
+                        round, during the entirety of round 4, or during purges.
+                      </Text>
+                      <Text style={styles.modalText}>
+                        11. The gamemakers hold the right to announce purges at
+                        any time. During a purge, there will be a notification
+                        sent and it will display on the screen a purge is
+                        active. No one is safe during a purge. Any agent may
+                        eliminate any other agent at this time. The purge is
+                        over once another notification is sent signifying the
+                        end of the purge.
+                      </Text>
+                      <Text style={styles.modalText}>
+                        12. The gamemakers hold the right to announce times
+                        where the immunity party hat does not count. This will
+                        be announced through a notification.
+                      </Text>
+                      <Text style={styles.modalText}>
+                        Make sure to take videos of your eliminations and send
+                        them to @dmatufmemes on Instagram!
+                      </Text>
+                      <Text style={styles.modalText}>
+                        If any agents are being difficult once eliminated,
+                        please contact Sydney Wall at swall@floridadm.org.
+                      </Text>
+                      <Text style={styles.modalText}>
+                        If any technical difficulties arise, please contact
+                        Zachary Grosswirth at zgrosswirth@ufl.edu.
+                      </Text>
+                    </ScrollView>
+                    <TouchableOpacity
+                      style={[
+                        styles.closeButton,
+                        { marginTop: 10, marginBottom: 0 },
+                      ]}
+                      onPress={() => setIsRulesModalVisible(false)}
+                    >
+                      <Text style={styles.closeButtonText}>Close</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </Modal>
+              <Modal
+                animationType="fade"
+                transparent={true}
+                visible={isImageModalVisible}
+                onRequestClose={() => setIsImageModalVisible(false)}
+              >
+                <View style={styles.modalContainer}>
+                  <View style={styles.modalContent}>
+                    <Image
+                      source={{ uri: targetImageURL }}
+                      style={styles.zoomedImage}
+                    />
+                    <TouchableOpacity
+                      style={styles.closeButton}
+                      onPress={() => setIsImageModalVisible(false)}
+                    >
+                      <Text style={styles.closeButtonText}>Close</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </Modal>
+              <Modal
+                animationType="fade"
+                transparent={true}
+                visible={isStatsModalVisible}
+                onRequestClose={() => setIsStatsModalVisible(false)}
+              >
+                <View style={styles.modalContainer}>
+                  <View style={styles.modalContent}>
+                    <Text style={styles.userCodeText}>{userCode}</Text>
+                    <TouchableOpacity
+                      style={styles.closeButton}
+                      onPress={() => setIsStatsModalVisible(false)}
+                    >
+                      <Text style={styles.closeButtonText}>Close</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </Modal>
             </View>
-            <View
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                marginTop: 10,
-                width: "95%",
-              }}
-            >
-              <TouchableOpacity
-                style={[
-                  styles.enrollButton,
-                  { flex: 1, marginRight: 5, marginTop: 10 },
-                ]}
-                onPress={unenrollUser}
-              >
-                <Text style={styles.enrollButtonText}>Leave Game</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.enrollButton,
-                  { flex: 1, marginLeft: 5, marginTop: 10 },
-                ]}
-                onPress={enrollUser}
-              >
-                <Text style={styles.enrollButtonText}>Enroll In MissionDM</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.enrollButton,
-                  { flex: 1, marginRight: 5, marginTop: 10 },
-                ]}
-                onPress={shuffleTargets}
-              >
-                <Text style={styles.enrollButtonText}>Shuffle Targets</Text>
-              </TouchableOpacity>
-            </View>
-            <Modal
-              animationType="fade"
-              transparent={true}
-              visible={isRulesModalVisible}
-              onRequestClose={() => setIsRulesModalVisible(false)}
-            >
-              <View style={styles.modalContainer}>
-                <View style={styles.rulesModalContent}>
-                  <Text style={styles.modalTitle}>MissionDM Rules</Text>
-                  <ScrollView style={{ paddingRight: 7 }}>
-                    <Text style={styles.modalText}>
-                      1. The game will play March 24th - April 4th.
-                    </Text>
-
-                    <Text style={styles.modalText}>
-                      2. Any elimination occurring at a safe zone will be
-                      discounted, and could result in your removal from
-                      MissionDM, future Dance Marathon events, or removal from
-                      the organization entirely. All of these locations are
-                      considered safe zones:
-                    </Text>
-
-                    <View style={styles.bulletList}>
-                      <Text style={styles.bulletItem}>
-                        • UF classrooms and/or inside campus buildings
-                      </Text>
-                      <Text style={styles.bulletItem}>
-                        • UF Health Shands and all hospital buildings
-                      </Text>
-                      <Text style={styles.bulletItem}>
-                        • Inside sorority and fraternity houses
-                      </Text>
-                      <Text style={styles.bulletItem}>
-                        • Mini Marathons (during and inside the event)
-                      </Text>
-                    </View>
-
-                    <Text style={styles.modalText}>
-                      4. Respect people’s privacy, respect those around you,
-                      respect property, and treat others as you would like to be
-                      treated.
-                    </Text>
-                    <Text style={styles.modalText}>
-                      5. You must upload a proper picture of your face and
-                      maintain your real name on your DonorDrive profile.
-                    </Text>
-                    <Text style={styles.modalText}>
-                      6. Each round will last 3 days, with each round starting
-                      at 8am and ending at 12am.
-                    </Text>
-                    <Text style={styles.modalText}>
-                      7. To move on to the next round, you must eliminate at
-                      least one target. If you do not eliminate your target by
-                      the end of the round, you are eliminated.
-                    </Text>
-                    <Text style={styles.modalText}>
-                      8. You will receive a new target at the start of each
-                      round.
-                    </Text>
-                    <Text style={styles.modalText}>
-                      9. When you are eliminated, you must give your code to the
-                      agent that eliminated you.
-                    </Text>
-                    <Text style={styles.modalText}>
-                      10. Immunity is granted by wearing a party hat on your
-                      head. Immunity does not count on the last day of each
-                      round, during the entirety of round 4, or during purges.
-                    </Text>
-                    <Text style={styles.modalText}>
-                      11. The gamemakers hold the right to announce purges at
-                      any time. During a purge, there will be a notification
-                      sent and it will display on the screen a purge is active.
-                      No one is safe during a purge. Any agent may eliminate any
-                      other agent at this time. The purge is over once another
-                      notification is sent signifying the end of the purge.
-                    </Text>
-                    <Text style={styles.modalText}>
-                      12. The gamemakers hold the right to announce times where
-                      the immunity party hat does not count. This will be
-                      announce through a notification.
-                    </Text>
-                    <Text style={styles.modalText}>
-                      If any agents are being difficult once eliminated, please
-                      contact Sydney Wall at swall@floridadm.org.
-                    </Text>
-                    <Text style={styles.modalText}>
-                      If any technical difficulties arise, please contact
-                      Zachary Grosswirth at zgrosswirth@ufl.edu.
-                    </Text>
-          
-                  </ScrollView>
-                  <TouchableOpacity
-                    style={[styles.closeButton, { marginTop: 10, marginBottom: 0 }]}
-                    onPress={() => setIsRulesModalVisible(false)}
-                  >
-                    <Text style={styles.closeButtonText}>Close</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            </Modal>
-            <Modal
-              animationType="fade"
-              transparent={true}
-              visible={isImageModalVisible}
-              onRequestClose={() => setIsImageModalVisible(false)}
-            >
-              <View style={styles.modalContainer}>
-                <View style={styles.modalContent}>
-                  <Image
-                    source={{ uri: targetImageURL }}
-                    style={styles.zoomedImage}
-                  />
-                  <TouchableOpacity
-                    style={styles.closeButton}
-                    onPress={() => setIsImageModalVisible(false)}
-                  >
-                    <Text style={styles.closeButtonText}>Close</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            </Modal>
-            <Modal
-              animationType="fade"
-              transparent={true}
-              visible={isStatsModalVisible}
-              onRequestClose={() => setIsStatsModalVisible(false)}
-            >
-              <View style={styles.modalContainer}>
-                <View style={styles.modalContent}>
-                  <Text style={styles.userCodeText}>{userCode}</Text>
-                  <TouchableOpacity
-                    style={styles.closeButton}
-                    onPress={() => setIsStatsModalVisible(false)}
-                  >
-                    <Text style={styles.closeButtonText}>Close</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            </Modal>
-          </View>
           </TouchableWithoutFeedback>
         );
       }
@@ -1312,7 +1341,9 @@ const MissionDM = () => {
                 style={{ marginBottom: 20 }}
                 source={require("./images/eliminated-icon.png")}
               />
-              <Text style={{ color: "white", fontSize: 28, fontWeight: "bold" }}>
+              <Text
+                style={{ color: "white", fontSize: 28, fontWeight: "bold" }}
+              >
                 You have been eliminated.
               </Text>
               <Text
@@ -1324,7 +1355,14 @@ const MissionDM = () => {
                 }}
               >
                 You came in {ranking}
-                {ranking.toString().slice(-1) === '1' ? "st" : ranking.toString().slice(-1) === '2' ? "nd" : ranking.toString().slice(-1) === '3' ? "rd" : "th"} place.
+                {ranking.toString().slice(-1) === "1"
+                  ? "st"
+                  : ranking.toString().slice(-1) === "2"
+                    ? "nd"
+                    : ranking.toString().slice(-1) === "3"
+                      ? "rd"
+                      : "th"}{" "}
+                place.
               </Text>
               <Text
                 style={{
@@ -1434,7 +1472,9 @@ const MissionDM = () => {
               </Text>
               <View style={styles.inGameTimeContainer}>
                 <View style={styles.inGameTimeBox}>
-                  <Text style={styles.inGameTimeValue}>{String(timeLeft.days).padStart(2, "0")}</Text>
+                  <Text style={styles.inGameTimeValue}>
+                    {String(timeLeft.days).padStart(2, "0")}
+                  </Text>
                 </View>
                 <Text style={styles.colon}>:</Text>
                 <View style={styles.inGameTimeBox}>
@@ -1508,7 +1548,9 @@ const MissionDM = () => {
             </Text>
             <View style={styles.inGameTimeContainer}>
               <View style={styles.inGameTimeBox}>
-                <Text style={styles.inGameTimeValue}>{String(timeLeft.days).padStart(2, "0")}</Text>
+                <Text style={styles.inGameTimeValue}>
+                  {String(timeLeft.days).padStart(2, "0")}
+                </Text>
               </View>
               <Text style={styles.colon}>:</Text>
               <View style={styles.inGameTimeBox}>
@@ -1561,7 +1603,9 @@ const MissionDM = () => {
           </Text>
           <View style={styles.inGameTimeContainer}>
             <View style={styles.inGameTimeBox}>
-              <Text style={styles.inGameTimeValue}>{String(timeLeft.days).padStart(2, "0")}</Text>
+              <Text style={styles.inGameTimeValue}>
+                {String(timeLeft.days).padStart(2, "0")}
+              </Text>
             </View>
             <Text style={styles.colon}>:</Text>
             <View style={styles.inGameTimeBox}>
