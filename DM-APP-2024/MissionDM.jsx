@@ -949,6 +949,8 @@ const MissionDM = () => {
   //     </View>
   // )
 
+  
+
   // Player has clicked the enroll button. Their profile is created
   if (inGame) {
     // The game has started and has not ended yet
@@ -1526,6 +1528,99 @@ const MissionDM = () => {
           </View>
         );
       }
+    }
+    else if (lastRoundEnd && Date.now() > lastRoundEnd) {
+      return (
+        <View
+          style={{
+            flex: 1,
+            alignItems: "center",
+            backgroundColor: "#1F1F1F",
+            paddingHorizontal: 20,
+          }}
+        >
+          <Image
+            source={require("./images/MissionDMAppLogo.png")}
+            style={[styles.MissionDMLogo, { marginBottom: 20 }]}
+          />
+          <View
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              flexGrow: 0.8,
+              width: "100%",
+            }}
+          >
+            <Image
+              style={{
+                width: 250,
+                height: 250,
+                resizeMode: "contain",
+              }}
+              source={require("./images/Confetti.png")}
+            />
+            <Text
+              style={{
+                color: "white",
+                fontSize: 32,
+                fontWeight: "bold",
+                textAlign: "center",
+              }}
+            >
+              The game has ended!
+            </Text>
+            <Text
+              style={{
+                color: "white",
+                fontSize: 20,
+                marginTop: 5,
+                textAlign: "center",
+                width: "80%",
+              }}
+            >
+              Winners will be announced at the Main Event.
+            </Text>
+            <Text
+              style={{
+                color: "white",
+                fontSize: 18,
+                fontStyle: "italic",
+                marginTop: 5,
+                textAlign: "center",
+              }}
+            >
+              Thanks for playing!
+            </Text>
+            <View style={styles.userBox}>
+                  <View style={styles.tileHeader}>
+                    <FontAwesomeIcon
+                      icon={faCircleInfo}
+                      color="#f18221"
+                      size={18}
+                    />
+                    <Text style={styles.tileTitleText}>ROUND SUMMARY</Text>
+                  </View>
+                  <View style={styles.eliminationContainer}>
+                    <FontAwesomeIcon
+                      icon={faCrosshairs}
+                      color="#FFFFFF"
+                      size={25}
+                    />
+                    <Text style={[styles.eliminationHeader, { fontSize: 20 }]}>
+                      {roundPlayersEliminated} Players were eliminated
+                    </Text>
+                  </View>
+                  <View style={[styles.eliminationContainer, { marginBottom: 20 }]}>
+                    <FontAwesomeIcon icon={faUsers} color="#FFFFFF" size={25} />
+                    <Text style={[styles.eliminationHeader, { fontSize: 20 }]}>
+                      {countActivePlayers()} players remain
+                    </Text>
+                  </View>
+                </View>
+          </View>
+        </View>
+      );
     }
     // The game has not started yet
     else {
