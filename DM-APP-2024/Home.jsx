@@ -304,40 +304,40 @@ const Home = ({ route }) => {
           <Text style={styles.headerText}>UPCOMING EVENTS</Text>
         </View>
         <View style={styles.eventsList}>
-          {Array.isArray(items) && items.length > 0 ? (
-            items.map((item, index) => (
-              <View key={index} style={styles.eventContainer}>
-                {item.picture ? (
-                  <View style={styles.imageContainer}>
-                    <Image
-                      source={{ uri: imageUrls[item.picture] }}
-                      style={styles.eventImage}
-                    />
-                  </View>
-                ) : (
-                  <View></View>
-                )}
-                <View style={styles.eventDetails}>
-                  <Text style={styles.eventTitle}>{item.title}</Text>
-                  <TouchableOpacity
-                    onPress={() =>
-                      navigation.navigate("EventDetails", {
-                        event: {
-                          ...item,
-                          formattedDate: item.datetime.toDateString(),
-                          imageUrl: imageUrls[item.picture],
-                        },
-                      })
-                    }
-                  >
-                    <Text style={styles.learnMore}>Learn More</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            ))
-          ) : (
-            <Text style={styles.noEvents}>No upcoming events</Text>
-          )}
+        {Array.isArray(items) && items.length > 0 ? (
+  items.map((item, index) => (
+    <TouchableOpacity
+      key={index}
+      style={styles.eventContainer}
+      onPress={() =>
+        navigation.navigate("EventDetails", {
+          event: {
+            ...item,
+            formattedDate: item.datetime.toDateString(),
+            imageUrl: imageUrls[item.picture],
+          },
+        })
+      }
+    >
+      {item.picture ? (
+        <View style={styles.imageContainer}>
+          <Image
+            source={{ uri: imageUrls[item.picture] }}
+            style={styles.eventImage}
+          />
+        </View>
+      ) : (
+        <View />
+      )}
+      <View style={styles.eventDetails}>
+        <Text style={styles.eventTitle}>{item.title}</Text>
+        
+      </View>
+    </TouchableOpacity>
+  ))
+) : (
+  <Text style={styles.noEvents}>No upcoming events</Text>
+)}
         </View>
       </View>
     </View>
