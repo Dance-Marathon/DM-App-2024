@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useContext } from "react";
 import {
   View,
   Text,
@@ -11,6 +11,7 @@ import {
   Modal,
   TextInput,
   ScrollView,
+  Linking,
 } from "react-native";
 import { auth, db } from "./Firebase/AuthManager";
 import {
@@ -37,7 +38,9 @@ import { faUsers } from "@fortawesome/free-solid-svg-icons";
 import { faBullseye } from "@fortawesome/free-solid-svg-icons";
 import { faCircleInfo } from "@fortawesome/free-solid-svg-icons";
 import { faTriangleExclamation } from "@fortawesome/free-solid-svg-icons";
+import { faCartShopping } from "@fortawesome/free-solid-svg-icons";
 import CrosshairOverImage from "./images/Crosshair Over Image.png";
+import { useNavigation } from "@react-navigation/native";
 
 const MissionDM = () => {
   const [timeLeft, setTimeLeft] = useState({
@@ -76,6 +79,11 @@ const MissionDM = () => {
   const roundOverCalledRef = useRef(false);
   const [ranking, setRanking] = useState("");
   const [roundPlayersEliminated, setRoundPlayersEliminated] = useState(0);
+  const navigation = useNavigation();
+
+  const openWebsite = (url) => {
+    Linking.openURL(url);
+  };
 
   useEffect(() => {
     getUserData()
@@ -835,6 +843,7 @@ const MissionDM = () => {
 
       const userDocRef = doc(db, "MissionDMPlayers", currentUID);
       const userDoc = await getDoc(userDocRef);
+      // const userRole = userDoc.data().role;
       const targetID = userDoc.data().targetId;
       setUserCode(userDoc.data().code);
 
@@ -1021,6 +1030,17 @@ const MissionDM = () => {
                     color="#f18221"
                     size={18}
                   />
+                  <TouchableOpacity
+                    onPress={() => openWebsite("https://www.google.com")}
+                    style={styles.infoButton}
+                  >
+                    <FontAwesomeIcon
+                      icon={faCartShopping}
+                      color="white"
+                      size={20}
+                      style={{ top: -7, right: -7 }}
+                    />
+                  </TouchableOpacity>
                   <Text style={styles.tileTitleText}>
                     {purgeActive ? "ELIMINATE ANYONE" : "TARGET INFO"}
                   </Text>
@@ -1129,14 +1149,9 @@ const MissionDM = () => {
                 </View>
               </View>
               <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  marginTop: 10,
-                  width: "95%",
-                }}
+                style={{ marginTop: 30,}}
               >
-                <TouchableOpacity
+                {/* <TouchableOpacity
                   style={[
                     styles.enrollButton,
                     { flex: 1, marginRight: 5, marginTop: 10 },
@@ -1163,9 +1178,19 @@ const MissionDM = () => {
                   ]}
                   onPress={shuffleTargets}
                 >
-                  <Text style={styles.enrollButtonText}>Shuffle Targets</Text>
-                </TouchableOpacity>
+                  <Text style={styles.enrollButtonText}>Shuffle Targets</Text> */}
+                {/* </TouchableOpacity> */}
               </View>
+              {role ==="Admin" ? (
+                  <TouchableOpacity
+                    style={styles.adminButton}
+                    onPress={() => navigation.navigate("MissionDM Admin")}
+                  >
+                    <Text style={styles.adminButtonText}>Admin Page</Text>
+                  </TouchableOpacity>
+                ) : (
+                  <View style={{marginBottom: 20}}/>
+              )}
               <Modal
                 animationType="fade"
                 transparent={true}
@@ -2041,6 +2066,14 @@ const styles = StyleSheet.create({
     height: 40,
     width: 120,
   },
+  orangeButtonLarge: {
+    backgroundColor: "#f18221",
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 10,
+    height: 40,
+    width: 250,
+  },
   buttonBox: {
     alignItems: "center",
     marginBottom: 20,
@@ -2121,5 +2154,19 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 24,
     color: "white",
+  },
+  adminButton: {
+    padding: 8,
+    marginBottom: 20,
+    marginTop: 20,
+    borderRadius: 10,
+    backgroundColor: "#f18221",
+    width: "75%",
+  },
+  adminButtonText: {
+    color: "white",
+    textAlign: "center",
+    fontWeight: "bold",
+    fontSize: 16,
   },
 });
