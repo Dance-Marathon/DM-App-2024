@@ -1031,7 +1031,7 @@ const MissionDM = () => {
                     size={18}
                   />
                   <TouchableOpacity
-                    onPress={() => openWebsite("https://www.google.com")}
+                    onPress={() => openWebsite("https://docs.google.com/forms/d/e/1FAIpQLScEmi6y731oIUxKmkOLy6dxl_RnSDirW4TdMSDrV-9Br3Rdmw/viewform?usp=header")}
                     style={styles.infoButton}
                   >
                     <FontAwesomeIcon
