@@ -40,6 +40,7 @@ import { faBullseye } from "@fortawesome/free-solid-svg-icons";
 import { faCircleInfo } from "@fortawesome/free-solid-svg-icons";
 import { faTriangleExclamation } from "@fortawesome/free-solid-svg-icons";
 import { faCartShopping } from "@fortawesome/free-solid-svg-icons";
+import { faChildCombatant } from "@fortawesome/free-solid-svg-icons";
 import CrosshairOverImage from "./images/Crosshair Over Image.png";
 import { useNavigation } from "@react-navigation/native";
 
@@ -1015,6 +1016,24 @@ const MissionDM = () => {
                       style={{ top: -7, right: -7 }}
                     />
                   </TouchableOpacity>
+                  {role ==="Admin" ? (
+                  <TouchableOpacity
+                    style={{
+                      position: 'absolute',
+                      top: 10,
+                      left: 10, 
+                    }}
+                    onPress={() => navigation.navigate("MissionDM Admin")}
+                  >
+                    <FontAwesomeIcon
+                      icon={faChildCombatant}
+                      color="white"
+                      size={20}
+                    />
+                  </TouchableOpacity>
+                ) : (
+                  <View style={{marginBottom: 20}}/>
+              )}
                 </View>
                 <View style={styles.inGameTimeContainer}>
                   <View style={styles.inGameTimeBox}>
@@ -1052,6 +1071,17 @@ const MissionDM = () => {
                   <Text style={styles.tileTitleText}>
                     {purgeActive ? "ELIMINATE ANYONE" : "TARGET INFO"}
                   </Text>
+                  <TouchableOpacity
+                  style={styles.infoButton}
+                  onPress={() => openWebsite("https://docs.google.com/forms/d/e/1FAIpQLScEmi6y731oIUxKmkOLy6dxl_RnSDirW4TdMSDrV-9Br3Rdmw/viewform?usp=header")}
+                  >
+                      <FontAwesomeIcon  
+                        icon={faCartShopping}  
+                        color="white"  
+                        size={20}  
+                        style={{ top: -7, right: -7 }}
+                      />   
+                  </TouchableOpacity>
                 </View>
                 {purgeActive ? (
                   <View style={{ alignItems: "center", padding: 20 }}>
@@ -1189,30 +1219,6 @@ const MissionDM = () => {
                   <Text style={styles.enrollButtonText}>Shuffle Targets</Text> */}
                 {/* </TouchableOpacity> */}
               </View>
-              <TouchableOpacity
-                  style={styles.orangeButtonLarge}
-                  onPress={() => openWebsite("https://docs.google.com/forms/d/e/1FAIpQLScEmi6y731oIUxKmkOLy6dxl_RnSDirW4TdMSDrV-9Br3Rdmw/viewform?usp=header")}
-                  >
-                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>  
-                      <FontAwesomeIcon  
-                        icon={faCartShopping}  
-                        color="white"  
-                        size={15}  
-                        style={{ marginRight: 5 }}  
-                      />  
-                      <Text style={styles.orangeButtonText}>Purchase More Supplies</Text>  
-                    </View>  
-                  </TouchableOpacity>
-              {role ==="Admin" ? (
-                  <TouchableOpacity
-                    style={styles.adminButton}
-                    onPress={() => navigation.navigate("MissionDM Admin")}
-                  >
-                    <Text style={styles.adminButtonText}>Admin Page</Text>
-                  </TouchableOpacity>
-                ) : (
-                  <View style={{marginBottom: 20}}/>
-              )}
               <Modal
                 animationType="fade"
                 transparent={true}
