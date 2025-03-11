@@ -156,6 +156,7 @@ const MissionDM = () => {
     const unsubscribe = onSnapshot(docRef, (docSnapshot) => {
       if (docSnapshot.exists()) {
         setIsEliminated(docSnapshot.data().isEliminated);
+        setRanking(docSnapshot.data().ranking);
       } else {
         console.error("Document does not exist!");
         setIsEliminated(null);
@@ -1734,7 +1735,7 @@ const MissionDM = () => {
         <View style={[styles.targetBox, { alignItems: "center" }]}>
           <Text style={styles.header}>Please Enroll:</Text>
           <TouchableOpacity style={styles.enrollButton} onPress={enrollUser}>
-            <Text style={styles.enrollButtonText}>Create My Account!</Text>
+            <Text style={styles.enrollButtonText}>Enroll In Game!</Text>
           </TouchableOpacity>
         </View>
         <View style={[styles.targetBox, { padding: 10 }]}>
