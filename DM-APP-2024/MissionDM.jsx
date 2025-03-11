@@ -1030,17 +1030,6 @@ const MissionDM = () => {
                     color="#f18221"
                     size={18}
                   />
-                  <TouchableOpacity
-                    onPress={() => openWebsite("https://docs.google.com/forms/d/e/1FAIpQLScEmi6y731oIUxKmkOLy6dxl_RnSDirW4TdMSDrV-9Br3Rdmw/viewform?usp=header")}
-                    style={styles.infoButton}
-                  >
-                    <FontAwesomeIcon
-                      icon={faCartShopping}
-                      color="white"
-                      size={20}
-                      style={{ top: -7, right: -7 }}
-                    />
-                  </TouchableOpacity>
                   <Text style={styles.tileTitleText}>
                     {purgeActive ? "ELIMINATE ANYONE" : "TARGET INFO"}
                   </Text>
@@ -1181,6 +1170,20 @@ const MissionDM = () => {
                   <Text style={styles.enrollButtonText}>Shuffle Targets</Text> */}
                 {/* </TouchableOpacity> */}
               </View>
+              <TouchableOpacity
+                  style={styles.orangeButtonLarge}
+                  onPress={() => openWebsite("https://docs.google.com/forms/d/e/1FAIpQLScEmi6y731oIUxKmkOLy6dxl_RnSDirW4TdMSDrV-9Br3Rdmw/viewform?usp=header")}
+                  >
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>  
+                      <FontAwesomeIcon  
+                        icon={faCartShopping}  
+                        color="white"  
+                        size={15}  
+                        style={{ marginRight: 5 }}  
+                      />  
+                      <Text style={styles.orangeButtonText}>Purchase More Supplies</Text>  
+                    </View>  
+                  </TouchableOpacity>
               {role ==="Admin" ? (
                   <TouchableOpacity
                     style={styles.adminButton}
