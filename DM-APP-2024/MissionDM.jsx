@@ -1019,9 +1019,8 @@ const MissionDM = () => {
                   <TouchableOpacity
                     style={{
                       position: 'absolute',
-                      top: 7,
-                      left: 7,
-                      padding: 10, 
+                      top: 10,
+                      left: 10, 
                     }}
                     onPress={() => navigation.navigate("MissionDM Admin")}
                   >
@@ -1029,7 +1028,6 @@ const MissionDM = () => {
                       icon={faChildCombatant}
                       color="white"
                       size={20}
-                      style={{ position: 'absolute', top: 0, right: 0 }}
                     />
                   </TouchableOpacity>
                 ) : (
