@@ -951,7 +951,7 @@ const MissionDM = () => {
         backgroundColor: "#1F1F1F",
       }}
     >
-      <ActivityIndicator size="large" color="#0000ff" />
+      <ActivityIndicator size="large" color="#f18221" />
       <Text style={{ marginTop: 16, fontSize: 18, color: "white" }}>
         Loading data...
       </Text>
@@ -992,18 +992,25 @@ const MissionDM = () => {
             onPress={Keyboard.dismiss}
             accessible={false}
           >
+            <ScrollView 
+              contentContainerStyle={{ flexGrow: 1, width:"100%", justifyContent: 'center', alignItems: 'center' }} 
+              overScrollMode="never" 
+              bounces={false}
+              keyboardShouldPersistTaps="handled"
+            >
             <View
               style={{
                 flex: 1,
                 alignItems: "center",
                 backgroundColor: "#1F1F1F",
+                width: "100%",
               }}
             >
               <Image
                 source={require("./images/MissionDMAppLogo.png")}
-                style={styles.MissionDMLogo}
+                style={[styles.MissionDMLogo]}
               />
-              <View style={styles.roundBox}>
+              <View style={[styles.roundBox]}>
                 <View>
                   <Text style={styles.header}>ROUND {currentRound}</Text>
                   <TouchableOpacity
@@ -1033,7 +1040,7 @@ const MissionDM = () => {
                     />
                   </TouchableOpacity>
                 ) : (
-                  <View style={{marginBottom: 20}}/>
+                  <View />
               )}
                 </View>
                 <View style={styles.inGameTimeContainer}>
@@ -1220,6 +1227,7 @@ const MissionDM = () => {
                   <Text style={styles.enrollButtonText}>Shuffle Targets</Text> */}
                 {/* </TouchableOpacity> */}
               </View>
+              
               <Modal
                 animationType="fade"
                 transparent={true}
@@ -1333,6 +1341,7 @@ const MissionDM = () => {
                 visible={isImageModalVisible}
                 onRequestClose={() => setIsImageModalVisible(false)}
               >
+                <TouchableWithoutFeedback onPress={() => setIsImageModalVisible(false)}>
                 <View style={styles.modalContainer}>
                   <View style={styles.modalContent}>
                     <Image
@@ -1347,6 +1356,7 @@ const MissionDM = () => {
                     </TouchableOpacity>
                   </View>
                 </View>
+                </TouchableWithoutFeedback>
               </Modal>
               <Modal
                 animationType="fade"
@@ -1354,6 +1364,7 @@ const MissionDM = () => {
                 visible={isStatsModalVisible}
                 onRequestClose={() => setIsStatsModalVisible(false)}
               >
+                <TouchableWithoutFeedback onPress={() => setIsStatsModalVisible(false)}>
                 <View style={styles.modalContainer}>
                   <View style={styles.modalContent}>
                     <Text style={styles.userCodeText}>{userCode}</Text>
@@ -1365,8 +1376,10 @@ const MissionDM = () => {
                     </TouchableOpacity>
                   </View>
                 </View>
+                </TouchableWithoutFeedback>
               </Modal>
             </View>
+            </ScrollView>
           </TouchableWithoutFeedback>
         );
       }
