@@ -11,6 +11,7 @@ import {
   Modal,
   TextInput,
   ScrollView,
+  ActivityIndicator,
 } from "react-native";
 import { auth, db } from "./Firebase/AuthManager";
 import {
@@ -53,7 +54,6 @@ const MissionDM = () => {
   const [currentRoundStart, setCurrentRoundStart] = useState(null);
   const [currentRoundEnd, setCurrentRoundEnd] = useState(null);
   const [gameActive, setGameActive] = useState(false);
-  const [hasFetchedTarget, setHasFetchedTarget] = useState(false);
   const [currentRound, setCurrentRound] = useState(1);
   const [role, setRole] = useState("");
   const [isStatsModalVisible, setIsStatsModalVisible] = useState(false);
@@ -76,37 +76,71 @@ const MissionDM = () => {
   const roundOverCalledRef = useRef(false);
   const [ranking, setRanking] = useState("");
   const [roundPlayersEliminated, setRoundPlayersEliminated] = useState(0);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getUserData()
-      .then((data) => {
-        console.log("Fetched User Data:", data);
-        setUserIDState(data.donorID);
-        setRole(data.role);
-        setInGame(data.inGame);
-      })
-      .catch((err) => {
-        console.error(err);
-      });
+    const loadData = async () => {
+      try {
+        const userData = await getUserData();
+        console.log("Fetched User Data:", userData);
+        setUserIDState(userData.donorID);
+        setRole(userData.role);
+        setInGame(userData.inGame);
+
+        if (userData.donorID) {
+          const info = await getUserInfo(userData.donorID);
+          setUserInfo(info);
+        }
+
+        const selfRef = doc(db, "MissionDMPlayers", auth.currentUser.uid);
+        const docSnapshot = await getDoc(selfRef);
+        if (docSnapshot.exists()) {
+          setIsEliminated(docSnapshot.data().isEliminated);
+        } else {
+          console.error("Document does not exist!");
+          setIsEliminated(null);
+        }
+
+        const gameDocRef = doc(db, "MissionDMGames", "gameStats");
+        const gameSnapshot = await getDoc(gameDocRef);
+        if (gameSnapshot.exists()) {
+          setGameActive(gameSnapshot.data().gameActive);
+        } else {
+          console.error("gameStats document not found in Firestore.");
+        }
+
+        await getRoundInfo();
+
+        await getTargetUserInfo();
+
+        const elims = await getPlayerEliminations();
+        setEliminationsCount(elims);
+
+        const updatedSelfDoc = await getDoc(selfRef);
+        if (updatedSelfDoc.exists()) {
+          const updatedSelfData = updatedSelfDoc.data();
+          if (updatedSelfData.id === updatedSelfData.targetId) {
+            setIsWinner(true);
+          }
+          if (updatedSelfData.isEliminated === true) {
+            setRanking(updatedSelfData.ranking.toString());
+          }
+        }
+      } catch (error) {
+        console.error("Error loading data: ", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
   }, []);
 
   useEffect(() => {
-    if (userIDState) {
-      getPlayerEliminations().then((count) => setEliminationsCount(count));
+    if (rounds.length > 0) {
+      fetchGameStats();
     }
-  }, [userIDState]);
-
-  useEffect(() => {
-    if (userIDState) {
-      getUserInfo(userIDState)
-        .then((data) => {
-          setUserInfo(data);
-        })
-        .catch((err) => {
-          console.error("Error fetching user info:", err);
-        });
-    }
-  }, [userIDState]);
+  }, [rounds]);
 
   useEffect(() => {
     const docRef = doc(db, "MissionDMPlayers", auth.currentUser.uid);
@@ -192,33 +226,16 @@ const MissionDM = () => {
     return () => unsubscribePurge();
   }, [purgeActive]);
 
-  useEffect(() => {
-    async function checkWinner() {
-      const selfRef = doc(db, "MissionDMPlayers", auth.currentUser.uid);
-      const updatedSelfDoc = await getDoc(selfRef);
-      if (updatedSelfDoc.exists()) {
-        const updatedSelfData = updatedSelfDoc.data();
-        if (updatedSelfData.id === updatedSelfData.targetId) {
-          setIsWinner(true);
-        }
-        if (updatedSelfData.isEliminated === true) {
-          setRanking(updatedSelfData.ranking.toString());
-        }
-      }
-    }
-    checkWinner();
-  }, []);
+  // function formatToLocalDateTime(date) {
+  //   const year = date.getFullYear();
+  //   const month = String(date.getMonth() + 1).padStart(2, "0");
+  //   const day = String(date.getDate()).padStart(2, "0");
+  //   const hours = String(date.getHours()).padStart(2, "0");
+  //   const minutes = String(date.getMinutes()).padStart(2, "0");
+  //   const seconds = String(date.getSeconds()).padStart(2, "0");
 
-  function formatToLocalDateTime(date) {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
-    const hours = String(date.getHours()).padStart(2, "0");
-    const minutes = String(date.getMinutes()).padStart(2, "0");
-    const seconds = String(date.getSeconds()).padStart(2, "0");
-
-    return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
-  }
+  //   return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
+  // }
 
   const eliminate = async (data) => {
     const { eliminatorId, code } = data;
@@ -409,10 +426,6 @@ const MissionDM = () => {
     setRounds(rounds);
   };
 
-  useEffect(() => {
-    getRoundInfo();
-  }, []);
-
   const fetchGameStats = async () => {
     const gameDocRef = doc(db, "MissionDMGames", "gameStats");
     const gameDoc = await getDoc(gameDocRef);
@@ -442,12 +455,6 @@ const MissionDM = () => {
       console.error("gameStats document not found in Firestore.");
     }
   };
-
-  useEffect(() => {
-    if (rounds.length > 0) {
-      fetchGameStats();
-    }
-  }, [rounds]);
 
   const enrollUser = async () => {
     try {
@@ -822,13 +829,6 @@ const MissionDM = () => {
     }
   };
 
-  useEffect(() => {
-    if (!hasFetchedTarget) {
-      getTargetUserInfo();
-      setHasFetchedTarget(true);
-    }
-  }, [hasFetchedTarget]);
-
   const getTargetUserInfo = async () => {
     try {
       const currentUID = auth.currentUser.uid;
@@ -930,6 +930,22 @@ const MissionDM = () => {
     }
   };
 
+  const LoadingScreen = () => (
+    <View
+      style={{
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+        backgroundColor: "#1F1F1F",
+      }}
+    >
+      <ActivityIndicator size="large" color="#0000ff" />
+      <Text style={{ marginTop: 16, fontSize: 18, color: "white" }}>
+        Loading data...
+      </Text>
+    </View>
+  );
+
   // return (
   //   <View
   //     style={{
@@ -949,7 +965,9 @@ const MissionDM = () => {
   //     </View>
   // )
 
-  
+  if (loading) {
+    return <LoadingScreen />;
+  }
 
   // Player has clicked the enroll button. Their profile is created
   if (inGame) {
@@ -1258,7 +1276,7 @@ const MissionDM = () => {
                       </Text>
                       <Text style={styles.modalText}>
                         If any technical difficulties arise, please contact
-                        Zachary Grosswirth at zgrosswirth@ufl.edu.
+                        technology@floridadm.org.
                       </Text>
                     </ScrollView>
                     <TouchableOpacity
@@ -1528,8 +1546,7 @@ const MissionDM = () => {
           </View>
         );
       }
-    }
-    else if (lastRoundEnd && Date.now() > lastRoundEnd) {
+    } else if (lastRoundEnd && Date.now() > lastRoundEnd) {
       return (
         <View
           style={{
@@ -1593,31 +1610,31 @@ const MissionDM = () => {
               Thanks for playing!
             </Text>
             <View style={styles.userBox}>
-                  <View style={styles.tileHeader}>
-                    <FontAwesomeIcon
-                      icon={faCircleInfo}
-                      color="#f18221"
-                      size={18}
-                    />
-                    <Text style={styles.tileTitleText}>ROUND SUMMARY</Text>
-                  </View>
-                  <View style={styles.eliminationContainer}>
-                    <FontAwesomeIcon
-                      icon={faCrosshairs}
-                      color="#FFFFFF"
-                      size={25}
-                    />
-                    <Text style={[styles.eliminationHeader, { fontSize: 20 }]}>
-                      {roundPlayersEliminated} Players were eliminated
-                    </Text>
-                  </View>
-                  <View style={[styles.eliminationContainer, { marginBottom: 20 }]}>
-                    <FontAwesomeIcon icon={faUsers} color="#FFFFFF" size={25} />
-                    <Text style={[styles.eliminationHeader, { fontSize: 20 }]}>
-                      {countActivePlayers()} players remain
-                    </Text>
-                  </View>
-                </View>
+              <View style={styles.tileHeader}>
+                <FontAwesomeIcon
+                  icon={faCircleInfo}
+                  color="#f18221"
+                  size={18}
+                />
+                <Text style={styles.tileTitleText}>ROUND SUMMARY</Text>
+              </View>
+              <View style={styles.eliminationContainer}>
+                <FontAwesomeIcon
+                  icon={faCrosshairs}
+                  color="#FFFFFF"
+                  size={25}
+                />
+                <Text style={[styles.eliminationHeader, { fontSize: 20 }]}>
+                  {roundPlayersEliminated} Players were eliminated
+                </Text>
+              </View>
+              <View style={[styles.eliminationContainer, { marginBottom: 20 }]}>
+                <FontAwesomeIcon icon={faUsers} color="#FFFFFF" size={25} />
+                <Text style={[styles.eliminationHeader, { fontSize: 20 }]}>
+                  {countActivePlayers()} players remain
+                </Text>
+              </View>
+            </View>
           </View>
         </View>
       );
@@ -1762,7 +1779,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   subheader: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: 600,
     marginBottom: 10,
     marginTop: 0,
