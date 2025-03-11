@@ -158,6 +158,7 @@ const MissionDM = () => {
       if (docSnapshot.exists()) {
         setIsEliminated(docSnapshot.data().isEliminated);
         setRanking(docSnapshot.data().ranking);
+        getTargetUserInfo();
       } else {
         console.error("Document does not exist!");
         setIsEliminated(null);
@@ -576,7 +577,7 @@ const MissionDM = () => {
 
     const timer = setInterval(async () => {
       const now = Date.now();
-      console.log("Checking round start time:", now, "vs", firstRoundStart);
+      console.log("Checking round start time:", now, "vs", currentRoundStart);
       console.log("Current Round:", currentRound);
 
       const { active, timeLeft } = calculateTimeLeft();
