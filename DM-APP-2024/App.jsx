@@ -56,6 +56,7 @@ import { getUserInfo, getUserActivity } from "./api/index";
 
 import { UserProvider } from "./api/calls";
 import { app } from "./Firebase/firebase";
+import MissionDMAdmin from "./MissionDMAdmin";
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -422,6 +423,42 @@ const App = () => {
     </AboutStack.Navigator>
   );
 
+  const MissionDMStack = createStackNavigator();
+
+  const MissionDMScreenStack = (props) => (
+    <MissionDMStack.Navigator>
+      <MissionDMStack.Screen
+        name="MissionDM"
+        component={MissionDM}
+        options={{
+          headerStyle: {
+            backgroundColor: "#1f1f1f",
+            borderBottomWidth: 0,
+          },
+          headerShadowVisible: false,
+          headerShown: false,
+          headerTintColor: "white",
+        }}
+        initialParams={props.route.params}
+      />
+      <MissionDMStack.Screen
+        name="MissionDM Admin"
+        component={MissionDMAdmin}
+        initialParams={{ expoPushToken: expoPushToken }}
+        options={{
+          title: "MissionDM Admin",
+          headerStyle: {
+            backgroundColor: "#1f1f1f",
+            borderBottomWidth: 0,
+          },
+          headerTintColor: "white",
+          headerShadowVisible: false,
+          headerBackTitleVisible: false,
+        }}
+      />
+    </MissionDMStack.Navigator>
+  );
+
   if (appDisabled) {
     return (
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
@@ -498,7 +535,7 @@ const App = () => {
               {enrolled && (
                 <Tab.Screen
                   name="MissionDM"
-                  component={MissionDM}
+                  component={MissionDMScreenStack}
                   options={{
                     headerShown: false,
                     tabBarIcon: ({ color, size }) => (
