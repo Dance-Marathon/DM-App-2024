@@ -144,17 +144,17 @@ const MissionDMAdmin = () => {
   };
 
   // Change the current round manually
-  const changeRound = async (newRound) => {
-    try {
-      const gameDocRef = doc(db, "MissionDMGames", "gameStats");
-      await updateDoc(gameDocRef, { currentRound: newRound });
-      setCurrentRound(newRound);
-      Alert.alert("Success", `Round updated to ${newRound}`);
-    } catch (error) {
-      Alert.alert("Error", "Failed to update round.");
-      console.error("Round update error:", error);
-    }
-  };
+  // const changeRound = async (newRound) => {
+  //   try {
+  //     const gameDocRef = doc(db, "MissionDMGames", "gameStats");
+  //     await updateDoc(gameDocRef, { currentRound: newRound });
+  //     setCurrentRound(newRound);
+  //     Alert.alert("Success", `Round updated to ${newRound}`);
+  //   } catch (error) {
+  //     Alert.alert("Error", "Failed to update round.");
+  //     console.error("Round update error:", error);
+  //   }
+  // };
 
   return (
     <View style={{ flex: 1, padding: 20 }}>
@@ -187,19 +187,7 @@ const MissionDMAdmin = () => {
       />
 
       <Button title="Shuffle Players" onPress={shuffleTargets} color="#007BFF" />
-
-      <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 20 }}>
-        <Button 
-          title="Previous Round" 
-          onPress={() => changeRound(currentRound - 1)} 
-          disabled={currentRound < 1} 
-        />
-        <Text style={{ fontSize: 18, fontWeight: "bold" }}>
-          Current Round: {currentRound}
-        </Text>
-        <Button title="Next Round" onPress={() => changeRound(currentRound + 1)} />
       </View>
-    </View>
   );
 };
 
