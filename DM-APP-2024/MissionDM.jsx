@@ -40,6 +40,7 @@ import { faBullseye } from "@fortawesome/free-solid-svg-icons";
 import { faCircleInfo } from "@fortawesome/free-solid-svg-icons";
 import { faTriangleExclamation } from "@fortawesome/free-solid-svg-icons";
 import { faCartShopping } from "@fortawesome/free-solid-svg-icons";
+import { faChildCombatant } from "@fortawesome/free-solid-svg-icons";
 import CrosshairOverImage from "./images/Crosshair Over Image.png";
 import { useNavigation } from "@react-navigation/native";
 
@@ -1014,6 +1015,26 @@ const MissionDM = () => {
                       style={{ top: -7, right: -7 }}
                     />
                   </TouchableOpacity>
+                  {role ==="Admin" ? (
+                  <TouchableOpacity
+                    style={{
+                      position: 'absolute',
+                      top: 7,
+                      left: 7,
+                      padding: 10, 
+                    }}
+                    onPress={() => navigation.navigate("MissionDM Admin")}
+                  >
+                    <FontAwesomeIcon
+                      icon={faChildCombatant}
+                      color="white"
+                      size={20}
+                      style={{ position: 'absolute', top: 0, right: 0 }}
+                    />
+                  </TouchableOpacity>
+                ) : (
+                  <View style={{marginBottom: 20}}/>
+              )}
                 </View>
                 <View style={styles.inGameTimeContainer}>
                   <View style={styles.inGameTimeBox}>
@@ -1202,16 +1223,6 @@ const MissionDM = () => {
                       <Text style={styles.orangeButtonText}>Purchase More Supplies</Text>  
                     </View>  
                   </TouchableOpacity>
-              {role ==="Admin" ? (
-                  <TouchableOpacity
-                    style={styles.adminButton}
-                    onPress={() => navigation.navigate("MissionDM Admin")}
-                  >
-                    <Text style={styles.adminButtonText}>Admin Page</Text>
-                  </TouchableOpacity>
-                ) : (
-                  <View style={{marginBottom: 20}}/>
-              )}
               <Modal
                 animationType="fade"
                 transparent={true}
