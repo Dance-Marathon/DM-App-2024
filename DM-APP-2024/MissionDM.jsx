@@ -175,6 +175,7 @@ const MissionDM = () => {
       if (docSnapshot.exists()) {
         setGameActive(docSnapshot.data().gameActive);
         setPurgeActive(docSnapshot.data().purge);
+        setCurrentRound(docSnapshot.data().currentRound);
       } else {
         console.error("gameStats document not found in Firestore.");
       }
@@ -581,32 +582,6 @@ const MissionDM = () => {
       console.log("Reset round eliminations for all players.");
     } catch (error) {
       console.error("Error resetting round eliminations:", error);
-    }
-  };
-
-  const eliminateZeroElimsPlayers = async () => {
-    try {
-      const playersRef = collection(db, "MissionDMPlayers");
-      const querySnapshot = await getDocs(playersRef);
-
-      let x = 0;
-      const remaining = await countActivePlayers();
-
-      const batch = querySnapshot.docs.map(async (playerDoc) => {
-        const playerData = playerDoc.data();
-        if (playerData.roundElims === 0) {
-          return updateDoc(doc(db, "MissionDMPlayers", playerDoc.id), {
-            ranking: remaining - x,
-            isEliminated: true,
-          });
-        }
-        x += 1;
-      });
-
-      await Promise.all(batch);
-      console.log("Eliminated those losers.");
-    } catch (error) {
-      console.error("Error eliminating players with 0 eliminations:", error);
     }
   };
 
