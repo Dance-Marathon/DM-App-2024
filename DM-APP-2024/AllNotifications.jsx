@@ -6,8 +6,11 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   Modal,
 } from "react-native";
+import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
+import { faX } from "@fortawesome/free-solid-svg-icons";
 
 const AllNotifications = ({ route }) => {
   const { notifications } = route.params;
@@ -30,29 +33,32 @@ const AllNotifications = ({ route }) => {
       }}
     >
       <ScrollView style={{ width: "100%" }}>
-        <View style={{ alignItems: "center" }}>
+        <View style={{ alignItems: "center", paddingBottom: 50}}>
           {notifications.map((notification, index) => (
+            <TouchableOpacity
+            key={index}
+            onPress={() => handleNotificationClick(notification)}
+            style={{ width: "100%", alignItems: "center" }}
+          >
             <View key={index} style={styles.notificationContainer}>
-              <TouchableOpacity
-                key={index}
-                onPress={() => handleNotificationClick(notification)}
-              >
                 <Text style={styles.notificationTitle}>
                   {notification.title}
                 </Text>
-              </TouchableOpacity>
             </View>
+            </TouchableOpacity>
           ))}
         </View>
       </ScrollView>
 
       <Modal
-        animationType="slide"
+        animationType="fade"
         transparent={true}
         visible={notificationModalVisible}
         onRequestClose={() => setNotificationModalVisible(false)}
       >
-        <View style={styles.modalContainer}>
+        <TouchableWithoutFeedback
+          onPress={() => setNotificationModalVisible(false)}>
+        <View style={[styles.modalContainer, {position: "relative"}]}>
           <View style={styles.modalContent}>
             {selectedNotification && (
               <>
@@ -68,13 +74,14 @@ const AllNotifications = ({ route }) => {
               </>
             )}
             <TouchableOpacity
-              style={[styles.closeButton, { marginTop: 10, marginBottom: 0 }]}
+              style={styles.modalClose}
               onPress={() => setNotificationModalVisible(false)}
             >
-              <Text style={styles.closeButtonText}>Close</Text>
+              <FontAwesomeIcon icon={faX} color="white" size={20} />
             </TouchableOpacity>
           </View>
         </View>
+        </TouchableWithoutFeedback>
       </Modal>
     </View>
   );
@@ -97,6 +104,11 @@ const styles = StyleSheet.create({
     },
     shadowColor: "rgba(0, 0, 0, 0.25)",
     padding: 20,
+  },
+  modalClose: {
+    position: "absolute",
+    right: 10,
+    top: 10,
   },
   notificationContainer: {
     backgroundColor: "#233d72",
@@ -144,7 +156,6 @@ const styles = StyleSheet.create({
   modalContent: {
     backgroundColor: "#233d72",
     padding: 20,
-    paddingBottom: 10,
     borderRadius: 10,
     width: "85%",
     alignItems: "center",

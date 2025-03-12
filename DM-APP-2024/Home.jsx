@@ -443,8 +443,8 @@ const styles = StyleSheet.create({
   },
   modalClose: {
     position: "absolute",
-    right: -130,
-    top: 0,
+    right: -140,
+    top: -7,
   },
   eventsList: {
     paddingTop: 10,
