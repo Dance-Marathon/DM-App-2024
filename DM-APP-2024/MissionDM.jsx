@@ -183,61 +183,6 @@ const MissionDM = () => {
     return () => unsubscribe();
   }, []);
 
-  useEffect(() => {
-    const gameDocRef = doc(db, "MissionDMGames", "gameStats");
-    const unsubscribePurge = onSnapshot(gameDocRef, (docSnapshot) => {
-      async function handlePurge() {
-        if (docSnapshot.exists()) {
-          const purgeFlag = docSnapshot.data().purge;
-          if (purgeFlag) {
-            const fetchItems = await fetchData();
-            if (!purgeActive) {
-              setPurgeActive(true);
-              console.log("Purge activated");
-              const countBefore = await countActivePlayers();
-              setPrePurgeCount(countBefore);
-              // const fetchItems = await fetchData();
-              // try {
-              //   await sendPushNotificationToAlivePlayers(fetchItems, {
-              //     message: `A purge has been initiated. Any player can be eliminatead. Immuninity is not valid. Good luck.`,
-              //     title: `MissionDM - PURGE ACTIVE`,
-              //   });
-              //   console.log("All notifications sent!");
-              // } catch (error) {
-              //   console.error("Error sending notifications:", error);
-              // }
-            }
-          } else {
-            if (purgeActive) {
-              setPurgeActive(false);
-              const countAfter = await countActivePlayers();
-              console.log("Purge deactivated - shuffling targets now");
-              let eliminatedDuringPurge = 0;
-              if (prePurgeCount !== null) {
-                eliminatedDuringPurge = prePurgeCount - countAfter;
-                await updateDoc(gameDocRef, { playersRemaining: countAfter });
-              }
-              setPrePurgeCount(null);
-              shuffleTargets();
-              // const fetchItems = await fetchData();
-              // try {
-              //   await sendPushNotificationToAlivePlayers(fetchItems, {
-              //     message: `The purge is over. ${eliminatedDuringPurge} targets were eliminated. ${countAfter} players remain. Immuninity is now valid unless otherwise noted.`,
-              //     title: `MissionDM - PURGE OVER`,
-              //   });
-              //   console.log("All notifications sent!");
-              // } catch (error) {
-              //   console.error("Error sending notifications:", error);
-              // }
-            }
-          }
-        }
-      }
-      handlePurge();
-    });
-    return () => unsubscribePurge();
-  }, [purgeActive]);
-
   // function formatToLocalDateTime(date) {
   //   const year = date.getFullYear();
   //   const month = String(date.getMonth() + 1).padStart(2, "0");
