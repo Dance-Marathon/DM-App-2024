@@ -420,28 +420,7 @@ const App = () => {
           headerBackTitleVisible: false,
         }}
       />
-    </AboutStack.Navigator>
-  );
-
-  const MissionDMStack = createStackNavigator();
-
-  const MissionDMScreenStack = (props) => (
-    <MissionDMStack.Navigator>
-      <MissionDMStack.Screen
-        name="MissionDM"
-        component={MissionDM}
-        options={{
-          headerStyle: {
-            backgroundColor: "#1f1f1f",
-            borderBottomWidth: 0,
-          },
-          headerShadowVisible: false,
-          headerShown: false,
-          headerTintColor: "white",
-        }}
-        initialParams={props.route.params}
-      />
-      <MissionDMStack.Screen
+      <AboutStack.Screen
         name="MissionDM Admin"
         component={MissionDMAdmin}
         initialParams={{ expoPushToken: expoPushToken }}
@@ -456,7 +435,7 @@ const App = () => {
           headerBackTitleVisible: false,
         }}
       />
-    </MissionDMStack.Navigator>
+    </AboutStack.Navigator>
   );
 
   if (appDisabled) {
@@ -535,7 +514,7 @@ const App = () => {
               {enrolled && (
                 <Tab.Screen
                   name="MissionDM"
-                  component={MissionDMScreenStack}
+                  component={MissionDM}
                   options={{
                     headerShown: false,
                     tabBarIcon: ({ color, size }) => (

@@ -1,12 +1,20 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, Button, FlatList, TouchableOpacity, Alert } from "react-native";
-import { 
-  getFirestore, 
-  collection, 
-  getDocs, 
-  updateDoc, 
-  doc, 
-  getDoc 
+import {
+  View,
+  Text,
+  Button,
+  FlatList,
+  TouchableOpacity,
+  Alert,
+} from "react-native";
+import {
+  getFirestore,
+  collection,
+  getDocs,
+  updateDoc,
+  doc,
+  getDoc,
+  count,
 } from "firebase/firestore";
 
 const db = getFirestore();
@@ -14,6 +22,147 @@ const db = getFirestore();
 const MissionDMAdmin = () => {
   const [players, setPlayers] = useState([]);
   const [currentRound, setCurrentRound] = useState(1);
+  const [purgeActive, setPurgeActive] = useState(false);
+
+  async function sendPushNotificationsToAll(expoPushTokens, notification) {
+    console.log("Sending notifications...");
+
+    const batchSize = 50;
+    let messages = [];
+
+    for (const token of expoPushTokens) {
+      if (!token || token.trim() === "") {
+        console.warn("Skipping empty or invalid token:", token);
+        continue;
+      }
+
+      messages.push({
+        to: token,
+        sound: "default",
+        title: notification.title,
+        body: notification.message,
+      });
+
+      console.log(`Added token: ${token}`);
+
+      if (messages.length >= batchSize) {
+        await sendBatch(messages);
+        messages = [];
+      }
+    }
+
+    if (messages.length > 0) {
+      await sendBatch(messages);
+    }
+  }
+
+  async function sendBatch(batch) {
+    if (batch.length === 0) {
+      console.warn("Skipping empty batch.");
+      return;
+    }
+
+    try {
+      console.log(`Sending batch of ${batch.length} notifications...`);
+
+      const response = await fetch("https://exp.host/--/api/v2/push/send", {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Accept-encoding": "gzip, deflate",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(batch),
+      });
+
+      const json = await response.json();
+      console.log("Expo response:", JSON.stringify(json, null, 2));
+
+      if (json.data) {
+        json.data.forEach((result, index) => {
+          if (result.status === "error") {
+            console.error(
+              `Error sending to ${batch[index].to}:`,
+              result.message
+            );
+          }
+        });
+      }
+    } catch (error) {
+      console.error("Error sending notifications:", error);
+    }
+  }
+
+  const fetchData = async () => {
+    try {
+      const fetchedItems = [];
+
+      const q = query(
+        collection(db, "Users"),
+        where("inMissionDM", "==", true)
+      );
+      const querySnapshot = await getDocs(q);
+
+      querySnapshot.forEach((doc) => {
+        const docData = doc.data();
+        fetchedItems.push(docData.notificationToken);
+      });
+
+      return fetchedItems;
+    } catch (error) {
+      console.error("Error fetching events:", error);
+    }
+  };
+
+  const handleTogglePurge = async () => {
+    const gameRef = doc(db, "MissionDMGames", "gameStats");
+    if (!purgeActive) {
+      setPurgeActive(true);
+      const countBefore = await countActivePlayers();
+      await updateDoc(gameRef, {
+        purge: true,
+        countBefore: countBefore,
+      });
+      console.log("Purge activated");
+      const fetchItems = await fetchData();
+      try {
+        await sendPushNotificationsToAll(fetchItems, {
+          message: `A purge has been initiated. Any player can be eliminatead. Immuninity is not valid. Good luck.`,
+          title: `MissionDM - PURGE ACTIVE`,
+        });
+        console.log("All notifications sent!");
+      } catch (error) {
+        console.error("Error sending notifications:", error);
+      }
+    } else {
+      setPurgeActive(false);
+      await updateDoc(gameRef, {
+        purge: false,
+      });
+      const prePurgeCount = await getDoc(gameRef).data().countBefore;
+      const countAfter = await countActivePlayers();
+      console.log("Purge deactivated - shuffling targets now");
+      let eliminatedDuringPurge = 0;
+      if (prePurgeCount !== null) {
+        eliminatedDuringPurge = prePurgeCount - countAfter;
+        await updateDoc(gameRef, {
+          playersRemaining: countAfter,
+          countBefore: null,
+        });
+      }
+      shuffleTargets();
+      const fetchItems = await fetchData();
+      try {
+        await sendPushNotificationsToAll(fetchItems, {
+          message: `The purge is over. ${eliminatedDuringPurge} targets were eliminated. ${countAfter} players remain. Immuninity is now valid unless otherwise noted.`,
+          title: `MissionDM - PURGE OVER`,
+        });
+        console.log("All notifications sent!");
+      } catch (error) {
+        console.error("Error sending notifications:", error);
+      }
+    }
+  };
 
   // Fetch all players from the MissionDMPlayers collection
   useEffect(() => {
@@ -94,26 +243,26 @@ const MissionDMAdmin = () => {
       // First extract the players
       const playersRef = collection(db, "MissionDMPlayers");
       const snapshot = await getDocs(playersRef);
-  
+
       if (snapshot.empty) {
         throw new Error("No players found.");
       }
-  
+
       // Extract their info
       const players = snapshot.docs.map((doc) => ({
-        id: doc.data().id,        // In-game player ID
-        uid: doc.id,              // Firebase UID
+        id: doc.data().id, // In-game player ID
+        uid: doc.id, // Firebase UID
         name: doc.data().name,
         isEliminated: doc.data().isEliminated,
       }));
-  
+
       // Filter out eliminated players
       const activePlayers = players.filter((player) => !player.isEliminated);
-  
+
       if (activePlayers.length < 2) {
         throw new Error("Not enough active players to shuffle.");
       }
-  
+
       // Shuffle the active players using Fisher–Yates algorithm
       const shuffledPlayers = [...activePlayers];
       for (let i = shuffledPlayers.length - 1; i > 0; i--) {
@@ -123,17 +272,17 @@ const MissionDMAdmin = () => {
           shuffledPlayers[i],
         ];
       }
-  
+
       // Assign new targets in a circular pattern
       for (let i = 0; i < shuffledPlayers.length; i++) {
         const currentPlayer = shuffledPlayers[i];
         const newTarget = shuffledPlayers[(i + 1) % shuffledPlayers.length];
-  
+
         await updateDoc(doc(db, "MissionDMPlayers", currentPlayer.uid), {
           targetId: newTarget.id,
         });
       }
-  
+
       console.log("Targets successfully shuffled.");
       Alert.alert("Success", "Players shuffled successfully!");
     } catch (error) {
@@ -158,36 +307,60 @@ const MissionDMAdmin = () => {
 
   return (
     <View style={{ flex: 1, padding: 20 }}>
-      <Text style={{ fontSize: 24, fontWeight: "bold", marginBottom: 10 }}>Admin Panel</Text>
+      <Text style={{ fontSize: 24, fontWeight: "bold", marginBottom: 10 }}>
+        Admin Panel
+      </Text>
 
       <FlatList
         data={players}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          <View 
-            style={{ 
-              padding: 10, 
-              backgroundColor: item.isEliminated ? "#F44336" : "#4CAF50", 
-              marginBottom: 5 
+          <View
+            style={{
+              padding: 10,
+              backgroundColor: item.isEliminated ? "#F44336" : "#4CAF50",
+              marginBottom: 5,
             }}
           >
             <Text style={{ color: "white", fontSize: 18 }}>
               {item.name} {item.isEliminated ? "(Eliminated)" : "(Alive)"}
             </Text>
             {!item.isEliminated && (
-              <TouchableOpacity 
+              <TouchableOpacity
                 onPress={() => eliminatePlayer(item.id)} // Using Firebase document ID
                 style={{ marginTop: 5 }}
               >
-                <Text style={{ color: "#FFC107", fontWeight: "bold" }}>Eliminate</Text>
+                <Text style={{ color: "#FFC107", fontWeight: "bold" }}>
+                  Eliminate
+                </Text>
               </TouchableOpacity>
             )}
           </View>
         )}
       />
 
-      <Button title="Shuffle Players" onPress={shuffleTargets} color="#007BFF" />
-      </View>
+      <Text style={{ fontSize: 18, marginBottom: 10 }}>
+        {purgeActive ? "Purge Active" : "Purge Inactive"}
+      </Text>
+      <TouchableOpacity
+        style={{
+          backgroundColor: "#007AFF",
+          paddingVertical: 12,
+          paddingHorizontal: 20,
+          borderRadius: 8,
+        }}
+        onPress={handleTogglePurge}
+      >
+        <Text style={{ color: "#fff", fontSize: 16 }}>
+          {purgeActive ? "End Purge" : "Start Purge"}
+        </Text>
+      </TouchableOpacity>
+      <Button
+        title="Shuffle Players"
+        onPress={shuffleTargets}
+        color="#007BFF"
+      />
+    </View>
   );
 };
 

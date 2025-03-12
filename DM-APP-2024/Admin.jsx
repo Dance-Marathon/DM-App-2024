@@ -28,6 +28,9 @@ import {
   updateDoc,
   arrayUnion,
 } from "firebase/firestore";
+import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
+import { faChildCombatant } from "@fortawesome/free-solid-svg-icons";
+import { useNavigation } from "@react-navigation/native";
 
 import { addUserExpoPushToken } from "./Firebase/AuthManager";
 
@@ -194,6 +197,7 @@ const Admin = ({ route }) => {
   const [newTeam, setNewTeam] = useState("");
   const [modalVisible, setModalVisible] = useState(false);
 
+  const navigation = useNavigation();
   const { expoPushToken } = route.params;
 
   useEffect(() => {
@@ -340,6 +344,16 @@ const Admin = ({ route }) => {
         <View style={styles.header}>
           <View style={styles.smallCircle} />
           <Text style={styles.headerText}>NOTIFICATIONS</Text>
+          <TouchableOpacity
+            style={{
+              position: "absolute",
+              top: 0,
+              right: 20,
+            }}
+            onPress={() => navigation.navigate("MissionDM Admin")}
+          >
+            <FontAwesomeIcon icon={faChildCombatant} color="white" size={20} />
+          </TouchableOpacity>
         </View>
         <View>
           <Text style={[styles.sectionTitle, { marginTop: 5 }]}>Title</Text>
