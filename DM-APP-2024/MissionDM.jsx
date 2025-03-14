@@ -80,6 +80,7 @@ const MissionDM = () => {
   const [ranking, setRanking] = useState("");
   const [roundPlayersEliminated, setRoundPlayersEliminated] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [loadingBetweenRounds, setLoadingBetweenRounds] = useState(true);
   const navigation = useNavigation();
 
   const openWebsite = (url) => {
@@ -188,6 +189,21 @@ const MissionDM = () => {
         } else {
           console.error("Invalid round number.");
         }
+      } else {
+        console.error("gameStats document not found in Firestore.");
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    const roundDoc = `round${currentRound}`
+    const gameDocRef = doc(db, "MissionDMGames", roundDoc);
+
+    const unsubscribe = onSnapshot(gameDocRef, (docSnapshot) => {
+      if (docSnapshot.exists()) {
+        setLoadingBetweenRounds(!docSnapshot.data().roundOverLock);
       } else {
         console.error("gameStats document not found in Firestore.");
       }
@@ -905,6 +921,22 @@ const MissionDM = () => {
     </View>
   );
 
+  const LoadingBetweenRoundsScreen = () => (
+    <View
+      style={{
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+        backgroundColor: "#1F1F1F",
+      }}
+    >
+      <ActivityIndicator size="large" color="#f18221" />
+      <Text style={{ width: "90%", marginTop: 16, fontSize: 18, color: "white", textAlign: "center" }}>
+        Our team is hard at work gathering the latest round data... Check back later for the latest round details.
+      </Text>
+    </View>
+  );
+
   // return (
   //   <View
   //     style={{
@@ -928,12 +960,16 @@ const MissionDM = () => {
     return <LoadingScreen />;
   }
 
+  if (loadingBetweenRounds && gameActive && !inRound && !isEliminated && !isWinner && currentRound !== 5) {
+    return <LoadingBetweenRoundsScreen />;
+  }
+
   // Player has clicked the enroll button. Their profile is created
   if (inGame) {
     // The game has started and has not ended yet
     if (gameActive) {
       // Player is still alive and has not won
-      if (inRound && !isEliminated && !isWinner) {
+      if (inRound && !isEliminated && !isWinner && Date.now() >= currentRoundStart) {
         return (
           <TouchableWithoutFeedback
             onPress={Keyboard.dismiss}

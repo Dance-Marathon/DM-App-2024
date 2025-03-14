@@ -190,7 +190,7 @@ def round_over(round_id):
         if round_data.get("roundOverLock") is True:
             raise Exception(f"Round {round_id} is already processed.")
 
-        round_doc_ref.update({"roundOverLock": True})
+        
 
         if count_active_players() > 1:
             eliminate_zero_elims_players()
@@ -224,6 +224,8 @@ def round_over(round_id):
             })
 
         shuffle_targets()
+
+        round_doc_ref.update({"roundOverLock": True})
 
         print(f"Round {round_id} processed successfully.")
     except Exception as e:
