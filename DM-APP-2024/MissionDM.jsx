@@ -558,12 +558,11 @@ const MissionDM = () => {
         roundOverCalledRef.current = true;
         console.log("Round should now end! Running roundOver().");
         await roundOver();
-        clearInterval(timer);
       }
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [currentRoundEnd]);
+  }, [currentRoundStart, currentRoundEnd]);
 
   const countActivePlayers = async () => {
     try {
@@ -1527,7 +1526,10 @@ const MissionDM = () => {
                   size={25}
                 />
                 <Text style={[styles.eliminationHeader, { fontSize: 20 }]}>
-                  {roundPlayersEliminated} Players were eliminated
+                  {Number(roundPlayersEliminated)}{" "}
+                      {Number(roundPlayersEliminated) === 1
+                        ? "player was eliminated"
+                        : "players were eliminated"}
                 </Text>
               </View>
               <View style={[styles.eliminationContainer, { marginBottom: 20 }]}>
@@ -1622,7 +1624,10 @@ const MissionDM = () => {
                   size={25}
                 />
                 <Text style={[styles.eliminationHeader, { fontSize: 20 }]}>
-                  {getTotalEliminations()} Players were eliminated
+                  {Number(getTotalEliminations())}{" "}
+                      {Number(getTotalEliminations()) === 1
+                        ? "player was eliminated"
+                        : "players were eliminated"}
                 </Text>
               </View>
               <View style={[styles.eliminationContainer, { marginBottom: 20 }]}>
