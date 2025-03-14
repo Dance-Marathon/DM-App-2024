@@ -563,7 +563,7 @@ const MissionDM = () => {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [currentRoundStart, currentRoundEnd]);
+  }, [currentRoundEnd]);
 
   const countActivePlayers = async () => {
     try {
@@ -722,17 +722,17 @@ const MissionDM = () => {
       }
 
       const currentRound = gameDoc.data().currentRound;
-      const previousPlayers = gameDoc.data().playersRemaining;
-      const activePlayers = await countActivePlayers();
-      const eliminations = previousPlayers - activePlayers;
-      setRoundPlayersEliminated(eliminations);
+      // const previousPlayers = gameDoc.data().playersRemaining;
+      // const activePlayers = await countActivePlayers();
+      // const eliminations = previousPlayers - activePlayers;
+      // setRoundPlayersEliminated(eliminations);
       const fieldToUpdate = `round${currentRound}Eliminations`;
 
       if (currentRound === 0 && Date.now() >= firstRoundStart) {
-        await updateDoc(gameDocRef, {
-          currentRound: 1,
-          gameActive: true,
-        });
+        // await updateDoc(gameDocRef, {
+        //   currentRound: 1,
+        //   gameActive: true,
+        // });
         setCurrentRound(1);
         setGameActive(true);
         setInRound(true);
@@ -767,7 +767,7 @@ const MissionDM = () => {
       roundOverCalledRef.current = false;
 
       console.log(
-        `Round successfully incremented to: ${currentRound + 1}, targets shuffled, notifications sent.`
+        `Round successfully incremented to: ${currentRound + 1}.`
       );
     } catch (error) {
       console.error("Error incrementing round:", error);
@@ -1456,7 +1456,7 @@ const MissionDM = () => {
             </View>
           </View>
         );
-      } else if (!inRound) {
+      } else if (!inRound && currentRound !== 0) {
         return (
           <View
             style={{

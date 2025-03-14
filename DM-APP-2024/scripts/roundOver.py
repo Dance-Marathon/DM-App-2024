@@ -169,8 +169,14 @@ def round_over(round_id):
 
             game_stats_ref.update({
                 "currentRound": 1,
-                "gameActive": True
-            })
+                "gameActive": True,
+                "round0Eliminations": 0,
+                "round1Eliminations": 0,
+                "round2Eliminations": 0,
+                "round3Eliminations": 0,
+                "round4Eliminations": 0,
+                "round5Eliminations": 0,
+            })  
 
             shuffle_targets()
             return
@@ -201,8 +207,6 @@ def round_over(round_id):
             "title": f"MissionDM - Round {round_id} Over"
         }) 
 
-        shuffle_targets()
-
         # If round 4, end game
         if round_id == 4:
             game_stats_ref.update({
@@ -217,6 +221,8 @@ def round_over(round_id):
                 "playersRemaining": active_players,
                 field_to_update: eliminations,
             })
+
+        shuffle_targets()
 
         print(f"Round {round_id} processed successfully.")
     except Exception as e:
