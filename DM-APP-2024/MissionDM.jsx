@@ -176,6 +176,18 @@ const MissionDM = () => {
         setGameActive(docSnapshot.data().gameActive);
         setPurgeActive(docSnapshot.data().purge);
         setCurrentRound(docSnapshot.data().currentRound);
+        // Set round players eliminated based on what round it is
+        if (docSnapshot.data().currentRound === 2) {
+          setRoundPlayersEliminated(docSnapshot.data().round1Eliminations);
+        } else if (docSnapshot.data().currentRound === 3) {
+          setRoundPlayersEliminated(docSnapshot.data().round2Eliminations);
+        } else if (docSnapshot.data().currentRound === 4) {
+          setRoundPlayersEliminated(docSnapshot.data().round3Eliminations);
+        } else if (docSnapshot.data().currentRound === 5) {
+          setRoundPlayersEliminated(docSnapshot.data().round4Eliminations);
+        } else {
+          console.error("Invalid round number.");
+        }
       } else {
         console.error("gameStats document not found in Firestore.");
       }
@@ -1377,7 +1389,7 @@ const MissionDM = () => {
               >
                 Thanks for playing!
               </Text>
-              {currentRound <= 2 && (
+              {currentRound <= 2 && Date.now() < currentRoundStart && (
                 <View style={styles.buttonBox}>
                   <TouchableOpacity style={styles.orangeButton}>
                     <Text style={styles.orangeButtonText}>Buy Back In!</Text>

@@ -29,7 +29,6 @@ def eliminate_zero_elims_players():
             if player_data.get("roundElims") == 0 and player_data.get("isEliminated") == False :
                 players_ref.document(doc.id).update({
                     "ranking": remaining - x,
-                    "playersRemaining": remaining - x,
                     "isEliminated": True
                 })
                 x += 1
@@ -155,10 +154,30 @@ def round_over(round_id):
         raise ValueError("roundId is required.")
 
     round_doc_id = "round" + str(round_id)
-    round_doc_ref = db.collection("MissionDMGames").document(round_doc_id)
+    
     game_stats_ref = db.collection("MissionDMGames").document("gameStats")
 
     try:
+        # Get game doc
+        game_doc = game_stats_ref.get()
+        if not game_doc.exists:
+            raise Exception("The Firebase document does not exist.")
+        
+        
+        # Round 0 logic
+        if round_id == 0:
+
+            game_stats_ref.update({
+                "currentRound": 1,
+                "gameActive": True
+            })
+
+            shuffle_targets()
+            return
+        
+        # Get round doc if not round 0
+        round_doc_ref = db.collection("MissionDMGames").document(round_doc_id)
+
         round_doc = round_doc_ref.get()
 
         round_data = round_doc.to_dict()
@@ -167,38 +186,32 @@ def round_over(round_id):
 
         round_doc_ref.update({"roundOverLock": True})
 
-        game_doc = game_stats_ref.get()
-        if not game_doc.exists:
-            raise Exception("The Firebase document does not exist.")
+        eliminate_zero_elims_players()
         
-        if round_id != 0:
-            eliminate_zero_elims_players()
-            reset_round_elims()
-            send_push_notification_to_alive_players({
-                "message": f"Round {round_id} is over. {eliminations} players were eliminated and {active_players} remain.",
-                "title": f"MissionDM - Round {round_id} Over"
-            })
-            
-        shuffle_targets()
-
+        # Update game stats
         previous_players = game_doc.to_dict().get("playersRemaining")
         active_players = count_active_players()
         eliminations = previous_players - active_players
         field_to_update = f"round{round_id}Eliminations"
 
-        if round_id == 0:
-            game_stats_ref.update({
-                "currentRound": 1,
-                "gameActive": True
-            })
-        elif round_id == 4:
+        # Process round
+        reset_round_elims()
+        send_push_notification_to_alive_players({
+            "message": f"Round {round_id} is over. {eliminations} players were eliminated and {active_players} remain.",
+            "title": f"MissionDM - Round {round_id} Over"
+        }) 
+
+        shuffle_targets()
+
+        # If round 4, end game
+        if round_id == 4:
             game_stats_ref.update({
                 "currentRound": 5,
                 "gameActive": False,
                 "playersRemaining": active_players,
                 field_to_update: eliminations,
             })
-        else:
+        else: # Update current round and eliminations
             game_stats_ref.update({
                 "currentRound": round_id + 1,
                 "playersRemaining": active_players,
@@ -211,7 +224,7 @@ def round_over(round_id):
 
 if __name__ == "__main__":
     try:
-        round_id = 3
+        round_id = 1
         round_over(round_id)
     except Exception as err:
         print("Round processing failed:", err)
