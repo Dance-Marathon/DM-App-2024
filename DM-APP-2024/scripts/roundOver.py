@@ -192,7 +192,8 @@ def round_over(round_id):
 
         round_doc_ref.update({"roundOverLock": True})
 
-        eliminate_zero_elims_players()
+        if count_active_players() > 1:
+            eliminate_zero_elims_players()
         
         # Update game stats
         previous_players = game_doc.to_dict().get("playersRemaining")
