@@ -1691,7 +1691,7 @@ const MissionDM = () => {
             source={require("./images/MissionDMAppLogo.png")}
             style={[styles.MissionDMLogo, { marginBottom: 20 }]}
           />
-          <Text style={styles.header}>Thank you for Enrolling!</Text>
+          <Text style={styles.header}>Thank you for enrolling!</Text>
           <View style={[styles.targetBox, { padding: 10 }]}>
             <Text style={[styles.header, { marginBottom: 5 }]}>
               The game starts in:
