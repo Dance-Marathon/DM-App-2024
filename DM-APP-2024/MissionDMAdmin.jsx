@@ -15,6 +15,8 @@ import {
   doc,
   getDoc,
   count,
+  query,
+  where,
 } from "firebase/firestore";
 
 const db = getFirestore();
@@ -181,7 +183,7 @@ const MissionDMAdmin = () => {
 
     fetchPlayers();
   }, []);
-
+   
   // Fetch the current game round from the MissionDMGames collection
   useEffect(() => {
     const fetchRoundInfo = async () => {
@@ -199,27 +201,58 @@ const MissionDMAdmin = () => {
     fetchRoundInfo();
   }, []);
 
-  // Function to eliminate a player by their Firebase document ID
   const adminEliminate = async (playerDocId) => {
     if (!playerDocId) {
       throw new Error("Missing required player ID.");
     }
+  
     try {
-      const playerRef = doc(db, "MissionDMPlayers", playerDocId);
-      const playerDoc = await getDoc(playerRef);
+      const playerQuery = query(collection(db, "MissionDMPlayers"), where("id", "==", playerDocId));
+      const playerSnapshot = await getDocs(playerQuery);
+
+      if (playerSnapshot.empty) {
+        throw new Error("Player does not exist.");
+      }
+
+      const playerDoc = playerSnapshot.docs[0]; // First matching document
+      const playerRef = playerDoc.ref;
+  
       if (!playerDoc.exists()) {
         throw new Error("Player does not exist.");
       }
+  
+      const playerData = playerDoc.data();
+      const eliminatedTargetId = playerData.targetId;
+  
+      // Mark player as eliminated
       await updateDoc(playerRef, {
         isEliminated: true,
-        targetId: null, // Optionally clear their target assignment
+        targetId: null,
       });
+  
+      // If the player had a target, find their eliminator and reassign the target
+      const eliminatorQuery = query(
+        collection(db, "MissionDMPlayers"),
+        where("targetId", "==", playerDocId)
+      );
+      const eliminatorSnapshot = await getDocs(eliminatorQuery);
+  
+      if (!eliminatorSnapshot.empty) {
+        const eliminatorDoc = eliminatorSnapshot.docs[0];
+        const eliminatorRef = eliminatorDoc.ref;
+  
+        await updateDoc(eliminatorRef, {
+          targetId: eliminatedTargetId || null, // Pass on target if exists
+        });
+      }
+  
       return { message: "Player eliminated successfully." };
     } catch (error) {
       console.error("Error in adminEliminate function:", error);
       throw new Error("Elimination failed.");
     }
   };
+  
 
   // Wrapper function to handle elimination from the UI
   const eliminatePlayer = async (playerDocId) => {
@@ -238,6 +271,7 @@ const MissionDMAdmin = () => {
       Alert.alert("Error", "Failed to eliminate player.");
     }
   };
+
   const shuffleTargets = async () => {
     try {
       // First extract the players
@@ -310,7 +344,6 @@ const MissionDMAdmin = () => {
       <Text style={{ fontSize: 24, fontWeight: "bold", marginBottom: 10 }}>
         Admin Panel
       </Text>
-
       <FlatList
         data={players}
         keyExtractor={(item) => item.id}
@@ -338,7 +371,6 @@ const MissionDMAdmin = () => {
           </View>
         )}
       />
-
       <Text style={{ fontSize: 18, marginBottom: 10 }}>
         {purgeActive ? "Purge Active" : "Purge Inactive"}
       </Text>
