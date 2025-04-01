@@ -94,7 +94,16 @@ const MissionDM = () => {
         console.log("Fetched User Data:", userData);
         setUserIDState(userData.donorID);
         setRole(userData.role);
-        setInGame(userData.inGame);
+        
+        const docRef = doc(db, "MissionDMPlayers", auth.currentUser.uid);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          console.log("Document exists:", docSnap.data());
+          setInGame(true);
+        } else {
+          console.log("No such document!");
+          setInGame(false);
+        }
 
         if (userData.donorID) {
           const info = await getUserInfo(userData.donorID);
@@ -198,7 +207,7 @@ const MissionDM = () => {
   }, []);
 
   useEffect(() => {
-    const roundDoc = `round${currentRound}`
+    const roundDoc = `round${currentRound}`;
     const gameDocRef = doc(db, "MissionDMGames", roundDoc);
 
     const unsubscribe = onSnapshot(gameDocRef, (docSnapshot) => {
@@ -781,9 +790,7 @@ const MissionDM = () => {
 
       roundOverCalledRef.current = false;
 
-      console.log(
-        `Round successfully incremented to: ${currentRound + 1}.`
-      );
+      console.log(`Round successfully incremented to: ${currentRound + 1}.`);
     } catch (error) {
       console.error("Error incrementing round:", error);
     }
@@ -931,8 +938,17 @@ const MissionDM = () => {
       }}
     >
       <ActivityIndicator size="large" color="#f18221" />
-      <Text style={{ width: "90%", marginTop: 16, fontSize: 18, color: "white", textAlign: "center" }}>
-        Our team is hard at work gathering the latest round data... Check back later for the latest round details.
+      <Text
+        style={{
+          width: "90%",
+          marginTop: 16,
+          fontSize: 18,
+          color: "white",
+          textAlign: "center",
+        }}
+      >
+        Our team is hard at work gathering the latest round data... Check back
+        later for the latest round details.
       </Text>
     </View>
   );
@@ -960,7 +976,14 @@ const MissionDM = () => {
     return <LoadingScreen />;
   }
 
-  if (loadingBetweenRounds && gameActive && !inRound && !isEliminated && !isWinner && currentRound !== 5) {
+  if (
+    loadingBetweenRounds &&
+    gameActive &&
+    !inRound &&
+    !isEliminated &&
+    !isWinner &&
+    currentRound !== 5
+  ) {
     return <LoadingBetweenRoundsScreen />;
   }
 
@@ -969,7 +992,12 @@ const MissionDM = () => {
     // The game has started and has not ended yet
     if (gameActive) {
       // Player is still alive and has not won
-      if (inRound && !isEliminated && !isWinner && Date.now() >= currentRoundStart) {
+      if (
+        inRound &&
+        !isEliminated &&
+        !isWinner &&
+        Date.now() >= currentRoundStart
+      ) {
         return (
           <TouchableWithoutFeedback
             onPress={Keyboard.dismiss}
@@ -1563,9 +1591,9 @@ const MissionDM = () => {
                 />
                 <Text style={[styles.eliminationHeader, { fontSize: 20 }]}>
                   {Number(roundPlayersEliminated)}{" "}
-                      {Number(roundPlayersEliminated) === 1
-                        ? "player was eliminated"
-                        : "players were eliminated"}
+                  {Number(roundPlayersEliminated) === 1
+                    ? "player was eliminated"
+                    : "players were eliminated"}
                 </Text>
               </View>
               <View style={[styles.eliminationContainer, { marginBottom: 20 }]}>
@@ -1661,9 +1689,9 @@ const MissionDM = () => {
                 />
                 <Text style={[styles.eliminationHeader, { fontSize: 20 }]}>
                   {Number(getTotalEliminations())}{" "}
-                      {Number(getTotalEliminations()) === 1
-                        ? "player was eliminated"
-                        : "players were eliminated"}
+                  {Number(getTotalEliminations()) === 1
+                    ? "player was eliminated"
+                    : "players were eliminated"}
                 </Text>
               </View>
               <View style={[styles.eliminationContainer, { marginBottom: 20 }]}>
