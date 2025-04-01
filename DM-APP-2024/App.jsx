@@ -22,6 +22,7 @@ import * as Notifications from "expo-notifications";
 import Constants from "expo-constants";
 
 import Home from "./Home";
+import HomeME from "./HomeME";
 import CalendarPage from "./CalendarPage";
 import Spirit from "./Spirit";
 import Fundraiser from "./Fundraiser";
@@ -267,7 +268,7 @@ const App = () => {
     <HomeStack.Navigator>
       <HomeStack.Screen
         name="Home"
-        component={Home}
+        component={HomeME}
         options={{ headerShown: false }}
         initialParams={props.route.params}
       />
