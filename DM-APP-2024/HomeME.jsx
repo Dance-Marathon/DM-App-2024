@@ -26,9 +26,11 @@ import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 import { faX } from "@fortawesome/free-solid-svg-icons";
 import LogoStyles from "./LogoStyles";
 
+import odomeMap from './images/candylandm.png';
+
 const Home = ({ route }) => {
   const [modalVisible, setModalVisible] = useState(false);
-  const [notificationModalVisible, setNotificationModalVisible] =
+  const [MapModalVisible, setMapModalVisible] =
     useState(false);
   const [allNotifications, setAllNotifications] = useState({});
   const [items, setItems] = useState([]);
@@ -228,10 +230,10 @@ const Home = ({ route }) => {
         source={require("./images/logo.png")}
       />
       <View style={{diplay: "flex", flexDirection: "row", marginTop: 20, gap: 10, width: "85%"}}>
-        <View style={[styles.METile, {backgroundColor: "#E2213E"}]} >
+        <TouchableOpacity style={[styles.METile, {backgroundColor: "#E2213E"}]} onPress={() => setMapModalVisible(true)}>
           <FontAwesome name="map-o" size={32} color="white" />
           <Text style={{ color: "white", fontSize: 10,  }}>O'Dome Map</Text>
-        </View>
+        </TouchableOpacity>
         <TouchableOpacity style={[styles.METile, {backgroundColor: "#B71B7C"}]} onPress={() => Linking.openURL("")}>
           <FontAwesome name="music" size={32} color="white" />
           <Text style={{ color: "white", fontSize: 10,  }}>Music Request</Text>
@@ -248,7 +250,40 @@ const Home = ({ route }) => {
           <FontAwesome name="bell-o" size={32} color="white" />
           <Text style={{ color: "white", fontSize: 10,  }}>Notifications</Text>
         </TouchableOpacity>
+      </View>   
+    <Modal
+      animationType="fade"
+      transparent={true}
+      visible={MapModalVisible}
+      onRequestClose={() => setMapModalVisible(false)}
+    >
+      <TouchableWithoutFeedback onPress={() => setMapModalVisible(false)}>
+      <View style={styles.modalContainer}>
+        <TouchableWithoutFeedback>
+        <View style={styles.modalContent}>
+          <View
+            style={[
+              styles.header,
+              { marginBottom: -5, marginTop: -15 },
+            ]}
+          >
+            <TouchableOpacity
+              style={styles.modalClose}
+              onPress={() => setMapModalVisible(false)}
+            >
+              <FontAwesomeIcon icon={faX} color="white" size={20} />
+            </TouchableOpacity>
+          </View>
+          <Image
+            source={odomeMap}
+            style={{ width: 250, height: 250, resizeMode: 'contain'}}
+          />
+
+        </View>
+        </TouchableWithoutFeedback>
       </View>
+      </TouchableWithoutFeedback>
+    </Modal>    
 
       {/* <View style={styles.notificationsBox}>
         <View style={styles.header}>
