@@ -232,22 +232,22 @@ const Home = ({ route }) => {
           <FontAwesome name="map-o" size={32} color="white" />
           <Text style={{ color: "white", fontSize: 10,  }}>O'Dome Map</Text>
         </View>
-        <View style={[styles.METile, {backgroundColor: "#B71B7C"}]}>
+        <TouchableOpacity style={[styles.METile, {backgroundColor: "#B71B7C"}]} onPress={() => Linking.openURL("")}>
           <FontAwesome name="music" size={32} color="white" />
           <Text style={{ color: "white", fontSize: 10,  }}>Music Request</Text>
-        </View> 
-        <View style={[styles.METile, {backgroundColor: "#EAB90A"}]}>
+        </TouchableOpacity> 
+        <TouchableOpacity style={[styles.METile, {backgroundColor: "#EAB90A"}]} onPress={() => Linking.openURL("https://drive.google.com/drive/folders/1e_KKm4u42APaIYhM7ILqxc28bPotKLT9")}>
           <FontAwesome name="dollar" size={32} color="white" />
           <Text style={{ color: "white", fontSize: 10,  }}>Resources</Text>
-        </View>
-        <View style={[styles.METile, {backgroundColor: "#1642A2"}]} onPress={() =>
+        </TouchableOpacity>
+        <TouchableOpacity style={[styles.METile, {backgroundColor: "#1642A2"}]} onPress={() =>
               navigation.navigate("AllNotifications", {
                 notifications: allNotifications,
               })
             }>
           <FontAwesome name="bell-o" size={32} color="white" />
           <Text style={{ color: "white", fontSize: 10,  }}>Notifications</Text>
-        </View>
+        </TouchableOpacity>
       </View>
 
       {/* <View style={styles.notificationsBox}>
