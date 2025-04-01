@@ -257,7 +257,6 @@ const Fundraiser = () => {
     <View
       style={{
         flex: 1,
-        justifyContent: "center",
         alignItems: "center",
         backgroundColor: "#1F1F1F",
       }}
@@ -638,8 +637,7 @@ const styles = StyleSheet.create({
   info: {
     alignItems: "center",
     marginBottom: 20,
-    marginTop: 60,
-    top: 30,
+    marginTop: 20,
   },
   profileContainer: {
     flexDirection: "row",
