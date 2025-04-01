@@ -31,9 +31,8 @@ import { useNavigation } from "@react-navigation/native";
 // import { getUserData } from "./Firebase/UserManager";
 
 import { UserContext } from "./api/calls";
-import TeamFundraiser from "./TeamFundraiser";
 
-const Fundraiser = () => {
+const TeamFundraiser = () => {
   //const [userID, setuserID] = useState("");
   //const [userInfo, setUserInfo] = useState({});
   //const [milestoneInfo, setMilestoneInfo] = useState({});
@@ -48,7 +47,6 @@ const Fundraiser = () => {
   const [badgeModalVisible, setBadgeModalVisible] = useState(false);
   const [selectedBadge, setSelectedBadge] = useState(null);
   const [progress, setProgress] = useState(0);
-
   const navigation = useNavigation();
 
   const {
@@ -224,6 +222,7 @@ const Fundraiser = () => {
     .catch((err) => console.error("Error copying to clipboard:", err));
   };
 
+
   const openBadgeModal = (badge) => {
     setSelectedBadge(badge);
     setBadgeModalVisible(true);
@@ -334,12 +333,10 @@ const Fundraiser = () => {
             <View>
               <Text style={styles.displayName}>{userInfo.displayName}</Text>
               <View style={styles.tagsContainer}>
-              <TouchableOpacity onPress={() => navigation.navigate("Team Fundraiser")}>
                 <View style={styles.section}>
                   <FontAwesome name="circle" size={15} color="orange" />
                   <Text style={styles.tag}>{userInfo.teamName}</Text>
                 </View>
-                </TouchableOpacity>
                 <View style={styles.section}>
                   <FontAwesome name="circle" size={15} color="orange" />
                   <Text style={styles.tag}>{role}</Text>
@@ -498,7 +495,7 @@ const Fundraiser = () => {
           <View style={styles.rectangleView}>
             <View style={styles.header}>
               <FontAwesome name="dollar" size={18} color="orange" />
-              <Text style={styles.headerText}>DONATIONS</Text>
+              <Text style={styles.headerText}>TEAM</Text>
             </View>
             <View style={{ marginTop: 5, marginLeft: 5, flex: 1 }}>
               <ScrollView>
@@ -905,4 +902,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default Fundraiser;
+export default TeamFundraiser;

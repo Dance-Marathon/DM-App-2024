@@ -44,6 +44,7 @@ import checkForUpdate from "./AppUpdateCheck";
 import EventDetails from "./EventDetails";
 import AllNotifications from "./AllNotifications";
 import FAQ from "./FAQpage";
+import TeamFundraiser from "./TeamFundraiser";
 
 import { addUserExpoPushToken } from "./Firebase/AuthManager";
 
@@ -302,6 +303,24 @@ const App = () => {
     </HomeStack.Navigator>
   );
 
+   const FundraiserStack = createStackNavigator();
+
+  const FundraiserStackScreen = (props) => (
+    <FundraiserStack.Navigator>
+      <FundraiserStack.Screen
+        name="Fundraiser"
+        component={Fundraiser}
+        options={{ headerShown: false }}
+        initialParams={props.route.params}
+      />
+      <FundraiserStack.Screen
+        name="Team Fundraiser"
+        component={TeamFundraiser}
+        options={{ headerShown: false }}
+      />
+    </FundraiserStack.Navigator>
+  );
+
   const SpiritStack = createStackNavigator();
 
   const SpiritScreenStack = (props) => (
@@ -445,7 +464,7 @@ const App = () => {
               )} */}
               <Tab.Screen
                 name="Fundraiser"
-                component={Fundraiser}
+                component={FundraiserStackScreen}
                 options={{
                   headerShown: false,
                   tabBarIcon: ({ color, size }) => (
