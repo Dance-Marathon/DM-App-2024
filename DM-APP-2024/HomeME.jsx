@@ -34,6 +34,7 @@ const Home = ({ route }) => {
     useState(false);
   const [allNotifications, setAllNotifications] = useState({});
   const [items, setItems] = useState([]);
+  const [allItems, setAllItems] = useState([]);
   const [selectedNotification, setSelectedNotification] = useState("");
 
   const navigation = useNavigation();
@@ -158,7 +159,8 @@ const Home = ({ route }) => {
         }
       });
 
-      setItems(filteredItems.slice(0, 3));
+      setItems(filteredItems.slice(0, 4));
+      setAllItems(filteredItems);
     } catch (error) {
       console.error("Error fetching events:", error);
       setItems([]);
@@ -304,10 +306,33 @@ const Home = ({ route }) => {
         <View style={styles.header}>
           <FontAwesome name="calendar" size={18} color="orange" />
           <Text style={styles.headerText}>UPCOMING EVENTS</Text>
+          { items.length > 0 && (
+            <TouchableOpacity
+              onPress={() =>
+                navigation.navigate("AllEvents", {
+                  items: allItems,
+                  imageUrls: imageUrls,
+                })
+              }
+            >
+              <Text style={styles.showAll}>Show All</Text>
+            </TouchableOpacity>
+          )}
         </View>
         <View style={styles.eventsList}>
           {Array.isArray(items) && items.length > 0 ? (
             items.map((item, index) => (
+              <TouchableOpacity
+                    onPress={() =>
+                      navigation.navigate("EventDetails", {
+                        event: {
+                          ...item,
+                          formattedDate: item.datetime.toDateString(),
+                          imageUrl: imageUrls[item.picture],
+                        },
+                      })
+                    }
+                  >
               <View key={index} style={styles.eventContainer}>
                 {item.picture ? (
                   <View style={styles.imageContainer}>
@@ -321,21 +346,12 @@ const Home = ({ route }) => {
                 )}
                 <View style={styles.eventDetails}>
                   <Text style={styles.eventTitle}>{item.title}</Text>
-                  <TouchableOpacity
-                    onPress={() =>
-                      navigation.navigate("EventDetails", {
-                        event: {
-                          ...item,
-                          formattedDate: item.datetime.toDateString(),
-                          imageUrl: imageUrls[item.picture],
-                        },
-                      })
-                    }
-                  >
+                  
                     <Text style={styles.learnMore}>Learn More</Text>
-                  </TouchableOpacity>
+                  
                 </View>
               </View>
+              </TouchableOpacity>
             ))
           ) : (
             <Text style={styles.noEvents}>No upcoming events</Text>
@@ -384,7 +400,7 @@ const styles = StyleSheet.create({
     borderRadius: 9,
     backgroundColor: "#233d72",
     width: '85%',
-    height: 470,
+    height: 480,
     shadowOpacity: 1,
     elevation: 4,
     shadowRadius: 4,

@@ -44,6 +44,7 @@ import TTHome from "./HomeTT";
 import checkForUpdate from "./AppUpdateCheck";
 import EventDetails from "./EventDetails";
 import AllNotifications from "./AllNotifications";
+import AllEvents from "./AllEvents";
 import FAQ from "./FAQpage";
 import TeamFundraiser from "./TeamFundraiser";
 
@@ -292,6 +293,20 @@ const App = () => {
         component={AllNotifications}
         options={{
           title: "Notifications",
+          headerStyle: {
+            backgroundColor: "#1f1f1f",
+            borderBottomWidth: 0,
+          },
+          headerTintColor: "white",
+          headerShadowVisible: false,
+          headerBackTitleVisible: false,
+        }}
+      />
+      <HomeStack.Screen
+        name="AllEvents"
+        component={AllEvents}
+        options={{
+          title: "Events",
           headerStyle: {
             backgroundColor: "#1f1f1f",
             borderBottomWidth: 0,
