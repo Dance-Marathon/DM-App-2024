@@ -306,7 +306,7 @@ const Home = ({ route }) => {
         <View style={styles.header}>
           <FontAwesome name="calendar" size={18} color="orange" />
           <Text style={styles.headerText}>UPCOMING EVENTS</Text>
-          { items.length > 0 && (
+          { items.length > 4 && (
             <TouchableOpacity
               onPress={() =>
                 navigation.navigate("AllEvents", {
@@ -346,9 +346,7 @@ const Home = ({ route }) => {
                 )}
                 <View style={styles.eventDetails}>
                   <Text style={styles.eventTitle}>{item.title}</Text>
-                  
-                    <Text style={styles.learnMore}>Learn More</Text>
-                  
+                  <Text style={styles.learnMore}>Learn More</Text>
                 </View>
               </View>
               </TouchableOpacity>

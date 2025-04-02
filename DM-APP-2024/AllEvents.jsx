@@ -34,6 +34,7 @@ const AllEvents = ({ route }) => {
           {Array.isArray(items) && items.length > 0 ? (
             items.map((item, index) => (
               <TouchableOpacity
+                key={index}
                 onPress={() =>
                   navigation.navigate("EventDetails", {
                     event: {
@@ -43,8 +44,8 @@ const AllEvents = ({ route }) => {
                     },
                   })
                 }
+                style={styles.eventContainer}
               >
-                <View key={index} style={styles.eventContainer}>
                   {item.picture ? (
                     <View style={styles.imageContainer}>
                       <Image
@@ -61,7 +62,6 @@ const AllEvents = ({ route }) => {
                     <Text style={styles.learnMore}>Learn More</Text>
 
                   </View>
-                </View>
               </TouchableOpacity>
             ))
           ) : (
