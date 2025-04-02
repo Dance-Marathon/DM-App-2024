@@ -236,7 +236,7 @@ const Home = ({ route }) => {
           <FontAwesome name="map-o" size={32} color="white" />
           <Text style={{ color: "white", fontSize: 10,  }}>O'Dome Map</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={[styles.METile, {backgroundColor: "#B71B7C"}]} onPress={() => Linking.openURL("")}>
+        <TouchableOpacity style={[styles.METile, {backgroundColor: "#B71B7C"}]} onPress={() => Linking.openURL("https://events.dancemarathon.com/index.cfm?fuseaction=donorDrive.participant&participantID=1223104")}>
           <FontAwesome name="music" size={32} color="white" />
           <Text style={{ color: "white", fontSize: 10,  }}>Music Request</Text>
         </TouchableOpacity> 
