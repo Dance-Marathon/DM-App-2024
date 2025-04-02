@@ -138,6 +138,7 @@ const App = () => {
   const [enrolled, setEnrolled] = useState(false);
   const [appDisabled, setAppDisabled] = useState(false);
   const [image, setImage] = useState(null);
+  const [mainEvent, setMainEvent] = useState(false);
 
   useEffect(() => {
     const docRef = doc(db, "Permissions", "tempData");
@@ -148,6 +149,11 @@ const App = () => {
           setAppDisabled(true);
         } else {
           setAppDisabled(false);
+        }
+        if (docSnapshot.data().mainevent) {
+          setMainEvent(true);
+        } else {
+          setMainEvent(false);
         }
       } else {
         console.error("Document does not exist!");
@@ -311,10 +317,11 @@ const App = () => {
   const HomeStack = createStackNavigator();
 
   const HomeStackScreen = (props) => (
+    
     <HomeStack.Navigator>
       <HomeStack.Screen
-        name="Home"
-        component={HomeME}
+        name={mainEvent ? "HomeME" : "Home"}
+        component={mainEvent ? HomeME : Home}
         options={{ headerShown: false }}
         initialParams={props.route.params}
       />
