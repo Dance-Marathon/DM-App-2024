@@ -39,7 +39,7 @@ const Home = ({ route }) => {
   const navigation = useNavigation();
 
   const SPREADSHEET_ID = "15kkihl7I0p4A_jyT-a-ozXQA9kvi_as-ry_6J0PfPis";
-  const range = "Sheet1!A5:F100";
+  const range = "MainEvent!A2:F100";
   const apiKey = sheetsAPIKey;
 
   const { expoPushToken } = route.params;
@@ -322,7 +322,7 @@ const Home = ({ route }) => {
         <View style={styles.header}>
           <FontAwesome name="calendar" size={18} color="orange" />
           <Text style={styles.headerText}>UPCOMING EVENTS</Text>
-          {items.length > 4 && (
+          {allItems.length > 4 && (
             <TouchableOpacity
               onPress={() =>
                 navigation.navigate("AllEvents", {
