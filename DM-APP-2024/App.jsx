@@ -445,7 +445,7 @@ const App = () => {
           The app has been disabled.
         </Text>
         <Text style={{ fontSize: 20, fontWeight: "bold", marginTop: 20, marginBottom: 20 }}>
-          -Zach :)
+          - Tech
         </Text>
         {image && (
           <Image
