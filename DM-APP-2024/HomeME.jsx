@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import FontAwesome from 'react-native-vector-icons/FontAwesome';
+import FontAwesome from "react-native-vector-icons/FontAwesome";
 import {
   View,
   Text,
@@ -26,12 +26,11 @@ import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 import { faX } from "@fortawesome/free-solid-svg-icons";
 import LogoStyles from "./LogoStyles";
 
-import odomeMap from './images/candylandm.png';
+import odomeMap from "./images/floorplan2025.png";
 
 const Home = ({ route }) => {
   const [modalVisible, setModalVisible] = useState(false);
-  const [MapModalVisible, setMapModalVisible] =
-    useState(false);
+  const [MapModalVisible, setMapModalVisible] = useState(false);
   const [allNotifications, setAllNotifications] = useState({});
   const [items, setItems] = useState([]);
   const [allItems, setAllItems] = useState([]);
@@ -231,61 +230,78 @@ const Home = ({ route }) => {
         resizeMode="contain"
         source={require("./images/logo.png")}
       />
-      <View style={{diplay: "flex", flexDirection: "row", marginTop: 20, gap: 10, width: "85%"}}>
-        <TouchableOpacity style={[styles.METile, {backgroundColor: "#E2213E"}]} onPress={() => setMapModalVisible(true)}>
+      <View
+        style={{
+          diplay: "flex",
+          flexDirection: "row",
+          marginTop: 20,
+          gap: 10,
+          width: "85%",
+        }}
+      >
+        <TouchableOpacity
+          style={[styles.METile, { backgroundColor: "#E2213E" }]}
+          onPress={() => setMapModalVisible(true)}
+        >
           <FontAwesome name="map-o" size={32} color="white" />
-          <Text style={{ color: "white", fontSize: 10,  }}>O'Dome Map</Text>
+          <Text style={{ color: "white", fontSize: 10 }}>O'Dome Map</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={[styles.METile, {backgroundColor: "#B71B7C"}]} onPress={() => Linking.openURL("https://events.dancemarathon.com/index.cfm?fuseaction=donorDrive.participant&participantID=1223104")}>
+        <TouchableOpacity
+          style={[styles.METile, { backgroundColor: "#B71B7C" }]}
+          onPress={() =>
+            Linking.openURL(
+              "https://events.dancemarathon.com/index.cfm?fuseaction=donorDrive.participant&participantID=1223104"
+            )
+          }
+        >
           <FontAwesome name="music" size={32} color="white" />
-          <Text style={{ color: "white", fontSize: 10,  }}>Music Request</Text>
-        </TouchableOpacity> 
-        <TouchableOpacity style={[styles.METile, {backgroundColor: "#EAB90A"}]} onPress={() => Linking.openURL("https://drive.google.com/drive/folders/1e_KKm4u42APaIYhM7ILqxc28bPotKLT9")}>
+          <Text style={{ color: "white", fontSize: 10 }}>Music Request</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.METile, { backgroundColor: "#EAB90A" }]}
+          onPress={() =>
+            Linking.openURL(
+              "https://drive.google.com/drive/folders/1e_KKm4u42APaIYhM7ILqxc28bPotKLT9"
+            )
+          }
+        >
           <FontAwesome name="dollar" size={32} color="white" />
-          <Text style={{ color: "white", fontSize: 10,  }}>Resources</Text>
+          <Text style={{ color: "white", fontSize: 10 }}>Resources</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={[styles.METile, {backgroundColor: "#1642A2"}]} onPress={() =>
-              navigation.navigate("AllNotifications", {
-                notifications: allNotifications,
-              })
-            }>
+        <TouchableOpacity
+          style={[styles.METile, { backgroundColor: "#1642A2" }]}
+          onPress={() =>
+            navigation.navigate("AllNotifications", {
+              notifications: allNotifications,
+            })
+          }
+        >
           <FontAwesome name="bell-o" size={32} color="white" />
-          <Text style={{ color: "white", fontSize: 10,  }}>Notifications</Text>
+          <Text style={{ color: "white", fontSize: 10 }}>Notifications</Text>
         </TouchableOpacity>
-      </View>   
-    <Modal
-      animationType="fade"
-      transparent={true}
-      visible={MapModalVisible}
-      onRequestClose={() => setMapModalVisible(false)}
-    >
-      <TouchableWithoutFeedback onPress={() => setMapModalVisible(false)}>
-      <View style={styles.modalContainer}>
-        <TouchableWithoutFeedback>
-        <View style={styles.modalContent}>
-          <View
-            style={[
-              styles.header,
-              { marginBottom: -5, marginTop: -15 },
-            ]}
-          >
-            <TouchableOpacity
-              style={styles.modalClose}
-              onPress={() => setMapModalVisible(false)}
-            >
-              <FontAwesomeIcon icon={faX} color="white" size={20} />
-            </TouchableOpacity>
-          </View>
-          <Image
-            source={odomeMap}
-            style={{ width: 250, height: 250, resizeMode: 'contain'}}
-          />
-
-        </View>
-        </TouchableWithoutFeedback>
       </View>
-      </TouchableWithoutFeedback>
-    </Modal>    
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={MapModalVisible}
+        onRequestClose={() => setMapModalVisible(false)}
+      >
+        <TouchableWithoutFeedback onPress={() => setMapModalVisible(false)}>
+          <View
+            style={{
+              flex: 1,
+              backgroundColor: "rgba(0, 0, 0, 0.9)",
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+          >
+            <Image
+              source={odomeMap}
+              style={{ width: "90%", height: "80%", resizeMode: "contain" }}
+            />
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
 
       {/* <View style={styles.notificationsBox}>
         <View style={styles.header}>
@@ -306,7 +322,7 @@ const Home = ({ route }) => {
         <View style={styles.header}>
           <FontAwesome name="calendar" size={18} color="orange" />
           <Text style={styles.headerText}>UPCOMING EVENTS</Text>
-          { items.length > 4 && (
+          {items.length > 4 && (
             <TouchableOpacity
               onPress={() =>
                 navigation.navigate("AllEvents", {
@@ -323,32 +339,32 @@ const Home = ({ route }) => {
           {Array.isArray(items) && items.length > 0 ? (
             items.map((item, index) => (
               <TouchableOpacity
-                    onPress={() =>
-                      navigation.navigate("EventDetails", {
-                        event: {
-                          ...item,
-                          formattedDate: item.datetime.toDateString(),
-                          imageUrl: imageUrls[item.picture],
-                        },
-                      })
-                    }
-                  >
-              <View key={index} style={styles.eventContainer}>
-                {item.picture ? (
-                  <View style={styles.imageContainer}>
-                    <Image
-                      source={{ uri: imageUrls[item.picture] }}
-                      style={styles.eventImage}
-                    />
+                onPress={() =>
+                  navigation.navigate("EventDetails", {
+                    event: {
+                      ...item,
+                      formattedDate: item.datetime.toDateString(),
+                      imageUrl: imageUrls[item.picture],
+                    },
+                  })
+                }
+              >
+                <View key={index} style={styles.eventContainer}>
+                  {item.picture ? (
+                    <View style={styles.imageContainer}>
+                      <Image
+                        source={{ uri: imageUrls[item.picture] }}
+                        style={styles.eventImage}
+                      />
+                    </View>
+                  ) : (
+                    <View></View>
+                  )}
+                  <View style={styles.eventDetails}>
+                    <Text style={styles.eventTitle}>{item.title}</Text>
+                    <Text style={styles.learnMore}>Learn More</Text>
                   </View>
-                ) : (
-                  <View></View>
-                )}
-                <View style={styles.eventDetails}>
-                  <Text style={styles.eventTitle}>{item.title}</Text>
-                  <Text style={styles.learnMore}>Learn More</Text>
                 </View>
-              </View>
               </TouchableOpacity>
             ))
           ) : (
@@ -362,8 +378,8 @@ const Home = ({ route }) => {
 
 export default Home;
 
-const { width } = Dimensions.get('window');
-const tileWidth = (width * .85) *.25 - 7.5;
+const { width } = Dimensions.get("window");
+const tileWidth = width * 0.85 * 0.25 - 7.5;
 
 const styles = StyleSheet.create({
   METile: {
@@ -397,7 +413,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
     borderRadius: 9,
     backgroundColor: "#233d72",
-    width: '85%',
+    width: "85%",
     height: 480,
     shadowOpacity: 1,
     elevation: 4,
