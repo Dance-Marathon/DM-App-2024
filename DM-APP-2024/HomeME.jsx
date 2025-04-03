@@ -1,204 +1,171 @@
-// Page1.js (similar structure for other pages)
 import React, { useEffect, useState } from "react";
+import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import {
   View,
   Text,
-  Platform,
   Image,
   Modal,
   StyleSheet,
   TouchableOpacity,
+  TouchableWithoutFeedback,
+  Linking,
   Dimensions,
-  ScrollView,
-  Button,
-  TextInput,
-  FlatList,
-  Alert
 } from "react-native";
-import UpcomingEventsScreen from "./UpcomingEvents";
 const INITIAL_DATE = new Date();
-import { auth, db } from './Firebase/AuthManager';
-import { doc, getDoc, collection, getDocs, setDoc, updateDoc, arrayUnion } from 'firebase/firestore';
+import { auth, db } from "./Firebase/AuthManager";
+import { doc, getDoc, collection, getDocs } from "firebase/firestore";
+import { getStorage, ref, getDownloadURL } from "firebase/storage";
 
 import { addUserExpoPushToken } from "./Firebase/AuthManager";
-import { getUserData } from "./Firebase/UserManager";
 
-const fetchData = async () => {
-  try {
-    const eventsCollectionRef = collection(db, "Users");
-    const querySnapshot = await getDocs(eventsCollectionRef);
-    const fetchedItems = [];
+import axios from "axios";
+import { sheetsAPIKey } from "./api/apiKeys";
 
-    querySnapshot.forEach((doc) => {
-      const docData = doc.data();
-        //console.log(docData);
-        fetchedItems.push(docData.notificationToken);
+import { useNavigation } from "@react-navigation/native";
+import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
+import { faX } from "@fortawesome/free-solid-svg-icons";
+import LogoStyles from "./LogoStyles";
 
-    });
+import odomeMap from './images/candylandm.png';
 
-    //console.log('Item:',fetchedItems);
-    return fetchedItems;
-  } catch (error) {
-    console.error("Error fetching events:", error);
-    // Handle errors as needed
-  }
-};
-
-async function sendPushNotificationsToAll(expoPushTokens, notification) {
-  console.log('Sending notifications...');
-  const messages = []
-/*   const messages = expoPushTokens.map(token => ({
-    to: token,
-    sound: 'default',
-    title: 'Original Title',
-    body: 'And here is the body!',
-    data: { someData: 'goes here' },
-  })); */
-
-  for (const token of expoPushTokens) {
-    messages.push({
-    to: token,
-    sound: 'default',
-    title: notification.title,
-    body: notification.message,
-    //data: { someData: 'goes here' },
-    })
-  }
-  for (const message of messages) {
-    //console.log(`Sending to token: ${message.to}`);
-    await fetch('https://exp.host/--/api/v2/push/send', {
-      method: 'POST',
-      headers: {
-        Accept: 'application/json',
-        'Accept-encoding': 'gzip, deflate',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(message),
-    });
-  }
-}
-
-async function sendPushNotification(expoPushToken, notification) {
-  const message = {
-    to: expoPushToken,
-    sound: 'default',
-    title: notification.title,
-    body: notification.message,
-  };
-
-  await fetch('https://exp.host/--/api/v2/push/send', {
-    method: 'POST',
-    headers: {
-      Accept: 'application/json',
-      'Accept-encoding': 'gzip, deflate',
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(message),
-  });
-}
-
-function getCurrentDate() {
-  const date = new Date();
-  const year = date.getFullYear();
-  const month = (date.getMonth() + 1).toString().padStart(2, '0'); // Convert month to 2 digits
-  const day = date.getDate().toString().padStart(2, '0'); // Convert day to 2 digits
-  return `${year}-${month}-${day}`;
-}
-
-function getCurrentTime() {
-  const date = new Date();
-  let hours = date.getHours();
-  const minutes = date.getMinutes().toString().padStart(2, '0');
-  const ampm = hours >= 12 ? 'PM' : 'AM';
-  hours = hours % 12;
-  hours = hours ? hours : 12; // the hour '0' should be '12'
-  hours = hours.toString().padStart(2, '0'); // Convert hours to 2 digits
-  return `${hours}:${minutes} ${ampm}`;
-}
-
-const Home = ({route}) => {
-
-  const [title, setTitle] = useState('');
-  const [message, setMessage] = useState('');
+const Home = ({ route }) => {
   const [modalVisible, setModalVisible] = useState(false);
-  const [role, setRole] = useState('');
-  const [userIDState, setUserIDState] = useState('');
+  const [MapModalVisible, setMapModalVisible] =
+    useState(false);
   const [allNotifications, setAllNotifications] = useState({});
+  const [items, setItems] = useState([]);
+  const [allItems, setAllItems] = useState([]);
+  const [selectedNotification, setSelectedNotification] = useState("");
 
-  const {expoPushToken} = route.params;
+  const navigation = useNavigation();
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      fetchAllNotifications();
-    }, 120000); // Refresh every two minutes
+  const SPREADSHEET_ID = "15kkihl7I0p4A_jyT-a-ozXQA9kvi_as-ry_6J0PfPis";
+  const range = "Sheet1!A5:F100";
+  const apiKey = sheetsAPIKey;
 
-    fetchData(); // Also fetch immediately on component mount
-
-    return () => clearInterval(interval); // Clear interval on component unmount
-  }, []);
-
-  const addNotification = async (notification) => {
-    try {
-      const notificationsRef = collection(db, "Notifications");
-      const notificationDate = notification.date; // Ensure that 'notification' has a 'date' property
-      const dateDocRef = doc(notificationsRef, notificationDate);
-      const docSnapshot = await getDoc(dateDocRef);
-  
-      if (docSnapshot.exists()) {
-        // If the document exists, append the new event to the 'events' array
-        await updateDoc(dateDocRef, {
-          events: arrayUnion(notification),
-        });
-      } else {
-        // If the document does not exist, create it with the 'events' array containing the new event
-        await setDoc(dateDocRef, {
-          events: [notification],
-        });
-      }
-      console.log("Notification added successfully");
-    } catch (error) {
-      console.error("Error adding notification:", error);
-      throw error; // Rethrow the error to handle it in the calling function
-    }
-  };
+  const { expoPushToken } = route.params;
 
   const fetchAllNotifications = async () => {
     try {
-      console.log('Starting to fetch notifications...');
+      console.log("Starting to fetch notifications...");
       const notificationsRef = collection(db, "Notifications");
       const querySnapshot = await getDocs(notificationsRef);
       const fetchedNotifs = [];
-  
+
       querySnapshot.forEach((docSnapshot) => {
         const docData = docSnapshot.data();
-        const eventsArray = docData.events; // This is an array based on your Firestore structure
-  
+        const eventsArray = docData.events;
+
         if (Array.isArray(eventsArray)) {
-          eventsArray.forEach(event => {
+          eventsArray.forEach((event) => {
             fetchedNotifs.push({
-              ...event, // Spread operator to get all properties of the event
-              id: `${docSnapshot.id}_${event.time}` // Construct a unique id for the keyExtractor later
+              ...event,
+              id: `${docSnapshot.id}_${event.time}`,
             });
           });
         }
       });
 
-      setAllNotifications(fetchedNotifs); // Assuming setAllNotifications is a state setter
+      setAllNotifications(fetchedNotifs.reverse());
     } catch (error) {
       console.error("Error fetching notifications:", error);
     }
   };
-  
-  useEffect(() => {
-    getUserData().then((data) => {
-      setUserIDState(data.donorID);
-      setRole(data.role);
-    })
-    .catch((err) => {
-      console.error(err);
-      setError(err);
-    });
-  }, []);
+
+  const fetchDates = async () => {
+    try {
+      const response = await axios.get(
+        `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${range}?key=${apiKey}`
+      );
+
+      const rows = response.data.values;
+
+      if (!rows || rows.length === 0) {
+        console.log("No data found.");
+        setItems([]);
+        return;
+      }
+
+      const fetchedItems = rows.slice(0).map((row, index) => {
+        const [title, date, time, location, description, pictureName] = row;
+
+        if (!date || !time) {
+          return null;
+        }
+
+        const [year, month, day] = date.split("-").map(Number);
+
+        let hours = 0,
+          minutes = 0;
+        const timeMatch = time.match(/^(\d+):(\d+)\s?(AM|PM)$/i);
+        if (timeMatch) {
+          hours = parseInt(timeMatch[1], 10);
+          minutes = parseInt(timeMatch[2], 10);
+          const period = timeMatch[3].toUpperCase();
+
+          if (period === "PM" && hours !== 12) {
+            hours += 12;
+          } else if (period === "AM" && hours === 12) {
+            hours = 0;
+          }
+        } else {
+          return null;
+        }
+
+        if (
+          isNaN(year) ||
+          isNaN(month) ||
+          isNaN(day) ||
+          isNaN(hours) ||
+          isNaN(minutes)
+        ) {
+          return null;
+        }
+
+        const eventDate = new Date(year, month - 1, day, hours, minutes);
+        if (isNaN(eventDate.getTime())) {
+          return null;
+        }
+
+        return {
+          formattedDate: new Intl.DateTimeFormat("en-US", {
+            month: "long",
+            day: "numeric",
+            year: "numeric",
+          }).format(eventDate),
+          date,
+          time: time,
+          title: title,
+          description: description,
+          location: location,
+          datetime: eventDate,
+          picture: pictureName,
+        };
+      });
+
+      const currentDate = new Date(INITIAL_DATE).getTime();
+
+      const validItems = fetchedItems.filter((item) => item !== null);
+
+      const filteredItems = validItems.filter(
+        (item) => item.datetime.getTime() >= currentDate
+      );
+
+      filteredItems.sort((a, b) => a.datetime - b.datetime);
+
+      filteredItems.forEach((item) => {
+        if (item.picture) {
+          fetchImageUrl(item.picture);
+        }
+      });
+
+      setItems(filteredItems.slice(0, 4));
+      setAllItems(filteredItems);
+    } catch (error) {
+      console.error("Error fetching events:", error);
+      setItems([]);
+    }
+  };
 
   useEffect(() => {
     const getUserRole = async () => {
@@ -211,232 +178,381 @@ const Home = ({route}) => {
           const data = docSnap.data();
           if (!data.notificationToken) {
             await addUserExpoPushToken(auth.currentUser.uid, expoPushToken);
-        } else {
-          console.log("Token exists");
-        }}
+          } else {
+            console.log("Token exists");
+          }
+        }
       } else {
-        console.log('auth.currentUser is null, waiting for authentication.');
+        console.log("auth.currentUser is null, waiting for authentication.");
       }
     };
     getUserRole();
   }, [auth.currentUser]);
 
-  let handleClick = async () => {
-    fetchItems = await fetchData();
-    /* sendPushNotificationsToAll(fetchItems, {
-      date: getCurrentDate(),
-      message: message,
-      time: getCurrentTime(),
-      title: title
-    }).then(() => {
-      console.log('All notifications sent!');
-    }).catch(error => {
-      console.error('Error sending notifications:', error);
-    }); */
-    sendPushNotification('ExponentPushToken[UVH4ZkJqvUH8iQJRWE2Z5o]',{
-      date: getCurrentDate(),
-      message: message,
-      time: getCurrentTime(),
-      title: title
-    });
-    addNotification({
-      date: getCurrentDate(),
-      message: message,
-      time: getCurrentTime(),
-      title: title
-    });
-    setTitle('');
-    setMessage('');
+  useEffect(() => {
+    fetchAllNotifications();
+  }, []);
+
+  useEffect(() => {
+    fetchDates();
+  }, []);
+
+  const [imageUrls, setImageUrls] = useState({});
+
+  const fetchImageUrl = async (imageName) => {
+    try {
+      const storage = getStorage();
+      const storageRef = ref(storage, imageName);
+      const url = await getDownloadURL(storageRef);
+      setImageUrls((prevUrls) => ({
+        ...prevUrls,
+        [imageName]: url,
+      }));
+    } catch (error) {
+      console.error("Error getting image URL: ", error);
     }
+  };
 
-    useEffect(() => {
-      fetchAllNotifications();
-    }, []);
-
-    const confirmSend = () => {
-      Alert.alert(
-        'Send Notification',
-        'Are you sure you want to send this notification?',
-        [
-          // The "Yes" button
-          { text: 'Yes', onPress: () => handleClick() },
-          // The "No" button
-          { text: 'No', style: 'cancel' },
-        ],
-        { cancelable: false }
-      );
-    };
-
-    const renderNotif = ({ item }) => {
-      return (
-        <View style={styles.notificationContainer}>
-          <Text style={styles.notificationTitle}>{item.title}</Text>
-          <Text style={styles.notificationMessage}>{item.message}</Text>
-          <Text style={styles.notificationDate}>{item.date} at {item.time}</Text>
-        </View>
-      );
-    };
+  const handleNotificationClick = (notification) => {
+    setSelectedNotification(notification);
+    setNotificationModalVisible(true);
+  };
 
   return (
     <View
       style={{
         flex: 1,
-        justifyContent: "center",
         alignItems: "center",
-        backgroundColor: "#233563",
+        backgroundColor: "#1F1F1F",
       }}
     >
-        <FlatList
-          data={allNotifications}
-          renderItem={renderNotif} // Your renderItem function to display the notification
-          keyExtractor={item => item.id} // Unique key for each notification
-        />
-        {role === "Admin" ? (
-          <>
-          <View style={styles.itemContainer}>
-                  <TextInput
-                  style={styles.inputTop}
-                  onChangeText={(text) => setTitle(text)}
-                  placeholder="Title"
-                  autoCapitalize="none"
-                  value={title}
-                />
-                    <TextInput
-                  style={styles.inputTop}
-                  onChangeText={(text) => setMessage(text)}
-                  placeholder="Message"
-                  autoCapitalize="none"
-                  value={message}
-                />
-                <Button
-                  title="Send Notification"
-                  onPress={() => confirmSend()}
-                  buttonStyle={styles.button} 
-                />
-            </View>
-          </>
-          ) : (
-        <><Text style={styles.topText}>If your Fundraiser Page is not working, please find someone on Digital Marketing.</Text></>)}
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ width: "95%", alignSelf: "center" }}
-      >
-        <Text style={styles.header}>MAIN EVENT FLOOR PLAN</Text>
-        <View style={styles.eventItem}>
-          <TouchableOpacity onPress={() => setModalVisible(true)}>
-            <Image
-              source={require("./images/rotatedfloor.png")}
-              style={{
-                width: eventItemWidth,
-                height: 100,
-                alignSelf: "center",
-                resizeMode: "stretch",
+      <Image
+        style={LogoStyles.logo}
+        resizeMode="contain"
+        source={require("./images/logo.png")}
+      />
+      <View style={{diplay: "flex", flexDirection: "row", marginTop: 20, gap: 10, width: "85%"}}>
+        <TouchableOpacity style={[styles.METile, {backgroundColor: "#E2213E"}]} onPress={() => setMapModalVisible(true)}>
+          <FontAwesome name="map-o" size={32} color="white" />
+          <Text style={{ color: "white", fontSize: 10,  }}>O'Dome Map</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={[styles.METile, {backgroundColor: "#B71B7C"}]} onPress={() => Linking.openURL("https://events.dancemarathon.com/index.cfm?fuseaction=donorDrive.participant&participantID=1223104")}>
+          <FontAwesome name="music" size={32} color="white" />
+          <Text style={{ color: "white", fontSize: 10,  }}>Music Request</Text>
+        </TouchableOpacity> 
+        <TouchableOpacity style={[styles.METile, {backgroundColor: "#EAB90A"}]} onPress={() => Linking.openURL("https://drive.google.com/drive/folders/1e_KKm4u42APaIYhM7ILqxc28bPotKLT9")}>
+          <FontAwesome name="dollar" size={32} color="white" />
+          <Text style={{ color: "white", fontSize: 10,  }}>Resources</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={[styles.METile, {backgroundColor: "#1642A2"}]} onPress={() =>
+              navigation.navigate("AllNotifications", {
+                notifications: allNotifications,
+              })
+            }>
+          <FontAwesome name="bell-o" size={32} color="white" />
+          <Text style={{ color: "white", fontSize: 10,  }}>Notifications</Text>
+        </TouchableOpacity>
+      </View>   
+    <Modal
+      animationType="fade"
+      transparent={true}
+      visible={MapModalVisible}
+      onRequestClose={() => setMapModalVisible(false)}
+    >
+      <TouchableWithoutFeedback onPress={() => setMapModalVisible(false)}>
+      <View style={styles.modalContainer}>
+        <TouchableWithoutFeedback>
+        <View style={styles.modalContent}>
+          <View
+            style={[
+              styles.header,
+              { marginBottom: -5, marginTop: -15 },
+            ]}
+          >
+            <TouchableOpacity
+              style={styles.modalClose}
+              onPress={() => setMapModalVisible(false)}
+            >
+              <FontAwesomeIcon icon={faX} color="white" size={20} />
+            </TouchableOpacity>
+          </View>
+          <Image
+            source={odomeMap}
+            style={{ width: 250, height: 250, resizeMode: 'contain'}}
+          />
 
-              }}
-            />
+        </View>
+        </TouchableWithoutFeedback>
+      </View>
+      </TouchableWithoutFeedback>
+    </Modal>    
+
+      {/* <View style={styles.notificationsBox}>
+        <View style={styles.header}>
+          <FontAwesome name="bell-o" size={18} color="orange" />
+          <Text style={styles.headerText}>NOTIFICATIONS</Text>
+          <TouchableOpacity
+            onPress={() =>
+              navigation.navigate("AllNotifications", {
+                notifications: allNotifications,
+              })
+            }
+          >
+            <Text style={styles.showAll}>Show All</Text>
           </TouchableOpacity>
         </View>
-
-        <Modal
-          visible={modalVisible}
-          animationType="slide"
-          transparent={true}
-          onRequestClose={() => {
-            setModalVisible(!modalVisible);
-          }}
-        >
-          <View style={styles.centeredView}>
-            <View style={styles.modalView}>
-              <TouchableOpacity onPress={() => setModalVisible(!modalVisible)}>
-                <Image
-                  source={require("./images/floor.png")}
-                  style={{ width: 300, height: 500, resizeMode: "contain" }}
-                />
+      </View> */}
+      <View style={styles.eventsBox}>
+        <View style={styles.header}>
+          <FontAwesome name="calendar" size={18} color="orange" />
+          <Text style={styles.headerText}>UPCOMING EVENTS</Text>
+          { items.length > 4 && (
+            <TouchableOpacity
+              onPress={() =>
+                navigation.navigate("AllEvents", {
+                  items: allItems,
+                  imageUrls: imageUrls,
+                })
+              }
+            >
+              <Text style={styles.showAll}>Show All</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+        <View style={styles.eventsList}>
+          {Array.isArray(items) && items.length > 0 ? (
+            items.map((item, index) => (
+              <TouchableOpacity
+                    onPress={() =>
+                      navigation.navigate("EventDetails", {
+                        event: {
+                          ...item,
+                          formattedDate: item.datetime.toDateString(),
+                          imageUrl: imageUrls[item.picture],
+                        },
+                      })
+                    }
+                  >
+              <View key={index} style={styles.eventContainer}>
+                {item.picture ? (
+                  <View style={styles.imageContainer}>
+                    <Image
+                      source={{ uri: imageUrls[item.picture] }}
+                      style={styles.eventImage}
+                    />
+                  </View>
+                ) : (
+                  <View></View>
+                )}
+                <View style={styles.eventDetails}>
+                  <Text style={styles.eventTitle}>{item.title}</Text>
+                  <Text style={styles.learnMore}>Learn More</Text>
+                </View>
+              </View>
               </TouchableOpacity>
-            </View>
-          </View>
-        </Modal>
-        <UpcomingEventsScreen />
-      </ScrollView>
+            ))
+          ) : (
+            <Text style={styles.noEvents}>No upcoming events</Text>
+          )}
+        </View>
+      </View>
     </View>
   );
 };
 
 export default Home;
 
-const eventItemWidth = Dimensions.get("window").width * 0.9;
+const { width } = Dimensions.get('window');
+const tileWidth = (width * .85) *.25 - 7.5;
 
 const styles = StyleSheet.create({
-  eventItem: {
-    width: eventItemWidth,
-    backgroundColor: "white",
-    padding: 20,
-    borderRadius: 10,
-    alignSelf: "center",
+  METile: {
+    width: tileWidth,
+    height: tileWidth,
+    borderRadius: 9,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 5,
   },
-  centeredView: {
+  dmlogo: {
+    marginTop: 280,
+    width: "90%",
+    height: 75,
+  },
+  notificationsBox: {
+    marginTop: 100,
+    borderRadius: 9,
+    backgroundColor: "#233d72",
+    height: 180,
+    shadowOpacity: 1,
+    elevation: 4,
+    shadowRadius: 4,
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowColor: "rgba(0, 0, 0, 0.25)",
+  },
+  eventsBox: {
+    marginTop: 10,
+    borderRadius: 9,
+    backgroundColor: "#233d72",
+    width: '85%',
+    height: 480,
+    shadowOpacity: 1,
+    elevation: 4,
+    shadowRadius: 4,
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowColor: "rgba(0, 0, 0, 0.25)",
+  },
+  smallCircle: {
+    width: 15,
+    height: 15,
+    borderRadius: 50,
+    backgroundColor: "#EB9F68",
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 10,
+    left: 10,
+    top: 10,
+  },
+  headerText: {
+    color: "white",
+    fontWeight: "bold",
+    fontSize: 16,
+    flex: 1,
+    left: 5,
+  },
+  showAll: {
+    color: "white",
+    fontSize: 14,
+    right: 20,
+    textDecorationLine: "underline",
+  },
+  notifications: {
+    marginTop: 0,
+  },
+  notificationText: {
+    color: "white",
+    fontSize: 14,
+    paddingVertical: 16,
+    textAlign: "left",
+    left: 15,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    marginHorizontal: 0,
+  },
+  modalContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    marginTop: 22,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
   },
-  modalView: {
-    margin: 20,
-    backgroundColor: "white",
-    borderRadius: 20,
-    padding: 35,
+  modalContent: {
+    backgroundColor: "#233D72",
+    padding: 20,
+    borderRadius: 10,
     alignItems: "center",
-    shadowColor: "#000",
+    width: "80%",
+  },
+  modalText: {
+    fontSize: 16,
+    marginBottom: 20,
+  },
+  modalClose: {
+    position: "absolute",
+    right: -130,
+    top: 0,
+  },
+  eventsList: {
+    paddingTop: 10,
+  },
+  eventCard: {
+    flexDirection: "row",
+    backgroundColor: "#1E2A47",
+    borderRadius: 10,
+    overflow: "hidden",
+    marginBottom: 15,
+  },
+  eventImage: {
+    width: "100%",
+    height: 60,
+    resizeMode: "cover",
+  },
+  eventTitle: {
+    color: "white",
+    fontWeight: "bold",
+    fontSize: 14,
+    flex: 1,
+    left: 10,
+  },
+  learnMore: {
+    color: "white",
+    fontSize: 14,
+    textDecorationLine: "underline",
+    alignSelf: "flex-end",
+    right: 10,
+  },
+  noEvents: {
+    color: "white",
+    fontSize: 14,
+    left: 10,
+    top: 5,
+  },
+  eventContainer: {
+    backgroundColor: "#EB9F68",
+    alignItems: "center",
+    height: 100,
+    width: "94%",
+    borderRadius: 10,
+    overflow: "hidden",
+    marginBottom: 10,
+    shadowColor: "rgba(0, 0, 0, 0.25)",
     shadowOffset: {
       width: 0,
-      height: 2,
+      height: 4,
     },
-    shadowOpacity: 0.25,
     shadowRadius: 4,
-    elevation: 5,
+    elevation: 4,
+    shadowOpacity: 1,
   },
-  header: {
-    fontSize: 24,
-    fontWeight: "bold",
-    marginBottom: 20,
-    marginTop: 20,
+  eventsList: {
+    top: 10,
+    left: 10,
+  },
+  imageContainer: {
+    flex: 7,
+    width: "100%",
+  },
+  eventDetails: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 12,
+  },
+  modalTitle: {
     color: "white",
-    textAlign: "center",
+    fontSize: 18,
+    fontWeight: "bold",
+    marginTop: 30,
+    marginBottom: 10,
   },
-  button: {
-    backgroundColor: '#233D72',
-    margin: 2,
-    justifyContent: 'flex-start',
-    paddingLeft: 15,
-    borderRadius: 5,
-    borderWidth: 0,
-    borderBottomWidth: 2,
-    borderColor: '#2B457A',
-    },
-    inputTop: {
-      height: 40,
-      borderColor: "black",
-      borderWidth: 1,
-      marginBottom: 15,
-      paddingHorizontal: 10,
-      borderRadius: 5,
-      backgroundColor: "#D9D9D9",
-    },
-    topText: {
-      color: 'white',
-      fontSize: 12,
-      textAlign: 'center',
-      margin: 10,
-    },
-    itemContainer: {
-      backgroundColor: 'white',
-      padding: 20,
-      marginRight: 10,
-      marginTop: 17,
-      borderRadius: 5,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 4,
-    },
+  modalDateTime: {
+    color: "white",
+    fontSize: 16,
+    marginBottom: 10,
+  },
+  modalMessage: {
+    color: "white",
+    fontSize: 14,
+    marginBottom: 10,
+  },
 });

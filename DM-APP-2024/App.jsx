@@ -25,6 +25,7 @@ import * as Notifications from "expo-notifications";
 import Constants from "expo-constants";
 import { Image } from "react-native";
 import Home from "./Home";
+import HomeME from "./HomeME";
 import CalendarPage from "./CalendarPage";
 import Spirit from "./Spirit";
 import Fundraiser from "./Fundraiser";
@@ -46,6 +47,7 @@ import TTHome from "./HomeTT";
 import checkForUpdate from "./AppUpdateCheck";
 import EventDetails from "./EventDetails";
 import AllNotifications from "./AllNotifications";
+import AllEvents from "./AllEvents";
 import FAQ from "./FAQpage";
 import MissionDM from "./MissionDM";
 import Svg, { Path } from "react-native-svg";
@@ -136,6 +138,7 @@ const App = () => {
   const [enrolled, setEnrolled] = useState(false);
   const [appDisabled, setAppDisabled] = useState(false);
   const [image, setImage] = useState(null);
+  const [mainEvent, setMainEvent] = useState(false);
 
   useEffect(() => {
     const docRef = doc(db, "Permissions", "tempData");
@@ -146,6 +149,11 @@ const App = () => {
           setAppDisabled(true);
         } else {
           setAppDisabled(false);
+        }
+        if (docSnapshot.data().mainevent) {
+          setMainEvent(true);
+        } else {
+          setMainEvent(false);
         }
       } else {
         console.error("Document does not exist!");
@@ -309,10 +317,11 @@ const App = () => {
   const HomeStack = createStackNavigator();
 
   const HomeStackScreen = (props) => (
+    
     <HomeStack.Navigator>
       <HomeStack.Screen
-        name="Home"
-        component={Home}
+        name={mainEvent ? "HomeME" : "Home"}
+        component={mainEvent ? HomeME : Home}
         options={{ headerShown: false }}
         initialParams={props.route.params}
       />
@@ -335,6 +344,20 @@ const App = () => {
         component={AllNotifications}
         options={{
           title: "Notifications",
+          headerStyle: {
+            backgroundColor: "#1f1f1f",
+            borderBottomWidth: 0,
+          },
+          headerTintColor: "white",
+          headerShadowVisible: false,
+          headerBackTitleVisible: false,
+        }}
+      />
+      <HomeStack.Screen
+        name="AllEvents"
+        component={AllEvents}
+        options={{
+          title: "Events",
           headerStyle: {
             backgroundColor: "#1f1f1f",
             borderBottomWidth: 0,

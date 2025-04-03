@@ -217,7 +217,6 @@ const Home = ({ route }) => {
     <View
       style={{
         flex: 1,
-        justifyContent: "center",
         alignItems: "center",
         backgroundColor: "#1F1F1F",
       }}
@@ -353,7 +352,7 @@ const styles = StyleSheet.create({
     height: 75,
   },
   notificationsBox: {
-    marginTop: 100,
+    marginTop: 20,
     borderRadius: 9,
     backgroundColor: "#233d72",
     width: '85%',
