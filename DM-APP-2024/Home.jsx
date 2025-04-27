@@ -217,7 +217,6 @@ const Home = ({ route }) => {
     <View
       style={{
         flex: 1,
-        justifyContent: "center",
         alignItems: "center",
         backgroundColor: "#1F1F1F",
       }}
@@ -304,40 +303,40 @@ const Home = ({ route }) => {
           <Text style={styles.headerText}>UPCOMING EVENTS</Text>
         </View>
         <View style={styles.eventsList}>
-          {Array.isArray(items) && items.length > 0 ? (
-            items.map((item, index) => (
-              <View key={index} style={styles.eventContainer}>
-                {item.picture ? (
-                  <View style={styles.imageContainer}>
-                    <Image
-                      source={{ uri: imageUrls[item.picture] }}
-                      style={styles.eventImage}
-                    />
-                  </View>
-                ) : (
-                  <View></View>
-                )}
-                <View style={styles.eventDetails}>
-                  <Text style={styles.eventTitle}>{item.title}</Text>
-                  <TouchableOpacity
-                    onPress={() =>
-                      navigation.navigate("EventDetails", {
-                        event: {
-                          ...item,
-                          formattedDate: item.datetime.toDateString(),
-                          imageUrl: imageUrls[item.picture],
-                        },
-                      })
-                    }
-                  >
-                    <Text style={styles.learnMore}>Learn More</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            ))
-          ) : (
-            <Text style={styles.noEvents}>No upcoming events</Text>
-          )}
+        {Array.isArray(items) && items.length > 0 ? (
+  items.map((item, index) => (
+    <TouchableOpacity
+      key={index}
+      style={styles.eventContainer}
+      onPress={() =>
+        navigation.navigate("EventDetails", {
+          event: {
+            ...item,
+            formattedDate: item.datetime.toDateString(),
+            imageUrl: imageUrls[item.picture],
+          },
+        })
+      }
+    >
+      {item.picture ? (
+        <View style={styles.imageContainer}>
+          <Image
+            source={{ uri: imageUrls[item.picture] }}
+            style={styles.eventImage}
+          />
+        </View>
+      ) : (
+        <View />
+      )}
+      <View style={styles.eventDetails}>
+        <Text style={styles.eventTitle}>{item.title}</Text>
+        
+      </View>
+    </TouchableOpacity>
+  ))
+) : (
+  <Text style={styles.noEvents}>No upcoming events</Text>
+)}
         </View>
       </View>
     </View>
@@ -353,7 +352,7 @@ const styles = StyleSheet.create({
     height: 75,
   },
   notificationsBox: {
-    marginTop: 100,
+    marginTop: 20,
     borderRadius: 9,
     backgroundColor: "#233d72",
     width: '85%',
@@ -443,8 +442,8 @@ const styles = StyleSheet.create({
   },
   modalClose: {
     position: "absolute",
-    right: -130,
-    top: 0,
+    right: -140,
+    top: -7,
   },
   eventsList: {
     paddingTop: 10,

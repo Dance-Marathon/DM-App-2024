@@ -3,8 +3,7 @@ import { BottomSheet } from 'react-native-elements';
 
 const LogoStyles = StyleSheet.create({
   logo: {
-    position: 'absolute',
-    top: 70,
+    marginTop: 70,
     height: 75,
     // marginBottom: 30,
   },
