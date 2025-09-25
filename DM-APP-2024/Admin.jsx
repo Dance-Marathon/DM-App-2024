@@ -289,7 +289,7 @@ const Admin = ({ route }) => {
 
   let handleClick = async () => {
     fetchItems = await fetchData();
-    await sendPushNotificationsToAll(fetchItems, {
+    sendPushNotificationsToAll(fetchItems, {
       date: getCurrentDate(),
       message: message,
       time: getCurrentTime(),

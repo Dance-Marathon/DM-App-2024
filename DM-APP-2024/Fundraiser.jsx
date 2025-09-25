@@ -1,6 +1,6 @@
 import React, { useContext, useState, useEffect } from "react";
-import FontAwesome from 'react-native-vector-icons/FontAwesome';
-import Toast, {BaseToast} from "react-native-toast-message";
+import FontAwesome from "react-native-vector-icons/FontAwesome";
+import Toast, { BaseToast } from "react-native-toast-message";
 import {
   View,
   Text,
@@ -22,10 +22,9 @@ import {
 import * as Clipboard from "expo-clipboard";
 import * as Progress from "react-native-progress";
 import { Icon } from "react-native-elements";
-import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { faX } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
+import { faX } from "@fortawesome/free-solid-svg-icons";
 import LogoStyles from "./LogoStyles";
-
 
 // import { getUserData } from "./Firebase/UserManager";
 
@@ -76,18 +75,18 @@ const Fundraiser = () => {
       <BaseToast
         {...props}
         style={{
-          borderLeftColor: '#EB9F68',
+          borderLeftColor: "#EB9F68",
         }}
         contentContainerStyle={{ paddingHorizontal: 15 }}
         text1Style={{
-          color: "black", 
+          color: "black",
           fontSize: 20,
           fontWeight: "bold",
           textAlign: "center",
         }}
       />
     ),
-    }
+  };
 
   Object.entries(variables).forEach(([key, value]) => {
     if (value === undefined) {
@@ -193,30 +192,32 @@ const Fundraiser = () => {
     }
   }, [userID, userInfo, donationInfo]);
 
+  // Method to sort the donations by their createdDateUTC in descending order
   useEffect(() => {
     const sorted = sortedDonations.sort((a, b) => {
+      // Convert the createdDateUTC strings to Date objects for comparison
       const dateA = new Date(a.createdDateUTC);
       const dateB = new Date(b.createdDateUTC);
-      return dateB - dateA;
+      return dateB - dateA; // Subtract to get the descending order
     });
+    // Update the state with the sorted list of donations
     setSortedDonations(sorted);
   }, []);
 
   const copyToClipboard = () => {
     const text = userInfo.donateURL;
     Clipboard.setStringAsync(text)
-    .then(() => {
-      Toast.show({
-        type: "success",
-        text1: "DonorDrive Link Copied!",
-        position: "bottom",
-        visibilityTime: 3000, // Auto-hide in 3 seconds
-        autoHide: true,
-      });
-    })
-    .catch((err) => console.error("Error copying to clipboard:", err));
+      .then(() => {
+        Toast.show({
+          type: "success",
+          text1: "DonorDrive Link Copied!",
+          position: "bottom",
+          visibilityTime: 3000, // Auto-hide in 3 seconds
+          autoHide: true,
+        });
+      })
+      .catch((err) => console.error("Error copying to clipboard:", err));
   };
-
 
   const openBadgeModal = (badge) => {
     setSelectedBadge(badge);
@@ -274,11 +275,17 @@ const Fundraiser = () => {
                     style={styles.modalClose}
                     onPress={() => setModalVisible(false)}
                   >
-                    <FontAwesomeIcon icon={faX} size={24} color="white" style={styles.closeButton}/>
+                    <FontAwesomeIcon
+                      icon={faX}
+                      size={24}
+                      color="white"
+                      style={styles.closeButton}
+                    />
                   </TouchableOpacity>
                 </View>
                 <View style={styles.modalMilestonesContainer}>
-                  {Array.isArray(allMilestones) && userInfo.numMilestones > 0 ? (
+                  {Array.isArray(allMilestones) &&
+                  userInfo.numMilestones > 0 ? (
                     allMilestones.map((milestone, index) => (
                       <View key={index} style={styles.milestoneRow}>
                         <Icon
@@ -301,7 +308,9 @@ const Fundraiser = () => {
                       </View>
                     ))
                   ) : (
-                    <Text style={{ color: "white" }}>No milestones to display</Text>
+                    <Text style={{ color: "white" }}>
+                      No milestones to display
+                    </Text>
                   )}
                 </View>
               </View>
@@ -309,7 +318,6 @@ const Fundraiser = () => {
           </View>
         </TouchableWithoutFeedback>
       </Modal>
-
 
       <Image
         style={LogoStyles.logo}
@@ -460,28 +468,30 @@ const Fundraiser = () => {
               onRequestClose={closeBadgeModal}
             >
               <TouchableWithoutFeedback onPress={closeBadgeModal}>
-              <View style={styles.modalContainer}>
-                <TouchableWithoutFeedback>
-                <View style={styles.badgeView}>
-                  <View style={[styles.header, { marginBottom: -10 }]}>
-                    <TouchableOpacity
-                      style={[styles.modalClose, { marginLeft: 110 }]}
-                      onPress={closeBadgeModal}
-                    >
-                      <FontAwesomeIcon icon={faX} size={24} color="white" />
-                    </TouchableOpacity>
-                  </View>
-                  <Text style={styles.modalTitle}>{selectedBadge.title}</Text>
-                  <Text style={styles.modalDescription}>
-                    {selectedBadge.description}
-                  </Text>
-                  <Image
-                    source={{ uri: selectedBadge.badgeImageURL }}
-                    style={styles.modalImage}
-                  />
+                <View style={styles.modalContainer}>
+                  <TouchableWithoutFeedback>
+                    <View style={styles.badgeView}>
+                      <View style={[styles.header, { marginBottom: -10 }]}>
+                        <TouchableOpacity
+                          style={[styles.modalClose, { marginLeft: 110 }]}
+                          onPress={closeBadgeModal}
+                        >
+                          <FontAwesomeIcon icon={faX} size={24} color="white" />
+                        </TouchableOpacity>
+                      </View>
+                      <Text style={styles.modalTitle}>
+                        {selectedBadge.title}
+                      </Text>
+                      <Text style={styles.modalDescription}>
+                        {selectedBadge.description}
+                      </Text>
+                      <Image
+                        source={{ uri: selectedBadge.badgeImageURL }}
+                        style={styles.modalImage}
+                      />
+                    </View>
+                  </TouchableWithoutFeedback>
                 </View>
-                </TouchableWithoutFeedback>
-              </View>
               </TouchableWithoutFeedback>
             </Modal>
           )}
@@ -495,10 +505,10 @@ const Fundraiser = () => {
               <ScrollView>
                 {Array.isArray(allDonations) && allDonations.length > 0 ? (
                   allDonations.map((donation, index) => {
-                    donatorName = donation.displayName
+                    const donatorName = donation.displayName
                       ? donation.displayName
                       : "Anonymous";
-                    donatorName = donatorName
+                    const cleanedDonatorName = donatorName
                       .replace("Dance Marathon at UF", "")
                       .trim();
                     return (
@@ -506,7 +516,7 @@ const Fundraiser = () => {
                         style={{ fontSize: 16, color: "white" }}
                         key={index}
                       >
-                        • {donatorName} - ${donation.amount}
+                        • {cleanedDonatorName} - ${donation.amount}
                       </Text>
                     );
                   })
@@ -535,15 +545,14 @@ const Fundraiser = () => {
             >
               <Text style={styles.buttonText}>DonorDrive</Text>
             </TouchableOpacity>
-            
           </View>
           <TouchableOpacity
-              onPress={copyToClipboard}
-              style={styles.copyToClipboard}
-            >
-              <Icon name="link" type="font-awesome-5" color="white" />
-            </TouchableOpacity>
-            <Toast />
+            onPress={copyToClipboard}
+            style={styles.copyToClipboard}
+          >
+            <Icon name="link" type="font-awesome-5" color="white" />
+          </TouchableOpacity>
+          <Toast />
         </View>
       )}
       <Toast config={toastConfig} />
@@ -754,7 +763,6 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
-    
   },
   smallCircle: {
     width: 15,
@@ -820,7 +828,6 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     //alignItems: "center",
     //justifyContent: "center",
-
   },
   copyToClipboard: {
     position: "absolute",

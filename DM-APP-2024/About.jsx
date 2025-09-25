@@ -103,8 +103,8 @@ const About = () => {
 
   return (
     <ScrollView
-    contentContainerStyle={{ flexGrow: 1, backgroundColor: "#1F1F1F" }}
-    style={{ backgroundColor: "#1F1F1F" }}
+      contentContainerStyle={{ flexGrow: 1, backgroundColor: "#1F1F1F" }}
+      style={{ backgroundColor: "#1F1F1F" }}
     >
       <View
         style={{
@@ -142,13 +142,27 @@ const About = () => {
         <Text style={styles.title}>FOLLOW US</Text>
         <View style={styles.boxes}>
           <Button
-            icon={<Icon name="facebook" type="font-awesome" color="white" style={{width: 30, marginRight: 10}}/>}
+            icon={
+              <Icon
+                name="facebook"
+                type="font-awesome"
+                color="white"
+                style={{ width: 30, marginRight: 10 }}
+              />
+            }
             title="Facebook"
             onPress={() => openWebsite("https://www.facebook.com/floridaDM/")}
             buttonStyle={styles.button}
           />
           <Button
-            icon={<Icon name="instagram" type="font-awesome" color="white" style={{width: 30, marginRight: 10}}/>}
+            icon={
+              <Icon
+                name="instagram"
+                type="font-awesome"
+                color="white"
+                style={{ width: 30, marginRight: 10 }}
+              />
+            }
             title="Instagram"
             onPress={() =>
               openWebsite("https://www.instagram.com/dmatuf/?hl=en")
@@ -157,7 +171,12 @@ const About = () => {
           />
           <Button
             icon={
-              <Icon name="youtube-play" type="font-awesome" color="white" style={{width: 30, marginRight: 10}}/>
+              <Icon
+                name="youtube-play"
+                type="font-awesome"
+                color="white"
+                style={{ width: 30, marginRight: 10 }}
+              />
             }
             title="Youtube"
             onPress={() =>
@@ -166,7 +185,14 @@ const About = () => {
             buttonStyle={styles.button}
           />
           <Button
-            icon={<Icon name="twitter" type="font-awesome" color="white" style={{width: 30, marginRight: 10}}/>}
+            icon={
+              <Icon
+                name="twitter"
+                type="font-awesome"
+                color="white"
+                style={{ width: 30, marginRight: 10 }}
+              />
+            }
             title="Twitter"
             onPress={() => openWebsite("https://twitter.com/floridadm?lang=en")}
             buttonStyle={styles.lastButton}
@@ -175,39 +201,71 @@ const About = () => {
         <Text style={styles.title}>LEARN MORE</Text>
         <View style={styles.boxes}>
           <Button
-            icon={<Icon name="info" type="font-awesome" color="white" style={{width: 30, marginRight: 10}}/>}
+            icon={
+              <Icon
+                name="info"
+                type="font-awesome"
+                color="white"
+                style={{ width: 30, marginRight: 10 }}
+              />
+            }
             title="CMN & UF Health"
             onPress={() => openWebsite("https://floridadm.org/about")}
             buttonStyle={styles.button}
           />
           <Button
-            icon={<Icon name="question" type="font-awesome" color="white" style={{width: 30, marginRight: 10}}/>}
+            icon={
+              <Icon
+                name="question"
+                type="font-awesome"
+                color="white"
+                style={{ width: 30, marginRight: 10 }}
+              />
+            }
             title="Frequently Asked Questions"
             onPress={() => navigation.navigate("FAQ")}
             buttonStyle={styles.button}
           />
-          
+
           <Button
             icon={
-              <Icon name="heart" type="font-awesome" color="white" size={16} style={{width: 30, marginRight: 10}}/>
+              <Icon
+                name="heart"
+                type="font-awesome"
+                color="white"
+                size={16}
+                style={{ width: 30, marginRight: 10 }}
+              />
             }
             title="Meet the Kids"
             onPress={() => openWebsite("https://floridadm.org/miraclefamilies")}
             buttonStyle={styles.button}
           />
           <Button
-            icon={<Icon name="user" type="font-awesome" color="white" style={{width: 30, marginRight: 10}}/>}
-            title="Meet the Overalls"
-            onPress={() =>
-              openWebsite("https://floridadm.org/contact")
+            icon={
+              <Icon
+                name="user"
+                type="font-awesome"
+                color="white"
+                style={{ width: 30, marginRight: 10 }}
+              />
             }
+            title="Meet the Overalls"
+            onPress={() => openWebsite("https://floridadm.org/contact")}
             buttonStyle={styles.lastButton}
           />
         </View>
         <Text style={styles.title}>CONTACT US</Text>
         <View style={styles.boxes}>
           <Button
-            icon={<Icon name="globe" type="font-awesome" color="white" style={{width: 30, marginRight: 10}}/>}
+            icon={
+              <Icon
+                name="globe"
+                type="font-awesome"
+                color="white"
+                style={{ width: 30, marginRight: 10 }}
+              />
+            }
             title="UF Health Office of Development"
             onPress={() =>
               openWebsite(
@@ -217,7 +275,14 @@ const About = () => {
             buttonStyle={styles.button}
           />
           <Button
-            icon={<Icon name="envelope" type="font-awesome" color="white" style={{width: 30, marginRight: 10}}/>}
+            icon={
+              <Icon
+                name="envelope"
+                type="font-awesome"
+                color="white"
+                style={{ width: 30, marginRight: 10 }}
+              />
+            }
             title="Email DM at UF"
             onPress={() => openWebsite("mailto:floridadm@floridadm.org")}
             buttonStyle={styles.lastButton}
@@ -232,13 +297,20 @@ const About = () => {
         <Text style={styles.title}>PHOTOS</Text>
         <View style={styles.boxes}>
           <Button
-            icon={<Icon name="camera" type="font-awesome" color="white" style={{width: 30, marginRight: 10}}/>}
+            icon={
+              <Icon
+                name="camera"
+                type="font-awesome"
+                color="white"
+                style={{ width: 30, marginRight: 10 }}
+              />
+            }
             title="Shootproof"
             onPress={() => openWebsite("https://floridadm.shootproof.com/")}
             buttonStyle={styles.lastButton}
           />
         </View>
-        {role==="Admin" ? (
+        {role === "Admin" ? (
           <TouchableOpacity
             style={styles.adminButton}
             onPress={() => navigation.navigate("Admin")}
@@ -246,7 +318,7 @@ const About = () => {
             <Text style={styles.buttonText}>Admin Page</Text>
           </TouchableOpacity>
         ) : (
-          <View style={{marginBottom: 20}}/>
+          <View style={{ marginBottom: 20 }} />
         )}
       </View>
       <Modal
@@ -255,51 +327,56 @@ const About = () => {
         animationType="fade"
       >
         <TouchableWithoutFeedback onPress={toggleAccountModel}>
-        <View style={styles.modalBackground}>
-          <TouchableWithoutFeedback>
-        <View style={styles.modalView}>
-        <TouchableOpacity
-            style={styles.closeButton}
-            onPress={toggleAccountModel}
-          >
-            <FontAwesomeIcon icon={faX} color="white" size={20} />
-          </TouchableOpacity>
-          <TextInput
-            style={styles.input}
-            placeholder="Enter new DonorDrive link"
-            value={newLink}
-            onChangeText={(text) => setNewLink(text)}
-          />
-          <TouchableOpacity style={styles.updateButton} onPress={changeLink}>
-            <Text style={styles.modalButtonText}>Update Link</Text>
-          </TouchableOpacity>
-          <Dropdown
-            style={styles.dropdown}
-            placeholderStyle={styles.placeholderStyle}
-            selectedTextStyle={styles.selectedTextStyle}
-            inputSearchStyle={styles.inputSearchStyle}
-            iconStyle={styles.iconStyle}
-            containerStyle={styles.dropdownContainer}
-            data={roles}
-            search
-            maxHeight={300}
-            labelField="label"
-            valueField="value"
-            placeholder={!isFocus ? "Select Your Role" : "..."}
-            searchPlaceholder="Search..."
-            value={newRole}
-            onChange={(item) => {
-              setNewRole(item.value);
-              setIsFocus(false);
-            }}
-          />
-          <TouchableOpacity style={styles.updateButton} onPress={changeRole}>
-            <Text style={styles.modalButtonText}>Update Role</Text>
-          </TouchableOpacity>
-          
-        </View>
-        </TouchableWithoutFeedback>
-        </View>
+          <View style={styles.modalBackground}>
+            <TouchableWithoutFeedback>
+              <View style={styles.modalView}>
+                <TouchableOpacity
+                  style={styles.closeButton}
+                  onPress={toggleAccountModel}
+                >
+                  <FontAwesomeIcon icon={faX} color="white" size={20} />
+                </TouchableOpacity>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Enter new DonorDrive link"
+                  value={newLink}
+                  onChangeText={(text) => setNewLink(text)}
+                />
+                <TouchableOpacity
+                  style={styles.updateButton}
+                  onPress={changeLink}
+                >
+                  <Text style={styles.modalButtonText}>Update Link</Text>
+                </TouchableOpacity>
+                <Dropdown
+                  style={styles.dropdown}
+                  placeholderStyle={styles.placeholderStyle}
+                  selectedTextStyle={styles.selectedTextStyle}
+                  inputSearchStyle={styles.inputSearchStyle}
+                  iconStyle={styles.iconStyle}
+                  containerStyle={styles.dropdownContainer}
+                  data={roles}
+                  search
+                  maxHeight={300}
+                  labelField="label"
+                  valueField="value"
+                  placeholder={!isFocus ? "Select Your Role" : "..."}
+                  searchPlaceholder="Search..."
+                  value={newRole}
+                  onChange={(item) => {
+                    setNewRole(item.value);
+                    setIsFocus(false);
+                  }}
+                />
+                <TouchableOpacity
+                  style={styles.updateButton}
+                  onPress={changeRole}
+                >
+                  <Text style={styles.modalButtonText}>Update Role</Text>
+                </TouchableOpacity>
+              </View>
+            </TouchableWithoutFeedback>
+          </View>
         </TouchableWithoutFeedback>
       </Modal>
     </ScrollView>

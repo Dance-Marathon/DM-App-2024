@@ -3,7 +3,6 @@
     "name": "DM at UF",
     "slug": "DM-APP-2024",
     "version": "2.3.2",
-    "sdkVersion": "52.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon_image.png",
     "userInterfaceStyle": "light",
@@ -22,8 +21,7 @@
     "ios": {
       "supportsTablet": true,
       "googleServicesFile": "./GoogleService-Info.plist",
-      "bundleIdentifier": "com.ufdigitalmarketing.DMAPP2024",
-      "newArchEnabled": true
+      "bundleIdentifier": "com.ufdigitalmarketing.DMAPP2024"
     },
     "android": {
       "adaptiveIcon": {
@@ -59,7 +57,8 @@
           "enableCodeScanner": true
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      "expo-web-browser"
     ]
   }
 }
