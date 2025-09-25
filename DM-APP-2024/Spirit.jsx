@@ -78,62 +78,22 @@ const GenerateQRCode = ({ route }) => {
       (individual) => individual[0] === userInfo.displayName
     )?.[1] || 0;
 
-  // const fetchLeaderboardData = async () => {
-  //   try {
-  //     const response = await axios.get(
-  //       `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${range}?key=${apiKey}`
-  //     );
-
-  //     setFullTeamLeaderboard(response.data.values);
-
-  //     const sortedData = response.data.values
-  //       .filter((row) => row[1])
-  //       .map((row) => [row[0], parseInt(row[1], 10)])
-  //       .sort((a, b) => b[1] - a[1])
-  //       .slice(0, 3);
-  //     setLeaderboard(sortedData);
-  //   } catch (error) {
-  //     console.error("Error fetching leaderboard data", error);
-  //   }
-  // };
-
-  const fetchLeaderboardData = async (range, setFull, setTop) => {
+  const fetchLeaderboardData = async () => {
     try {
-      const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${range}?key=${apiKey}`;
-      console.log("Fetching leaderboard from URL:", url);
+      const response = await axios.get(
+        `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${range}?key=${apiKey}`
+      );
 
-      const response = await axios.get(url);
+      setFullTeamLeaderboard(response.data.values);
 
-      console.log("Raw response data:", response.data);
-
-      if (!response.data.values) {
-        console.warn("No 'values' field in response");
-        setFull([]);
-        setTop([]);
-        return;
-      }
-
-      setFull(response.data.values);
-
-      const sorted = response.data.values
+      const sortedData = response.data.values
         .filter((row) => row[1])
         .map((row) => [row[0], parseInt(row[1], 10)])
         .sort((a, b) => b[1] - a[1])
         .slice(0, 3);
-
-      console.log("Sorted top 3:", sorted);
-
-      setTop(sorted);
+      setLeaderboard(sortedData);
     } catch (error) {
-      if (axios.isAxiosError(error)) {
-        console.error("Axios error:", {
-          message: error.message,
-          code: error.code,
-          response: error.response?.data,
-        });
-      } else {
-        console.error("Unknown error:", error);
-      }
+      console.error("Error fetching leaderboard data", error);
     }
   };
 
