@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from "react";
-import FontAwesome from 'react-native-vector-icons/FontAwesome';
+import FontAwesome from "react-native-vector-icons/FontAwesome";
 import {
   View,
   StyleSheet,
@@ -20,10 +20,9 @@ import { useNavigation } from "@react-navigation/native";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "./Firebase/AuthManager";
 import { UserContext } from "./api/calls";
-import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { faX } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
+import { faX } from "@fortawesome/free-solid-svg-icons";
 import LogoStyles from "./LogoStyles";
-
 
 const GenerateQRCode = ({ route }) => {
   const [userIDState, setUserIDState] = useState("");
@@ -37,12 +36,13 @@ const GenerateQRCode = ({ route }) => {
   );
   const SPREADSHEET_ID = "1VTr6Jq_UbrJ1HEUTxCo0TlLvoLXc5PaPagufrzbAAxY";
   const range = `Sheet1!A2:B100`;
+  const individualRange = `Sheet2!A2:B600`;
   const apiKey = sheetsAPIKey;
   const [scannerVisible, setScannerVisible] = useState(false);
   const [scannerPermissions, setScannerPermissions] = useState({
-      allowedRoles: [],
-      teamBasedPermissions: {},
-    });
+    allowedRoles: [],
+    teamBasedPermissions: {},
+  });
 
   const navigation = useNavigation();
 
@@ -78,22 +78,62 @@ const GenerateQRCode = ({ route }) => {
       (individual) => individual[0] === userInfo.displayName
     )?.[1] || 0;
 
-  const fetchLeaderboardData = async () => {
+  // const fetchLeaderboardData = async () => {
+  //   try {
+  //     const response = await axios.get(
+  //       `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${range}?key=${apiKey}`
+  //     );
+
+  //     setFullTeamLeaderboard(response.data.values);
+
+  //     const sortedData = response.data.values
+  //       .filter((row) => row[1])
+  //       .map((row) => [row[0], parseInt(row[1], 10)])
+  //       .sort((a, b) => b[1] - a[1])
+  //       .slice(0, 3);
+  //     setLeaderboard(sortedData);
+  //   } catch (error) {
+  //     console.error("Error fetching leaderboard data", error);
+  //   }
+  // };
+
+  const fetchLeaderboardData = async (range, setFull, setTop) => {
     try {
-      const response = await axios.get(
-        `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${range}?key=${apiKey}`
-      );
+      const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${range}?key=${apiKey}`;
+      console.log("Fetching leaderboard from URL:", url);
 
-      setFullTeamLeaderboard(response.data.values);
+      const response = await axios.get(url);
 
-      const sortedData = response.data.values
+      console.log("Raw response data:", response.data);
+
+      if (!response.data.values) {
+        console.warn("No 'values' field in response");
+        setFull([]);
+        setTop([]);
+        return;
+      }
+
+      setFull(response.data.values);
+
+      const sorted = response.data.values
         .filter((row) => row[1])
         .map((row) => [row[0], parseInt(row[1], 10)])
         .sort((a, b) => b[1] - a[1])
         .slice(0, 3);
-      setLeaderboard(sortedData);
+
+      console.log("Sorted top 3:", sorted);
+
+      setTop(sorted);
     } catch (error) {
-      console.error("Error fetching leaderboard data", error);
+      if (axios.isAxiosError(error)) {
+        console.error("Axios error:", {
+          message: error.message,
+          code: error.code,
+          response: error.response?.data,
+        });
+      } else {
+        console.error("Unknown error:", error);
+      }
     }
   };
 
@@ -153,7 +193,7 @@ const GenerateQRCode = ({ route }) => {
     fetchScannerPermissions();
   }, [userInfo]);
 
-  console.log("Scanner Permissions:", scannerVisible); 
+  console.log("Scanner Permissions:", scannerVisible);
 
   const qrData = `name: ${userInfo.displayName}, team: ${userInfo.teamName}`;
 
@@ -269,40 +309,40 @@ const GenerateQRCode = ({ route }) => {
       </View>
 
       <Modal
-      // animationType="slide"
-      animationType="fade"
-      transparent={true}
-      visible={qrVisible}
-      onRequestClose={() => {
-        setQrVisible(false);
-      }}
-    >
-      <TouchableWithoutFeedback onPress={() => setQrVisible(false)}>
-        <View style={styles.modalBackground}>
-          <TouchableWithoutFeedback>
-            <View style={styles.modalContainer}>
-              <View style={styles.header}>
-                <Text style={styles.qrCode}>QR Code</Text>
-                <TouchableOpacity
-                  style={styles.closeButton}
-                  onPress={() => setQrVisible(false)}
+        // animationType="slide"
+        animationType="fade"
+        transparent={true}
+        visible={qrVisible}
+        onRequestClose={() => {
+          setQrVisible(false);
+        }}
+      >
+        <TouchableWithoutFeedback onPress={() => setQrVisible(false)}>
+          <View style={styles.modalBackground}>
+            <TouchableWithoutFeedback>
+              <View style={styles.modalContainer}>
+                <View style={styles.header}>
+                  <Text style={styles.qrCode}>QR Code</Text>
+                  <TouchableOpacity
+                    style={styles.closeButton}
+                    onPress={() => setQrVisible(false)}
+                  >
+                    <FontAwesomeIcon icon={faX} size={24} color="white" />
+                  </TouchableOpacity>
+                </View>
+                <View
+                  style={{
+                    backgroundColor: "white",
+                    padding: 5,
+                  }}
                 >
-                  <FontAwesomeIcon icon={faX} size={24} color="white" />
-                </TouchableOpacity>
+                  <QRCode value={qrData} size={300} />
+                </View>
               </View>
-              <View
-                style={{
-                  backgroundColor: "white",
-                  padding: 5,
-                }}
-              >
-                <QRCode value={qrData} size={300} />
-              </View>
-            </View>
-          </TouchableWithoutFeedback>
-        </View>
-      </TouchableWithoutFeedback>
-    </Modal>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
     </View>
   );
 };
@@ -342,7 +382,7 @@ const styles = StyleSheet.create({
     marginTop: 20,
     borderRadius: 9,
     backgroundColor: "#233d72",
-    width: '85%',
+    width: "85%",
     height: 180,
     shadowOpacity: 1,
     elevation: 4,
@@ -356,7 +396,7 @@ const styles = StyleSheet.create({
   leaderboardBox: {
     borderRadius: 9,
     backgroundColor: "#233d72",
-    width: '85%',
+    width: "85%",
     height: 370,
     marginTop: 30,
     shadowOpacity: 1,
