@@ -25,6 +25,7 @@ import { UserContext } from "./api/calls";
 import { useNavigation } from "@react-navigation/native";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 import { faX } from "@fortawesome/free-solid-svg-icons";
+import { faXTwitter } from "@fortawesome/free-brands-svg-icons";
 
 const About = () => {
   const [response, setResponse] = useState(false);
@@ -32,8 +33,10 @@ const About = () => {
   const [newRole, setNewRole] = useState("");
   const [accountModalVisable, setAccountModalVisable] = useState(false);
   const [isFocus, setIsFocus] = useState(false);
-  const { role } = useContext(UserContext);
+  const { role, refetchUserData } = useContext(UserContext);
   const navigation = useNavigation();
+
+  const [linkError, setLinkError] = useState("");
 
   // Organization role options
   const roles = [
@@ -79,13 +82,52 @@ const About = () => {
   };
 
   // Changes DonorDrive link
+  // const changeLink = async () => {
+  //   const currentUID = auth.currentUser.uid;
+  //   if (newLink !== "") {
+  //     await updateDDLink(currentUID, newLink);
+  //   }
+  //   await updateUserData();
+  //   await refetchUserData();
+  //   toggleAccountModel();
+  // };
+
   const changeLink = async () => {
-    const currentUID = auth.currentUser.uid;
-    if (newLink !== "") {
-      await updateDDLink(currentUID, newLink);
+    console.log("Changing link");
+    setLinkError("");
+
+    if (!newLink) {
+      setLinkError("Please enter a DonorDrive link.");
+      return;
     }
-    await updateUserData();
-    toggleAccountModel();
+
+    // const currentUID = auth.currentUser.uid;
+    // if (newLink !== "") {
+    //   await updateDDLink(currentUID, newLink);
+    // }
+    // await updateUserData();
+    // await refetchUserData();
+    // toggleAccountModel();
+    try {
+      const currentUID = auth.currentUser.uid;
+
+      // 🛑 Attempt to update. This will throw if the link is invalid.
+      await updateDDLink(currentUID, newLink);
+
+      // These only run if updateDDLink was successful
+      await updateUserData();
+      await refetchUserData();
+
+      // Success: Clear input and close modal
+      setNewLink("");
+      setLinkError("");
+      toggleAccountModel();
+    } catch (error) {
+      console.error("Link update failed:", error.message);
+
+      // ✅ Catch the error thrown by AuthManager and display the message
+      setLinkError(error.message);
+    }
   };
 
   // Changes user role
@@ -93,11 +135,14 @@ const About = () => {
     const currentUID = auth.currentUser.uid;
     await updateRole(currentUID, newRole);
     await updateUserData();
+    await refetchUserData();
     toggleAccountModel();
   };
 
   // Toggles account modal visibility
   const toggleAccountModel = () => {
+    setLinkError("");
+    setNewLink("");
     setAccountModalVisable(!accountModalVisable);
   };
 
@@ -186,14 +231,14 @@ const About = () => {
           />
           <Button
             icon={
-              <Icon
-                name="twitter"
-                type="font-awesome"
+              <FontAwesomeIcon
+                icon={faXTwitter}
+                size={20}
                 color="white"
                 style={{ width: 30, marginRight: 10 }}
               />
             }
-            title="Twitter"
+            title="X"
             onPress={() => openWebsite("https://twitter.com/floridadm?lang=en")}
             buttonStyle={styles.lastButton}
           />
@@ -336,9 +381,13 @@ const About = () => {
                 >
                   <FontAwesomeIcon icon={faX} color="white" size={20} />
                 </TouchableOpacity>
+                {linkError ? (
+                  <Text style={styles.errorText}>{linkError}</Text>
+                ) : null}
                 <TextInput
                   style={styles.input}
                   placeholder="Enter new DonorDrive link"
+                  placeholderTextColor="rgba(255, 255, 255, 0.5)"
                   value={newLink}
                   onChangeText={(text) => setNewLink(text)}
                 />
@@ -599,6 +648,12 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     backgroundColor: "#f18221",
     width: "90%",
+  },
+  errorText: {
+    color: "white",
+    marginBottom: 10,
+    textAlign: "center",
+    fontSize: 14,
   },
 });
 

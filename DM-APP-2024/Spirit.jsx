@@ -25,8 +25,9 @@ import { faX } from "@fortawesome/free-solid-svg-icons";
 import LogoStyles from "./LogoStyles";
 
 const GenerateQRCode = ({ route }) => {
-  const [userIDState, setUserIDState] = useState("");
-  const [userInfo, setUserInfo] = useState({});
+  // const [userIDState, setUserIDState] = useState("");
+  // const [userInfo, setUserInfo] = useState({});
+  // const [, setUserInfo] = useState({});
   const [qrVisible, setQrVisible] = useState(false);
   const [leaderboard, setLeaderboard] = useState([]);
   const [individualLeaderboard, setIndividualLeaderboard] = useState([]);
@@ -46,37 +47,51 @@ const GenerateQRCode = ({ route }) => {
 
   const navigation = useNavigation();
 
-  const { role } = useContext(UserContext);
+  const { role, userInfo } = useContext(UserContext);
 
-  useEffect(() => {
-    getUserData()
-      .then((data) => {
-        setUserIDState(data.donorID);
-      })
-      .catch((err) => {
-        console.error(err);
-      });
-  }, []);
+  // useEffect(() => {
+  //   getUserData()
+  //     .then((data) => {
+  //       setUserIDState(data.donorID);
+  //     })
+  //     .catch((err) => {
+  //       console.error(err);
+  //     });
+  // }, []);
 
-  useEffect(() => {
-    if (userIDState) {
-      getUserInfo(userIDState)
-        .then((data) => {
-          setUserInfo(data);
-        })
-        .catch((err) => {
-          console.error(err);
-        });
-    }
-  }, [userIDState]);
+  // useEffect(() => {
+  //   if (userIDState) {
+  //     getUserInfo(userIDState)
+  //       .then((data) => {
+  //         setUserInfo(data);
+  //       })
+  //       .catch((err) => {
+  //         console.error(err);
+  //       });
+  //   }
+  // }, [userIDState]);
+
+  // const userTeamScore =
+  //   fullTeamLeaderboard.find((team) => team[0] === userInfo.teamName)?.[1] || 0;
+
+  // const individualScore =
+  //   fullIndividualLeaderboard.find(
+  //     (individual) => individual[0] === userInfo.displayName
+  //   )?.[1] || 0;
 
   const userTeamScore =
-    fullTeamLeaderboard.find((team) => team[0] === userInfo.teamName)?.[1] || 0;
+    fullTeamLeaderboard && userInfo
+      ? fullTeamLeaderboard.find(
+          (team) => team[0] === userInfo.teamName
+        )?.[1] || 0
+      : 0;
 
   const individualScore =
-    fullIndividualLeaderboard.find(
-      (individual) => individual[0] === userInfo.displayName
-    )?.[1] || 0;
+    fullIndividualLeaderboard && userInfo
+      ? fullIndividualLeaderboard.find(
+          (individual) => individual[0] === userInfo.displayName
+        )?.[1] || 0
+      : 0;
 
   const fetchLeaderboardData = async () => {
     try {
@@ -155,7 +170,13 @@ const GenerateQRCode = ({ route }) => {
 
   console.log("Scanner Permissions:", scannerVisible);
 
-  const qrData = `name: ${userInfo.displayName}, team: ${userInfo.teamName}`;
+  // const isUserInfoEmpty = Object.keys(userInfo).length === 0;
+  const isUserInfoEmpty = Object.keys(userInfo || {}).length === 0;
+
+  // const qrData = `name: ${userInfo.displayName}, team: ${userInfo.teamName}`;
+  const qrData = isUserInfoEmpty
+    ? "" // Use empty string for QR code if data is missing
+    : `name: ${userInfo.displayName}, team: ${userInfo.teamName}`;
 
   return (
     <View
@@ -175,7 +196,45 @@ const GenerateQRCode = ({ route }) => {
           <FontAwesome name="star" size={20} color="orange" />
           <Text style={styles.headerText}>MY POINTS</Text>
         </View>
-        <View style={styles.pointsText}>
+        {isUserInfoEmpty ? (
+          <View style={styles.pointsText}>
+            <Text
+              style={{
+                color: "white",
+                fontSize: 20,
+                textAlign: "center",
+                paddingHorizontal: 20,
+                marginTop: 15,
+              }}
+            >
+              Please update your DonorDrive link in the Fundraising tab to earn
+              points
+            </Text>
+          </View>
+        ) : (
+          <>
+            <View style={styles.pointsText}>
+              <Text
+                style={{ color: "white", fontSize: 48, fontWeight: "bold" }}
+              >
+                {individualScore}
+              </Text>
+            </View>
+            <View style={styles.pointsText}>
+              <Text
+                style={{
+                  color: "white",
+                  fontSize: 16,
+                  fontWeight: "bold",
+                  marginTop: 5,
+                }}
+              >
+                {userInfo.teamName}'s Points: {userTeamScore}
+              </Text>
+            </View>
+          </>
+        )}
+        {/* <View style={styles.pointsText}>
           <Text style={{ color: "white", fontSize: 48, fontWeight: "bold" }}>
             {individualScore}
           </Text>
@@ -191,7 +250,7 @@ const GenerateQRCode = ({ route }) => {
           >
             {userInfo.teamName}'s Points: {userTeamScore}
           </Text>
-        </View>
+        </View> */}
         <View style={styles.header}>
           {scannerVisible ? (
             <TouchableOpacity
@@ -282,7 +341,7 @@ const GenerateQRCode = ({ route }) => {
             <TouchableWithoutFeedback>
               <View style={styles.modalContainer}>
                 <View style={styles.header}>
-                  <Text style={styles.qrCode}>QR Code</Text>
+                  {/* <Text style={styles.qrCode}>QR Code</Text> */}
                   <TouchableOpacity
                     style={styles.closeButton}
                     onPress={() => setQrVisible(false)}
@@ -322,7 +381,7 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     bottom: 20,
-    left: 90,
+    left: 140,
     justifyContent: "right",
     alignItems: "center",
   },
@@ -343,7 +402,9 @@ const styles = StyleSheet.create({
     borderRadius: 9,
     backgroundColor: "#233d72",
     width: "85%",
-    height: 180,
+    // height: 180,
+    minHeight: 180,
+    paddingBottom: 10,
     shadowOpacity: 1,
     elevation: 4,
     shadowRadius: 4,

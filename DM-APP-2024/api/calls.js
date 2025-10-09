@@ -21,25 +21,53 @@ export const UserProvider = ({ children }) => {
   const [isLoadingDonations, setIsLoadingDonations] = useState(true);
 
   // Fetch user data and basic info
+  // useEffect(() => {
+  //   const fetchUserData = async () => {
+  //     try {
+  //       const userData = await getUserData();
+  //       //console.log("userData", userData);
+  //       setUserID(userData.donorID);
+  //       setRole(userData.role);
+
+  //       const userInfoData = await getUserInfo(userData.donorID);
+  //       //console.log("userInfoData", userInfoData);
+  //       setUserInfo(userInfoData);
+  //     } catch (err) {
+  //       console.error("Error fetching user info:", err);
+  //     } finally {
+  //       setIsLoadingUserInfo(false);
+  //     }
+  //   };
+
+  //   fetchUserData();
+  // }, []);
+  // 1. Create the function to fetch basic user data
+  const refetchUserData = async () => {
+    setIsLoadingUserInfo(true);
+    // Reset ID and Role in case the link fetch fails or returns null
+    setUserID(null);
+    setRole(null);
+    setUserInfo(null);
+
+    try {
+      const userData = await getUserData();
+      //console.log("userData", userData);
+      setUserID(userData.donorID); // This will trigger all dependent useEffects!
+      setRole(userData.role);
+
+      const userInfoData = await getUserInfo(userData.donorID);
+      //console.log("userInfoData", userInfoData);
+      setUserInfo(userInfoData);
+    } catch (err) {
+      console.error("Error fetching user info:", err);
+    } finally {
+      setIsLoadingUserInfo(false);
+    }
+  };
+
+  // 2. Replace the initial useEffect with a call to the new function
   useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        const userData = await getUserData();
-        //console.log("userData", userData);
-        setUserID(userData.donorID);
-        setRole(userData.role);
-
-        const userInfoData = await getUserInfo(userData.donorID);
-        //console.log("userInfoData", userInfoData);
-        setUserInfo(userInfoData);
-      } catch (err) {
-        console.error("Error fetching user info:", err);
-      } finally {
-        setIsLoadingUserInfo(false);
-      }
-    };
-
-    fetchUserData();
+    refetchUserData();
   }, []);
 
   // Fetch user milestones
@@ -102,6 +130,7 @@ export const UserProvider = ({ children }) => {
         isLoadingUserInfo,
         isLoadingMilestones,
         isLoadingDonations,
+        refetchUserData,
       }}
     >
       {children}

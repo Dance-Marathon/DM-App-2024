@@ -35,51 +35,58 @@ const ForgotPassword = ({ navigation }) => {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 10}
     >
-    <View style={styles.container}>
-      <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-        {/* <Icon name="arrow-back" type="material" color="white" /> */}
-        <Image style={styles.backArrow} source={require('./images/backarrow.png')} />
-      </TouchableOpacity>
-      <Text style={styles.title}>Forgot Password</Text>
-      {!resetSent ? (
-        <>
-          <Text style={styles.subtitle}>
-            Enter your email address and we'll send you instructions to reset
-            your password.
-          </Text>
-          <View style={styles.box}>
-            <TextInput
-              style={styles.input}
-              value={email}
-              onChangeText={(text) => setEmail(text)}
-              placeholder="Email Address"
-              keyboardType="email-address"
-              autoCapitalize="none"
-            />
-            <TouchableOpacity
-              style={styles.resetButton}
-              onPress={handleResetPassword}
-            >
-              <Text style={styles.buttonText}>Reset Password</Text>
-            </TouchableOpacity>
-          </View>
-        </>
-      ) : (
-        <>
-          <View style={styles.secondPage}>
-            <Text style={styles.successMessage}>
-              Password reset instructions sent to your email.
+      <View style={styles.container}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+        >
+          {/* <Icon name="arrow-back" type="material" color="white" /> */}
+          <Image
+            style={styles.backArrow}
+            source={require("./images/backarrow.png")}
+          />
+        </TouchableOpacity>
+        <Text style={styles.title}>Forgot Password</Text>
+        {!resetSent ? (
+          <>
+            <Text style={styles.subtitle}>
+              Enter your email address and we'll send you instructions to reset
+              your password.
             </Text>
-            <TouchableOpacity
-              style={styles.loginButton}
-              onPress={() => navigation.goBack()}
-            >
-              <Text style={styles.buttonText}>Back to Login</Text>
-            </TouchableOpacity>
-          </View>
-        </>
-      )}
-    </View>
+            <View style={styles.box}>
+              <TextInput
+                style={styles.input}
+                value={email}
+                onChangeText={(text) => setEmail(text)}
+                placeholder="Email Address"
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
+              <TouchableOpacity
+                style={styles.resetButton}
+                onPress={handleResetPassword}
+              >
+                <Text style={styles.buttonText}>Reset Password</Text>
+              </TouchableOpacity>
+            </View>
+          </>
+        ) : (
+          <>
+            <View style={styles.secondPage}>
+              <Text style={styles.successMessage}>
+                Password reset instructions were sent to your email. Please
+                check your Spam folder if you cannot find it.
+              </Text>
+              <TouchableOpacity
+                style={styles.loginButton}
+                onPress={() => navigation.goBack()}
+              >
+                <Text style={styles.buttonText}>Back to Login</Text>
+              </TouchableOpacity>
+            </View>
+          </>
+        )}
+      </View>
     </KeyboardAvoidingView>
   );
 };
@@ -140,6 +147,7 @@ const styles = StyleSheet.create({
     color: "white",
     marginBottom: 20,
     textAlign: "center",
+    maxWidth: "80%",
   },
   loginButton: {
     backgroundColor: "#E2883C",

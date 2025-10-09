@@ -12,6 +12,7 @@ import {
   TouchableOpacity,
   TouchableWithoutFeedback,
   ActivityIndicator,
+  TextInput,
 } from "react-native";
 // import {
 //   getUserInfo,
@@ -30,6 +31,10 @@ import LogoStyles from "./LogoStyles";
 
 import { UserContext } from "./api/calls";
 
+import { updateDDLink } from "./Firebase/AuthManager";
+import { updateUserData } from "./Firebase/UserManager";
+import { auth } from "./Firebase/AuthManager";
+
 const Fundraiser = () => {
   //const [userID, setuserID] = useState("");
   //const [userInfo, setUserInfo] = useState({});
@@ -46,6 +51,11 @@ const Fundraiser = () => {
   const [selectedBadge, setSelectedBadge] = useState(null);
   const [progress, setProgress] = useState(0);
 
+  const [accountModalVisable, setAccountModalVisable] = useState(false);
+  const [newLink, setNewLink] = useState("");
+
+  const [linkError, setLinkError] = useState("");
+
   const {
     userID,
     role,
@@ -56,6 +66,7 @@ const Fundraiser = () => {
     isLoadingUserInfo,
     isLoadingMilestones,
     isLoadingDonations,
+    refetchUserData,
   } = useContext(UserContext);
 
   const variables = {
@@ -68,6 +79,7 @@ const Fundraiser = () => {
     isLoadingUserInfo,
     isLoadingMilestones,
     isLoadingDonations,
+    refetchUserData,
   };
 
   const toastConfig = {
@@ -156,10 +168,56 @@ const Fundraiser = () => {
   //     });
   // }, [userID]);
 
+  const toggleAccountModel = () => {
+    setLinkError("");
+    setNewLink("");
+    setAccountModalVisable(!accountModalVisable);
+  };
+
+  const changeLink = async () => {
+    console.log("Changing link");
+    setLinkError("");
+
+    if (!newLink) {
+      setLinkError("Please enter a DonorDrive link.");
+      return;
+    }
+
+    // const currentUID = auth.currentUser.uid;
+    // if (newLink !== "") {
+    //   await updateDDLink(currentUID, newLink);
+    // }
+    // await updateUserData();
+    // await refetchUserData();
+    // toggleAccountModel();
+    try {
+      const currentUID = auth.currentUser.uid;
+
+      // Attempt to update. This will throw if the link is invalid.
+      await updateDDLink(currentUID, newLink);
+
+      // These only run if updateDDLink was successful
+      await updateUserData();
+      await refetchUserData();
+
+      // Success: Clear input and close modal
+      setNewLink("");
+      setLinkError("");
+      toggleAccountModel();
+    } catch (error) {
+      //console.error("Link update failed:", error.message);
+
+      // Catch the error thrown by AuthManager and display the message
+      setLinkError(error.message);
+    }
+  };
+
   useEffect(() => {
-    if (userID && userInfo.numMilestones) {
+    if (userID && userInfo?.numMilestones) {
       for (let i = 0; i < userInfo.numMilestones; i++) {
-        const milestone = milestoneInfo.milestones[i];
+        const milestone = milestoneInfo?.milestones?.[i];
+        if (!milestone) continue; // Skip if milestone is null/undefined
+
         if (userInfo.sumDonations < milestone.amount) {
           break;
         }
@@ -169,11 +227,13 @@ const Fundraiser = () => {
   }, [userID, userInfo, milestoneInfo]);
 
   useEffect(() => {
-    if (userID) {
+    if (userID && userInfo?.numMilestones) {
       const allMilestones = [];
       for (let i = 0; i < userInfo.numMilestones; i++) {
-        const milestone = milestoneInfo.milestones[i];
-        allMilestones.push(milestone);
+        const milestone = milestoneInfo?.milestones?.[i];
+        if (milestone) {
+          allMilestones.push(milestone);
+        }
       }
       setAllMilestones(allMilestones);
     }
@@ -182,7 +242,7 @@ const Fundraiser = () => {
   useEffect(() => {
     if (userID && donationInfo?.donations) {
       const allDonations = [];
-      for (let i = 0; i < userInfo.numDonations; i++) {
+      for (let i = 0; i < userInfo?.numDonations; i++) {
         const donation = donationInfo.donations[i];
         if (donation?.amount != null) {
           allDonations.push(donation);
@@ -243,6 +303,79 @@ const Fundraiser = () => {
   //     </View>
   //   );
   // }
+
+  if (!userID) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          justifyContent: "center",
+          alignItems: "center",
+          backgroundColor: "#1F1F1F",
+        }}
+      >
+        <Text
+          style={{
+            color: "white",
+            fontSize: 18,
+            textAlign: "center",
+            marginBottom: 15,
+            width: "80%",
+          }}
+        >
+          Your DonorDrive link is not working. Please update it below!
+        </Text>
+        <TouchableOpacity
+          style={styles.updateLinkButton}
+          onPress={toggleAccountModel}
+        >
+          <Text style={{ color: "white", fontSize: 16, fontWeight: "bold" }}>
+            Update Link
+          </Text>
+        </TouchableOpacity>
+
+        <Modal
+          visible={accountModalVisable}
+          transparent={true}
+          animationType="fade"
+        >
+          <TouchableWithoutFeedback onPress={toggleAccountModel}>
+            <View style={styles.modalBackground}>
+              <TouchableWithoutFeedback>
+                <View style={styles.modalView}>
+                  <TouchableOpacity
+                    style={styles.closeButton}
+                    onPress={toggleAccountModel}
+                  >
+                    <FontAwesomeIcon icon={faX} color="white" size={20} />
+                  </TouchableOpacity>
+                  {linkError ? (
+                    <Text style={styles.errorText}>{linkError}</Text>
+                  ) : null}
+                  <TextInput
+                    style={[styles.input, linkError && styles.inputError]} // Highlight if error
+                    placeholder="Enter new DonorDrive link"
+                    placeholderTextColor="rgba(255, 255, 255, 0.5)"
+                    value={newLink}
+                    onChangeText={(text) => {
+                      setNewLink(text);
+                      setLinkError(""); // Clear error when typing
+                    }}
+                  />
+                  <TouchableOpacity
+                    style={styles.updateButton}
+                    onPress={changeLink}
+                  >
+                    <Text style={styles.modalButtonText}>Update Link</Text>
+                  </TouchableOpacity>
+                </View>
+              </TouchableWithoutFeedback>
+            </View>
+          </TouchableWithoutFeedback>
+        </Modal>
+      </View>
+    );
+  }
 
   if (isLoadingUserInfo || isLoadingMilestones || isLoadingDonations) {
     return <ActivityIndicator size="large" color="#0000ff" />;
@@ -599,14 +732,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: 22,
   },
-  modalView: {
-    backgroundColor: "#233D72",
-    padding: 20,
-    borderRadius: 10,
-    alignItems: "center",
-    width: 340,
-    height: 300,
-  },
   badgeView: {
     backgroundColor: "#233D72",
     padding: 20,
@@ -899,6 +1024,59 @@ const styles = StyleSheet.create({
     height: 16,
     marginLeft: 10,
     borderRadius: 2,
+  },
+  modalBackground: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalView: {
+    width: "80%",
+    backgroundColor: "#233d72",
+    borderRadius: 20,
+    padding: 20,
+    paddingTop: 50,
+    alignItems: "center",
+  },
+  closeButton: {
+    position: "absolute",
+    top: 15,
+    right: 20,
+  },
+  input: {
+    height: 40,
+    borderColor: "rgba(255, 255, 255, 0.8)",
+    borderWidth: 1,
+    paddingHorizontal: 10,
+    borderRadius: 5,
+    backgroundColor: "#1e1e1e",
+    width: "95%",
+    color: "white",
+    fontSize: 16,
+  },
+  updateButton: {
+    backgroundColor: "#E2883C",
+    padding: 10,
+    borderRadius: 5,
+    marginTop: 10,
+  },
+  modalButtonText: {
+    color: "white",
+    textAlign: "center",
+    fontWeight: "bold",
+  },
+  updateLinkButton: {
+    backgroundColor: "#f18221",
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    borderRadius: 8,
+  },
+  errorText: {
+    color: "white",
+    marginBottom: 10,
+    textAlign: "center",
+    fontSize: 14,
   },
 });
 
