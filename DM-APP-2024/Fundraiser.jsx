@@ -193,7 +193,7 @@ const Fundraiser = () => {
     try {
       const currentUID = auth.currentUser.uid;
 
-      // 🛑 Attempt to update. This will throw if the link is invalid.
+      // Attempt to update. This will throw if the link is invalid.
       await updateDDLink(currentUID, newLink);
 
       // These only run if updateDDLink was successful
@@ -207,7 +207,7 @@ const Fundraiser = () => {
     } catch (error) {
       //console.error("Link update failed:", error.message);
 
-      // ✅ Catch the error thrown by AuthManager and display the message
+      // Catch the error thrown by AuthManager and display the message
       setLinkError(error.message);
     }
   };
