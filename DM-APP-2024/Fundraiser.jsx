@@ -1,6 +1,6 @@
 import React, { useContext, useState, useEffect } from "react";
-import FontAwesome from 'react-native-vector-icons/FontAwesome';
-import Toast, {BaseToast} from "react-native-toast-message";
+import FontAwesome from "react-native-vector-icons/FontAwesome";
+import Toast, { BaseToast } from "react-native-toast-message";
 import {
   View,
   Text,
@@ -12,6 +12,7 @@ import {
   TouchableOpacity,
   TouchableWithoutFeedback,
   ActivityIndicator,
+  TextInput,
 } from "react-native";
 // import {
 //   getUserInfo,
@@ -22,14 +23,17 @@ import {
 import * as Clipboard from "expo-clipboard";
 import * as Progress from "react-native-progress";
 import { Icon } from "react-native-elements";
-import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { faX } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
+import { faX } from "@fortawesome/free-solid-svg-icons";
 import LogoStyles from "./LogoStyles";
-
 
 // import { getUserData } from "./Firebase/UserManager";
 
 import { UserContext } from "./api/calls";
+
+import { updateDDLink } from "./Firebase/AuthManager";
+import { updateUserData } from "./Firebase/UserManager";
+import { auth } from "./Firebase/AuthManager";
 
 const Fundraiser = () => {
   //const [userID, setuserID] = useState("");
@@ -47,6 +51,11 @@ const Fundraiser = () => {
   const [selectedBadge, setSelectedBadge] = useState(null);
   const [progress, setProgress] = useState(0);
 
+  const [accountModalVisable, setAccountModalVisable] = useState(false);
+  const [newLink, setNewLink] = useState("");
+
+  const [linkError, setLinkError] = useState("");
+
   const {
     userID,
     role,
@@ -57,6 +66,7 @@ const Fundraiser = () => {
     isLoadingUserInfo,
     isLoadingMilestones,
     isLoadingDonations,
+    refetchUserData,
   } = useContext(UserContext);
 
   const variables = {
@@ -69,6 +79,7 @@ const Fundraiser = () => {
     isLoadingUserInfo,
     isLoadingMilestones,
     isLoadingDonations,
+    refetchUserData,
   };
 
   const toastConfig = {
@@ -76,18 +87,18 @@ const Fundraiser = () => {
       <BaseToast
         {...props}
         style={{
-          borderLeftColor: '#EB9F68',
+          borderLeftColor: "#EB9F68",
         }}
         contentContainerStyle={{ paddingHorizontal: 15 }}
         text1Style={{
-          color: "black", 
+          color: "black",
           fontSize: 20,
           fontWeight: "bold",
           textAlign: "center",
         }}
       />
     ),
-    }
+  };
 
   Object.entries(variables).forEach(([key, value]) => {
     if (value === undefined) {
@@ -157,10 +168,56 @@ const Fundraiser = () => {
   //     });
   // }, [userID]);
 
+  const toggleAccountModel = () => {
+    setLinkError("");
+    setNewLink("");
+    setAccountModalVisable(!accountModalVisable);
+  };
+
+  const changeLink = async () => {
+    console.log("Changing link");
+    setLinkError("");
+
+    if (!newLink) {
+      setLinkError("Please enter a DonorDrive link.");
+      return;
+    }
+
+    // const currentUID = auth.currentUser.uid;
+    // if (newLink !== "") {
+    //   await updateDDLink(currentUID, newLink);
+    // }
+    // await updateUserData();
+    // await refetchUserData();
+    // toggleAccountModel();
+    try {
+      const currentUID = auth.currentUser.uid;
+
+      // Attempt to update. This will throw if the link is invalid.
+      await updateDDLink(currentUID, newLink);
+
+      // These only run if updateDDLink was successful
+      await updateUserData();
+      await refetchUserData();
+
+      // Success: Clear input and close modal
+      setNewLink("");
+      setLinkError("");
+      toggleAccountModel();
+    } catch (error) {
+      //console.error("Link update failed:", error.message);
+
+      // Catch the error thrown by AuthManager and display the message
+      setLinkError(error.message);
+    }
+  };
+
   useEffect(() => {
-    if (userID && userInfo.numMilestones) {
+    if (userID && userInfo?.numMilestones) {
       for (let i = 0; i < userInfo.numMilestones; i++) {
-        const milestone = milestoneInfo.milestones[i];
+        const milestone = milestoneInfo?.milestones?.[i];
+        if (!milestone) continue; // Skip if milestone is null/undefined
+
         if (userInfo.sumDonations < milestone.amount) {
           break;
         }
@@ -170,11 +227,13 @@ const Fundraiser = () => {
   }, [userID, userInfo, milestoneInfo]);
 
   useEffect(() => {
-    if (userID) {
+    if (userID && userInfo?.numMilestones) {
       const allMilestones = [];
       for (let i = 0; i < userInfo.numMilestones; i++) {
-        const milestone = milestoneInfo.milestones[i];
-        allMilestones.push(milestone);
+        const milestone = milestoneInfo?.milestones?.[i];
+        if (milestone) {
+          allMilestones.push(milestone);
+        }
       }
       setAllMilestones(allMilestones);
     }
@@ -183,7 +242,7 @@ const Fundraiser = () => {
   useEffect(() => {
     if (userID && donationInfo?.donations) {
       const allDonations = [];
-      for (let i = 0; i < userInfo.numDonations; i++) {
+      for (let i = 0; i < userInfo?.numDonations; i++) {
         const donation = donationInfo.donations[i];
         if (donation?.amount != null) {
           allDonations.push(donation);
@@ -208,18 +267,17 @@ const Fundraiser = () => {
   const copyToClipboard = () => {
     const text = userInfo.donateURL;
     Clipboard.setStringAsync(text)
-    .then(() => {
-      Toast.show({
-        type: "success",
-        text1: "DonorDrive Link Copied!",
-        position: "bottom",
-        visibilityTime: 3000, // Auto-hide in 3 seconds
-        autoHide: true,
-      });
-    })
-    .catch((err) => console.error("Error copying to clipboard:", err));
+      .then(() => {
+        Toast.show({
+          type: "success",
+          text1: "DonorDrive Link Copied!",
+          position: "bottom",
+          visibilityTime: 3000, // Auto-hide in 3 seconds
+          autoHide: true,
+        });
+      })
+      .catch((err) => console.error("Error copying to clipboard:", err));
   };
-
 
   const openBadgeModal = (badge) => {
     setSelectedBadge(badge);
@@ -245,6 +303,79 @@ const Fundraiser = () => {
   //     </View>
   //   );
   // }
+
+  if (!userID) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          justifyContent: "center",
+          alignItems: "center",
+          backgroundColor: "#1F1F1F",
+        }}
+      >
+        <Text
+          style={{
+            color: "white",
+            fontSize: 18,
+            textAlign: "center",
+            marginBottom: 15,
+            width: "80%",
+          }}
+        >
+          Your DonorDrive link is not working. Please update it below!
+        </Text>
+        <TouchableOpacity
+          style={styles.updateLinkButton}
+          onPress={toggleAccountModel}
+        >
+          <Text style={{ color: "white", fontSize: 16, fontWeight: "bold" }}>
+            Update Link
+          </Text>
+        </TouchableOpacity>
+
+        <Modal
+          visible={accountModalVisable}
+          transparent={true}
+          animationType="fade"
+        >
+          <TouchableWithoutFeedback onPress={toggleAccountModel}>
+            <View style={styles.modalBackground}>
+              <TouchableWithoutFeedback>
+                <View style={styles.modalView}>
+                  <TouchableOpacity
+                    style={styles.closeButton}
+                    onPress={toggleAccountModel}
+                  >
+                    <FontAwesomeIcon icon={faX} color="white" size={20} />
+                  </TouchableOpacity>
+                  {linkError ? (
+                    <Text style={styles.errorText}>{linkError}</Text>
+                  ) : null}
+                  <TextInput
+                    style={[styles.input, linkError && styles.inputError]} // Highlight if error
+                    placeholder="Enter new DonorDrive link"
+                    placeholderTextColor="rgba(255, 255, 255, 0.5)"
+                    value={newLink}
+                    onChangeText={(text) => {
+                      setNewLink(text);
+                      setLinkError(""); // Clear error when typing
+                    }}
+                  />
+                  <TouchableOpacity
+                    style={styles.updateButton}
+                    onPress={changeLink}
+                  >
+                    <Text style={styles.modalButtonText}>Update Link</Text>
+                  </TouchableOpacity>
+                </View>
+              </TouchableWithoutFeedback>
+            </View>
+          </TouchableWithoutFeedback>
+        </Modal>
+      </View>
+    );
+  }
 
   if (isLoadingUserInfo || isLoadingMilestones || isLoadingDonations) {
     return <ActivityIndicator size="large" color="#0000ff" />;
@@ -277,11 +408,17 @@ const Fundraiser = () => {
                     style={styles.modalClose}
                     onPress={() => setModalVisible(false)}
                   >
-                    <FontAwesomeIcon icon={faX} size={24} color="white" style={styles.closeButton}/>
+                    <FontAwesomeIcon
+                      icon={faX}
+                      size={24}
+                      color="white"
+                      style={styles.closeButton}
+                    />
                   </TouchableOpacity>
                 </View>
                 <View style={styles.modalMilestonesContainer}>
-                  {Array.isArray(allMilestones) && userInfo.numMilestones > 0 ? (
+                  {Array.isArray(allMilestones) &&
+                  userInfo.numMilestones > 0 ? (
                     allMilestones.map((milestone, index) => (
                       <View key={index} style={styles.milestoneRow}>
                         <Icon
@@ -304,7 +441,9 @@ const Fundraiser = () => {
                       </View>
                     ))
                   ) : (
-                    <Text style={{ color: "white" }}>No milestones to display</Text>
+                    <Text style={{ color: "white" }}>
+                      No milestones to display
+                    </Text>
                   )}
                 </View>
               </View>
@@ -312,7 +451,6 @@ const Fundraiser = () => {
           </View>
         </TouchableWithoutFeedback>
       </Modal>
-
 
       <Image
         style={LogoStyles.logo}
@@ -463,28 +601,30 @@ const Fundraiser = () => {
               onRequestClose={closeBadgeModal}
             >
               <TouchableWithoutFeedback onPress={closeBadgeModal}>
-              <View style={styles.modalContainer}>
-                <TouchableWithoutFeedback>
-                <View style={styles.badgeView}>
-                  <View style={[styles.header, { marginBottom: -10 }]}>
-                    <TouchableOpacity
-                      style={[styles.modalClose, { marginLeft: 110 }]}
-                      onPress={closeBadgeModal}
-                    >
-                      <FontAwesomeIcon icon={faX} size={24} color="white" />
-                    </TouchableOpacity>
-                  </View>
-                  <Text style={styles.modalTitle}>{selectedBadge.title}</Text>
-                  <Text style={styles.modalDescription}>
-                    {selectedBadge.description}
-                  </Text>
-                  <Image
-                    source={{ uri: selectedBadge.badgeImageURL }}
-                    style={styles.modalImage}
-                  />
+                <View style={styles.modalContainer}>
+                  <TouchableWithoutFeedback>
+                    <View style={styles.badgeView}>
+                      <View style={[styles.header, { marginBottom: -10 }]}>
+                        <TouchableOpacity
+                          style={[styles.modalClose, { marginLeft: 110 }]}
+                          onPress={closeBadgeModal}
+                        >
+                          <FontAwesomeIcon icon={faX} size={24} color="white" />
+                        </TouchableOpacity>
+                      </View>
+                      <Text style={styles.modalTitle}>
+                        {selectedBadge.title}
+                      </Text>
+                      <Text style={styles.modalDescription}>
+                        {selectedBadge.description}
+                      </Text>
+                      <Image
+                        source={{ uri: selectedBadge.badgeImageURL }}
+                        style={styles.modalImage}
+                      />
+                    </View>
+                  </TouchableWithoutFeedback>
                 </View>
-                </TouchableWithoutFeedback>
-              </View>
               </TouchableWithoutFeedback>
             </Modal>
           )}
@@ -498,10 +638,10 @@ const Fundraiser = () => {
               <ScrollView>
                 {Array.isArray(allDonations) && allDonations.length > 0 ? (
                   allDonations.map((donation, index) => {
-                    donatorName = donation.displayName
+                    const donatorName = donation.displayName
                       ? donation.displayName
                       : "Anonymous";
-                    donatorName = donatorName
+                    const cleanedDonatorName = donatorName
                       .replace("Dance Marathon at UF", "")
                       .trim();
                     return (
@@ -509,7 +649,7 @@ const Fundraiser = () => {
                         style={{ fontSize: 16, color: "white" }}
                         key={index}
                       >
-                        • {donatorName} - ${donation.amount}
+                        • {cleanedDonatorName} - ${donation.amount}
                       </Text>
                     );
                   })
@@ -538,15 +678,14 @@ const Fundraiser = () => {
             >
               <Text style={styles.buttonText}>DonorDrive</Text>
             </TouchableOpacity>
-            
           </View>
           <TouchableOpacity
-              onPress={copyToClipboard}
-              style={styles.copyToClipboard}
-            >
-              <Icon name="link" type="font-awesome-5" color="white" />
-            </TouchableOpacity>
-            <Toast />
+            onPress={copyToClipboard}
+            style={styles.copyToClipboard}
+          >
+            <Icon name="link" type="font-awesome-5" color="white" />
+          </TouchableOpacity>
+          <Toast />
         </View>
       )}
       <Toast config={toastConfig} />
@@ -592,14 +731,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginTop: 22,
-  },
-  modalView: {
-    backgroundColor: "#233D72",
-    padding: 20,
-    borderRadius: 10,
-    alignItems: "center",
-    width: 340,
-    height: 300,
   },
   badgeView: {
     backgroundColor: "#233D72",
@@ -757,7 +888,6 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
-    
   },
   smallCircle: {
     width: 15,
@@ -823,7 +953,6 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     //alignItems: "center",
     //justifyContent: "center",
-
   },
   copyToClipboard: {
     position: "absolute",
@@ -895,6 +1024,59 @@ const styles = StyleSheet.create({
     height: 16,
     marginLeft: 10,
     borderRadius: 2,
+  },
+  modalBackground: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalView: {
+    width: "80%",
+    backgroundColor: "#233d72",
+    borderRadius: 20,
+    padding: 20,
+    paddingTop: 50,
+    alignItems: "center",
+  },
+  closeButton: {
+    position: "absolute",
+    top: 15,
+    right: 20,
+  },
+  input: {
+    height: 40,
+    borderColor: "rgba(255, 255, 255, 0.8)",
+    borderWidth: 1,
+    paddingHorizontal: 10,
+    borderRadius: 5,
+    backgroundColor: "#1e1e1e",
+    width: "95%",
+    color: "white",
+    fontSize: 16,
+  },
+  updateButton: {
+    backgroundColor: "#E2883C",
+    padding: 10,
+    borderRadius: 5,
+    marginTop: 10,
+  },
+  modalButtonText: {
+    color: "white",
+    textAlign: "center",
+    fontWeight: "bold",
+  },
+  updateLinkButton: {
+    backgroundColor: "#f18221",
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    borderRadius: 8,
+  },
+  errorText: {
+    color: "white",
+    marginBottom: 10,
+    textAlign: "center",
+    fontSize: 14,
   },
 });
 
