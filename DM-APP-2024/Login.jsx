@@ -11,14 +11,14 @@ import {
   KeyboardAvoidingView,
   Platform,
   Modal,
-  Button
+  Button,
 } from "react-native";
 import { handleLogin, handleSignUp } from "./Firebase/AuthManager.js";
 import { useNavigation } from "@react-navigation/native";
 import { Dropdown } from "react-native-element-dropdown";
 import { Icon } from "react-native-elements";
 
-const Login = ({route}) => {
+const Login = ({ route }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [donorDriveLink, setDonorDriveLink] = useState("");
@@ -31,7 +31,7 @@ const Login = ({route}) => {
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [ddModalVisable, setDDModalVisable] = useState(false);
 
-  const {expoPushToken} = route.params;
+  const { expoPushToken } = route.params;
 
   const dismissKeyboard = () => {
     Keyboard.dismiss();
@@ -42,12 +42,12 @@ const Login = ({route}) => {
   };
 
   const openDDModal = () => {
-      setDDModalVisable(true);
+    setDDModalVisable(true);
   };
 
   const closeDDModal = () => {
     setDDModalVisable(false);
-};
+  };
 
   const handleLoginPress = async () => {
     const loginResult = await handleLogin(email, password);
@@ -60,8 +60,6 @@ const Login = ({route}) => {
   };
 
   const handleSignUpPress = async () => {
-
-    
     const signUpResult = await handleSignUp(
       email,
       password,
@@ -117,25 +115,37 @@ const Login = ({route}) => {
             <Text style={styles.errorMessage}>Error Signing Up</Text>
           )}
 
-        <Modal
-          animationType="slide"
-          transparent={true}
-          visible={ddModalVisable}
-          onRequestClose={closeDDModal}
-        >
-          <View style={styles.centeredView}>
-            <View style={styles.modalView}>
-              <Text style={styles.modalHeader}>How to Find Your DonorDrive Link</Text>
-              <Text style={styles.modalText}>1. Navigate to floridadm.org</Text>
-              <Text style={styles.modalText}>2. Click 'Donate'</Text>
-              <Text style={styles.modalText}>3. Enter your name in the search</Text>
-              <Text style={styles.modalText}>4. Under the resulting fundraisers, click on your name</Text>
-              <Text style={styles.modalText}>5. Copy the URL of the page you are currently on</Text>
-              <Text style={styles.modalText}>6. Paste that link in the app</Text>
-              <Button title="Close" onPress={closeDDModal} />
+          <Modal
+            animationType="slide"
+            transparent={true}
+            visible={ddModalVisable}
+            onRequestClose={closeDDModal}
+          >
+            <View style={styles.centeredView}>
+              <View style={styles.modalView}>
+                <Text style={styles.modalHeader}>
+                  How to Find Your DonorDrive Link
+                </Text>
+                <Text style={styles.modalText}>
+                  1. Navigate to floridadm.org
+                </Text>
+                <Text style={styles.modalText}>2. Click 'Donate'</Text>
+                <Text style={styles.modalText}>
+                  3. Enter your name in the search
+                </Text>
+                <Text style={styles.modalText}>
+                  4. Under the resulting fundraisers, click on your name
+                </Text>
+                <Text style={styles.modalText}>
+                  5. Copy the URL of the page you are currently on
+                </Text>
+                <Text style={styles.modalText}>
+                  6. Paste that link in the app
+                </Text>
+                <Button title="Close" onPress={closeDDModal} />
+              </View>
             </View>
-          </View>
-        </Modal>
+          </Modal>
 
           <View style={styles.loginbox}>
             <View style={styles.inputContainer}>
@@ -149,24 +159,24 @@ const Login = ({route}) => {
               />
 
               <View style={styles.passwordContainer}>
-              <TextInput
-                style={styles.inputMiddle}
-                value={password}
-                onChangeText={(text) => setPassword(text)}
-                placeholder="Password"
-                secureTextEntry={!passwordVisible}
-              />
-              <TouchableOpacity
-                onPress={() => setPasswordVisible(!passwordVisible)}
-                style={styles.iconContainer}
-              >
-                <Icon
-                  name={passwordVisible ? "visibility-off" : "visibility"}
-                  type="material" // specify the icon set, 'material' is the default
-                  size={24}
-                  color="grey"
+                <TextInput
+                  style={styles.inputMiddle}
+                  value={password}
+                  onChangeText={(text) => setPassword(text)}
+                  placeholder="Password"
+                  secureTextEntry={!passwordVisible}
                 />
-              </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => setPasswordVisible(!passwordVisible)}
+                  style={styles.iconContainer}
+                >
+                  <Icon
+                    name={passwordVisible ? "visibility-off" : "visibility"}
+                    type="material" // specify the icon set, 'material' is the default
+                    size={24}
+                    color="grey"
+                  />
+                </TouchableOpacity>
               </View>
 
               {!create && (
@@ -206,7 +216,7 @@ const Login = ({route}) => {
                 <TouchableOpacity
                   style={styles.createAccountButton}
                   onPress={async () => {
-                    await handleSignUpPress()
+                    await handleSignUpPress();
                   }}
                 >
                   <Text style={styles.buttonText}>Sign Up</Text>
@@ -232,34 +242,31 @@ const Login = ({route}) => {
             </TouchableOpacity>
 
             {create && (
-              <Text style={styles.signUp}>
-                New User?
-                <TouchableOpacity
-                  style={{ marginBottom: -3 }}
-                  onPress={() => {
-                    setCreate(false);
-                  }}
-                >
-                  <Text style={{ color: "#61A0DA" }}> Sign Up!</Text>
+              <View style={styles.signUpContainer}>
+                <Text style={styles.signUpText}>New User?</Text>
+                <TouchableOpacity onPress={() => setCreate(false)}>
+                  <Text style={styles.signUpLink}> Sign Up!</Text>
                 </TouchableOpacity>
-              </Text>
+              </View>
             )}
             {!create && (
               <View>
                 <TouchableOpacity onPress={openDDModal}>
-                  <Text style={styles.DDlink}>Where do I find my DonorDrive Link?</Text>
+                  <Text style={styles.DDlink}>
+                    Where do I find my DonorDrive Link?
+                  </Text>
                 </TouchableOpacity>
-              <Text style={styles.signUp}>
-                Already A User?
-                <TouchableOpacity
-                  style={{ marginBottom: -3 }}
-                  onPress={() => {
-                    setCreate(true);
-                  }}
-                >
-                  <Text style={{ color: "#61A0DA" }}> Log In!</Text>
-                </TouchableOpacity>
-              </Text>
+                <Text style={styles.signUp}>
+                  Already A User?
+                  <TouchableOpacity
+                    style={{ marginBottom: -3 }}
+                    onPress={() => {
+                      setCreate(true);
+                    }}
+                  >
+                    <Text style={{ color: "#61A0DA" }}> Log In!</Text>
+                  </TouchableOpacity>
+                </Text>
               </View>
             )}
           </View>
@@ -353,7 +360,7 @@ const styles = StyleSheet.create({
   },
   forgotPassword: {
     color: "#61A0DA",
-    textAlign: "center"
+    textAlign: "center",
   },
   DDlink: {
     color: "#61A0DA",
@@ -410,11 +417,11 @@ const styles = StyleSheet.create({
   },
   modalView: {
     margin: 20,
-    backgroundColor: 'white',
+    backgroundColor: "white",
     borderRadius: 20,
     padding: 35,
-    alignItems: 'center',
-    shadowColor: '#000',
+    alignItems: "center",
+    shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: 2,
@@ -425,21 +432,35 @@ const styles = StyleSheet.create({
   },
   centeredView: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginTop: 22,
   },
   modalHeader: {
     fontSize: 16,
-    fontWeight: 'bold',
-    textAlign: 'center',
+    fontWeight: "bold",
+    textAlign: "center",
     marginBottom: 20,
   },
   modalText: {
     fontSize: 14,
-    textAlign: 'left',
-    alignSelf: 'stretch',
+    textAlign: "left",
+    alignSelf: "stretch",
     marginBottom: 5,
+  },
+  signUpContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 5,
+  },
+  signUpText: {
+    color: "black",
+    textAlign: "center",
+  },
+  signUpLink: {
+    color: "#61A0DA",
+    textAlign: "center",
   },
 });
 
