@@ -21,7 +21,11 @@
     "ios": {
       "supportsTablet": true,
       "googleServicesFile": "./GoogleService-Info.plist",
-      "bundleIdentifier": "com.ufdigitalmarketing.DMAPP2024"
+      "bundleIdentifier": "com.ufdigitalmarketing.DMAPP2024",
+      "infoPlist": {
+        "NSCameraUsageDescription": "$(PRODUCT_NAME) needs access to your Camera to allow for scanning of spirit points.",
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -29,7 +33,10 @@
         "backgroundColor": "#ffffff"
       },
       "package": "com.ufdigitalmarketing.DMAPP2024",
-      "googleServicesFile": "./google-services.json"
+      "googleServicesFile": "./google-services.json",
+      "permissions": [
+        "android.permission.CAMERA"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
