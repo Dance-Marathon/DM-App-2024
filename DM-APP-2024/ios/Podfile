@@ -53,9 +53,9 @@ target 'DMatUF' do
   #   end
   # end
 
-    pre_install do |installer|
+  pre_install do |installer|
     installer.pod_targets.each do |pod|
-      if pod.name.start_with?('RNFB') && pod.respond_to?(:build_configurations)
+      if pod.name.start_with?('RNFB')
         pod.build_configurations.each do |config|
           config.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
         end
