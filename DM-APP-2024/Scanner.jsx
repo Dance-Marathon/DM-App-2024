@@ -37,6 +37,8 @@ const Scanner = () => {
   const [option3Checked, setOption3Checked] = useState(false);
   const [option4Checked, setOption4Checked] = useState(false);
   const [option5Checked, setOption5Checked] = useState(false);
+  const [option6Checked, setOption6Checked] = useState(false);
+  const [option7Checked, setOption7Checked] = useState(false);
 
   const scanLock = useRef(false);
 
@@ -174,18 +176,26 @@ const Scanner = () => {
     if (extractedData || extractedData.name !== "undefined") {
       const ACCESS_TOKEN = await getAccessToken();
       setUserData(extractedData);
-  
+
       const options = [
         { label: "Checked-In", checked: option1Checked, points: 1 },
-        { label: "Wore DM Shirt to Check-In", checked: option2Checked, points: 1 },
-        { label: "Brought A Friend to Check-In", checked: option3Checked, points: 1 },
+        {
+          label: "Wore DM Shirt to Check-In",
+          checked: option2Checked,
+          points: 1,
+        },
+        {
+          label: "Brought A Friend to Check-In",
+          checked: option3Checked,
+          points: 1,
+        },
         { label: "Attended All-Member", checked: option4Checked, points: 1 },
         { label: "Attended Spirit Night", checked: option5Checked, points: 2 },
       ];
-  
-      const selectedOptions = options.filter(option => option.checked);
-  
-      if (selectedOptions.length > 0) {  
+
+      const selectedOptions = options.filter((option) => option.checked);
+
+      if (selectedOptions.length > 0) {
         for (const option of selectedOptions) {
           const date = getCurrentDate();
           const time = getCurrentTime();
@@ -212,9 +222,11 @@ const Scanner = () => {
     setOption3Checked(false);
     setOption4Checked(false);
     setOption5Checked(false);
+    setOption6Checked(false);
+    setOption7Checked(false);
 
     scanLock.current = false;
-  };  
+  };
 
   // const handleBarCodeScanned = async ({ type, data }) => {
   //   setScanned(true);
@@ -332,7 +344,10 @@ const Scanner = () => {
             onValueChange={setOption4Checked}
             style={styles.checkbox}
           />
-          <Text style={styles.optionText}> Attended All-Member</Text>
+          <Text style={styles.optionText}>
+            {" "}
+            Attended All-Member / Captain Meeting
+          </Text>
         </View>
         <View style={styles.checkboxContainer}>
           <CheckBox
@@ -341,6 +356,22 @@ const Scanner = () => {
             style={styles.checkbox}
           />
           <Text style={styles.optionText}> Attended Spirit Night</Text>
+        </View>
+        <View style={styles.checkboxContainer}>
+          <CheckBox
+            value={option6Checked}
+            onValueChange={setOption6Checked}
+            style={styles.checkbox}
+          />
+          <Text style={styles.optionText}> Purchased Merchandise</Text>
+        </View>
+        <View style={styles.checkboxContainer}>
+          <CheckBox
+            value={option7Checked}
+            onValueChange={setOption7Checked}
+            style={styles.checkbox}
+          />
+          <Text style={styles.optionText}> Attended TT Event</Text>
         </View>
         <TouchableOpacity
           onPress={() => setModalVisible(true)}
