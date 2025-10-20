@@ -76,5 +76,8 @@
     "@babel/core": "^7.24.0",
     "@expo/config-plugins": "~54.0.1"
   },
+  "overrides": {
+    "@react-native-async-storage/async-storage": "2.2.0"
+  },
   "private": true
 }
