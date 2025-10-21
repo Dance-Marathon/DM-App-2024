@@ -213,6 +213,10 @@ const Fundraiser = () => {
   };
 
   useEffect(() => {
+    refetchUserData();
+  }, []);
+
+  useEffect(() => {
     if (userID && userInfo?.numMilestones) {
       for (let i = 0; i < userInfo.numMilestones; i++) {
         const milestone = milestoneInfo?.milestones?.[i];

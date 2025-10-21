@@ -42,26 +42,56 @@ export const UserProvider = ({ children }) => {
   //   fetchUserData();
   // }, []);
   // 1. Create the function to fetch basic user data
+  // const refetchUserData = async () => {
+  //   setIsLoadingUserInfo(true);
+  //   // Reset ID and Role in case the link fetch fails or returns null
+  //   setUserID(null);
+  //   setRole(null);
+  //   setUserInfo(null);
+
+  //   try {
+  //     const userData = await getUserData();
+  //     //console.log("userData", userData);
+  //     setUserID(userData.donorID); // This will trigger all dependent useEffects!
+  //     setRole(userData.role);
+
+  //     const userInfoData = await getUserInfo(userData.donorID);
+  //     //console.log("userInfoData", userInfoData);
+  //     setUserInfo(userInfoData);
+  //   } catch (err) {
+  //     console.error("Error fetching user info:", err);
+  //   } finally {
+  //     setIsLoadingUserInfo(false);
+  //   }
+  // };
   const refetchUserData = async () => {
     setIsLoadingUserInfo(true);
-    // Reset ID and Role in case the link fetch fails or returns null
-    setUserID(null);
-    setRole(null);
-    setUserInfo(null);
+    setIsLoadingMilestones(true);
+    setIsLoadingDonations(true);
 
     try {
       const userData = await getUserData();
-      //console.log("userData", userData);
-      setUserID(userData.donorID); // This will trigger all dependent useEffects!
+      setUserID(userData.donorID);
       setRole(userData.role);
 
-      const userInfoData = await getUserInfo(userData.donorID);
-      //console.log("userInfoData", userInfoData);
+      const [userInfoData, milestonesData, donationsData, badgesData] =
+        await Promise.all([
+          getUserInfo(userData.donorID),
+          getUserMilestones(userData.donorID),
+          getUserDonations(userData.donorID),
+          getUserBadges(userData.donorID),
+        ]);
+
       setUserInfo(userInfoData);
+      setMilestoneInfo(milestonesData);
+      setDonationInfo(donationsData);
+      setBadgeInfo(badgesData);
     } catch (err) {
-      console.error("Error fetching user info:", err);
+      console.error("Error fetching user data:", err);
     } finally {
       setIsLoadingUserInfo(false);
+      setIsLoadingMilestones(false);
+      setIsLoadingDonations(false);
     }
   };
 
@@ -93,7 +123,7 @@ export const UserProvider = ({ children }) => {
       getUserDonations(userID)
         .then((donationsData) => {
           setDonationInfo(donationsData);
-          //console.log("Fetched Donations:", donationsData);
+          console.log("Fetched Donations:", donationsData);
         })
         .catch((err) => {
           console.error("Error fetching donations:", err);
