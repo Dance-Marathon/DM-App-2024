@@ -174,7 +174,7 @@ const App = () => {
         })
         .catch((error) => {
           console.error("Error fetching kill image:", error);
-          setImage(null); 
+          setImage(null);
         });
     }
   }, [appDisabled]);
@@ -306,9 +306,15 @@ const App = () => {
     };
   }, []);
 
+  // useEffect(() => {
+  //   handleToken();
+  // }, [expoPushToken]);
+
   useEffect(() => {
-    handleToken();
-  }, [expoPushToken]);
+    if (expoPushToken && auth.currentUser) {
+      handleToken();
+    }
+  }, [expoPushToken, auth.currentUser]);
 
   if (loading) {
     return null;
@@ -317,7 +323,6 @@ const App = () => {
   const HomeStack = createStackNavigator();
 
   const HomeStackScreen = (props) => (
-    
     <HomeStack.Navigator>
       <HomeStack.Screen
         name={mainEvent ? "HomeME" : "Home"}
@@ -467,7 +472,14 @@ const App = () => {
         <Text style={{ fontSize: 20, fontWeight: "bold" }}>
           The app has been disabled.
         </Text>
-        <Text style={{ fontSize: 20, fontWeight: "bold", marginTop: 20, marginBottom: 20 }}>
+        <Text
+          style={{
+            fontSize: 20,
+            fontWeight: "bold",
+            marginTop: 20,
+            marginBottom: 20,
+          }}
+        >
           - Tech
         </Text>
         {image && (

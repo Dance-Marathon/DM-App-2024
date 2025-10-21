@@ -287,34 +287,76 @@ const Admin = ({ route }) => {
     getUserRole();
   }, [auth.currentUser]);
 
+  // let handleClick = async () => {
+  //   fetchItems = await fetchData();
+  //   // sendPushNotificationsToAll(fetchItems, {
+  //   //   date: getCurrentDate(),
+  //   //   message: message,
+  //   //   time: getCurrentTime(),
+  //   //   title: title,
+  //   // })
+  //   //   .then(() => {
+  //   //     console.log("All notifications sent!");
+  //   //   })
+  //   //   .catch((error) => {
+  //   //     console.error("Error sending notifications:", error);
+  //   //   });
+  //   sendPushNotification("ExponentPushToken[nVKGsGBm_XBGtyK2UEZ30w]", {
+  //     date: getCurrentDate(),
+  //     message: message,
+  //     time: getCurrentTime(),
+  //     title: title,
+  //   });
+  //   await addNotification({
+  //     date: getCurrentDate(),
+  //     message: message,
+  //     time: getCurrentTime(),
+  //     title: title,
+  //   });
+  //   setTitle("");
+  //   setMessage("");
+  // };
+
   let handleClick = async () => {
-    fetchItems = await fetchData();
-    sendPushNotificationsToAll(fetchItems, {
-      date: getCurrentDate(),
-      message: message,
-      time: getCurrentTime(),
-      title: title,
-    })
-      .then(() => {
-        console.log("All notifications sent!");
-      })
-      .catch((error) => {
-        console.error("Error sending notifications:", error);
+    try {
+      const tokens = await fetchData();
+
+      if (!tokens || tokens.length === 0) {
+        Alert.alert("Error", "No valid tokens found!");
+        return;
+      }
+
+      console.log(`📬 Sending to ${tokens.length} users...`);
+
+      await sendPushNotificationsToAll(tokens, {
+        date: getCurrentDate(),
+        message: message,
+        time: getCurrentTime(),
+        title: title,
       });
-    // sendPushNotification("ExponentPushToken[QYYQuGIxjfZXo1OpP86uhe]", {
-    //   date: getCurrentDate(),
-    //   message: message,
-    //   time: getCurrentTime(),
-    //   title: title,
-    // });
-    await addNotification({
-      date: getCurrentDate(),
-      message: message,
-      time: getCurrentTime(),
-      title: title,
-    });
-    setTitle("");
-    setMessage("");
+
+      // sendPushNotification("ExponentPushToken[nVKGsGBm_XBGtyK2UEZ30w]", {
+      //   date: getCurrentDate(),
+      //   message: message,
+      //   time: getCurrentTime(),
+      //   title: title,
+      // });
+
+      await addNotification({
+        date: getCurrentDate(),
+        message: message,
+        time: getCurrentTime(),
+        title: title,
+      });
+
+      console.log("✅ All notifications sent!");
+      setTitle("");
+      setMessage("");
+      Alert.alert("Success", "Notification sent successfully!");
+    } catch (error) {
+      console.error("Error sending notifications:", error);
+      Alert.alert("Error", "Failed to send notification. Check console logs.");
+    }
   };
 
   const confirmSend = () => {
