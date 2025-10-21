@@ -235,7 +235,7 @@ const About = () => {
                 icon={faXTwitter}
                 size={20}
                 color="white"
-                style={{ width: 30, marginRight: 10 }}
+                style={{ width: 30, marginRight: 15, marginLeft: 5 }}
               />
             }
             title="X"
