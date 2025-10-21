@@ -123,7 +123,7 @@ export const UserProvider = ({ children }) => {
       getUserDonations(userID)
         .then((donationsData) => {
           setDonationInfo(donationsData);
-          console.log("Fetched Donations:", donationsData);
+          // console.log("Fetched Donations:", donationsData);
         })
         .catch((err) => {
           console.error("Error fetching donations:", err);
