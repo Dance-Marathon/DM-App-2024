@@ -2,9 +2,9 @@
   "expo": {
     "name": "DM at UF",
     "slug": "DM-APP-2024",
-    "version": "3.0.2",
+    "version": "3.0.3",
     "orientation": "portrait",
-    "icon": "./assets/icon_yellowonyellow.png",
+    "icon": "./assets/icon_image.png",
     "userInterfaceStyle": "light",
     "splash": {
       "image": "./assets/splash_image.png",
@@ -17,7 +17,7 @@
       "supportsTablet": true,
       "googleServicesFile": "./GoogleService-Info.plist",
       "bundleIdentifier": "com.ufdigitalmarketing.DMAPP2024",
-      "buildNumber": "4",
+      "buildNumber": "1",
       "infoPlist": {
         "NSCameraUsageDescription": "$(PRODUCT_NAME) needs access to your Camera to allow for scanning of spirit points.",
         "ITSAppUsesNonExemptEncryption": false
