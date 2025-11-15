@@ -71,6 +71,7 @@ export const UserProvider = ({ children }) => {
 
     try {
       const userData = await getUserData();
+      // console.log("userData: ", JSON.stringify(userData));
       setUserID(userData.donorID);
       setRole(userData.role);
 
