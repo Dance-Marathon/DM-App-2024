@@ -17,7 +17,7 @@
       "supportsTablet": true,
       "googleServicesFile": "./GoogleService-Info.plist",
       "bundleIdentifier": "com.ufdigitalmarketing.DMAPP2024",
-      "buildNumber": "2",
+      "buildNumber": "3",
       "infoPlist": {
         "NSCameraUsageDescription": "$(PRODUCT_NAME) needs access to your Camera to allow for scanning of spirit points.",
         "ITSAppUsesNonExemptEncryption": false
