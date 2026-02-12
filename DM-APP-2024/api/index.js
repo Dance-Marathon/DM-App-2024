@@ -1,67 +1,83 @@
+import { apiPaths } from "./api-paths";
+import {
+  IBadgesList,
+  IDonationsList,
+  IExtraLifeTeam,
+  IExtraLifeUser,
+  IIncentivesList,
+  IMilestonesList,
+  IRosterList,
+} from "./interfaces";
 
-
-import { apiPaths } from './api-paths'
-import { IBadgesList, IDonationsList, IExtraLifeTeam, IExtraLifeUser, IIncentivesList, IMilestonesList, IRosterList } from './interfaces';
-
-export { IDonationsList, IExtraLifeTeam, IExtraLifeUser, IRosterList } from './interfaces';
+export {
+  IDonationsList,
+  IExtraLifeTeam,
+  IExtraLifeUser,
+  IRosterList,
+} from "./interfaces";
 
 export const getUserInfo = async (id) => {
-    return new Promise((resolve, reject) => {
-        const url = apiPaths.profileUrl(Number(id));
-        let userInfoJson = {};
+  return new Promise((resolve, reject) => {
+    // const url = apiPaths.profileUrl(Number(id));
+    const url = apiPaths.profileUrl(id);
+    let userInfoJson = {};
 
-        fetch(url)
-            .then(async (res) => {
-                try {
-                    userInfoJson = await res.json();
-                    userInfoJson.avatarImageURL = userInfoJson.avatarImageURL;
-                    userInfoJson.donateURL = `https://events.dancemarathon.com/index.cfm?fuseaction=donordrive.participant&participantID=${id}`;
+    fetch(url)
+      .then(async (res) => {
+        try {
+          userInfoJson = await res.json();
+          userInfoJson.avatarImageURL = userInfoJson.avatarImageURL;
+          userInfoJson.donateURL = `https://events.dancemarathon.com/index.cfm?fuseaction=donordrive.participant&participantID=${id}`;
 
-                    if (userInfoJson.teamID) {
-                        getTeamInfo(userInfoJson.teamID, false)
-                            .then((data) => {
-                                userInfoJson.teamURL = data.teamURL;
-                                resolve(userInfoJson);
-                            }).catch((reason) => {
-                                reject(reason);
-                            });
-                    } else {
-                        console.error('Team Info Fetch Error:', reason);
-                        resolve(userInfoJson);
-                    }
-                } catch (e) {
-                    reject(e);
-                }
-            })
-            .catch(() => {
-                console.error('Fetch Error:', error);
-                reject('There was an error trying to make your request');
-            });
-    });
-}
+          if (userInfoJson.teamID) {
+            getTeamInfo(userInfoJson.teamID, false)
+              .then((data) => {
+                userInfoJson.teamURL = data.teamURL;
+                resolve(userInfoJson);
+              })
+              .catch((reason) => {
+                reject(reason);
+              });
+          } else {
+            console.error("Team Info Fetch Error:", reason);
+            resolve(userInfoJson);
+          }
+        } catch (e) {
+          reject(e);
+        }
+      })
+      .catch(() => {
+        console.error("Fetch Error:", error);
+        reject("There was an error trying to make your request");
+      });
+  });
+};
 
 export const getUserDonations = async (id, limit = 100, page = 1) => {
-    return new Promise((resolve, reject) => {
-        const url = apiPaths.userDonationUrl(id, limit, page);
-        const userDonationsJson = {};
+  return new Promise((resolve, reject) => {
+    const url = apiPaths.userDonationUrl(id, limit, page);
+    const userDonationsJson = {};
 
-        fetch(url)
-            .then(async (res) => {
-                try {
-                    userDonationsJson.countDonations = parseInt(res.headers.get('num-records'), 10) || 0;
-                    userDonationsJson.countPages = Math.ceil(userDonationsJson.countDonations / limit);
-                    userDonationsJson.donations = await res.json();
-                    resolve(userDonationsJson);
-                } catch (e) {
-                    reject(e);
-                }
-            })
-            .catch(() => {
-                console.log('Error parsing userDonations URL');
-                reject('There was an error trying to make your request');
-            });
-    });
-}
+    fetch(url)
+      .then(async (res) => {
+        try {
+          userDonationsJson.countDonations =
+            parseInt(res.headers.get("num-records"), 10) || 0;
+          userDonationsJson.countPages = Math.ceil(
+            userDonationsJson.countDonations / limit
+          );
+          userDonationsJson.donations = await res.json();
+          resolve(userDonationsJson);
+        } catch (e) {
+          reject(e);
+        }
+      })
+      .catch(() => {
+        console.log("Error parsing userDonations URL");
+        reject("There was an error trying to make your request");
+      });
+  });
+};
 
 export const getUserMilestones = async (id, limit = 100, page = 1) => {
   return new Promise((resolve, reject) => {
@@ -71,8 +87,11 @@ export const getUserMilestones = async (id, limit = 100, page = 1) => {
     fetch(url)
       .then(async (res) => {
         try {
-          userMilestonesJson.countMilestones = parseInt(res.headers.get('num-records'), 10) || 0;
-          userMilestonesJson.countPages = Math.ceil(userMilestonesJson.countMilestones / limit);
+          userMilestonesJson.countMilestones =
+            parseInt(res.headers.get("num-records"), 10) || 0;
+          userMilestonesJson.countPages = Math.ceil(
+            userMilestonesJson.countMilestones / limit
+          );
           userMilestonesJson.milestones = await res.json();
           resolve(userMilestonesJson);
         } catch (e) {
@@ -80,8 +99,8 @@ export const getUserMilestones = async (id, limit = 100, page = 1) => {
         }
       })
       .catch(() => {
-        console.log('Error parsing userMilestones URL');
-        reject('There was an error trying to make your request');
+        console.log("Error parsing userMilestones URL");
+        reject("There was an error trying to make your request");
       });
   });
 };
@@ -94,8 +113,11 @@ export const getUserIncentives = async (id, limit = 100, page = 1) => {
     fetch(url)
       .then(async (res) => {
         try {
-          userIncentivesJson.countIncentives = parseInt(res.headers.get('num-records'), 10) || 0;
-          userIncentivesJson.countPages = Math.ceil(userIncentivesJson.countIncentives / limit);
+          userIncentivesJson.countIncentives =
+            parseInt(res.headers.get("num-records"), 10) || 0;
+          userIncentivesJson.countPages = Math.ceil(
+            userIncentivesJson.countIncentives / limit
+          );
           userIncentivesJson.incentives = await res.json();
           resolve(userIncentivesJson);
         } catch (e) {
@@ -103,8 +125,8 @@ export const getUserIncentives = async (id, limit = 100, page = 1) => {
         }
       })
       .catch(() => {
-        console.log('Error parsing userIncentives URL');
-        reject('There was an error trying to make your request');
+        console.log("Error parsing userIncentives URL");
+        reject("There was an error trying to make your request");
       });
   });
 };
@@ -117,8 +139,11 @@ export const getUserBadges = async (id, limit = 100, page = 1) => {
     fetch(url)
       .then(async (res) => {
         try {
-          userBadgesJson.countBadges = parseInt(res.headers.get('num-records'), 10) || 0;
-          userBadgesJson.countPages = Math.ceil(userBadgesJson.countBadges / limit);
+          userBadgesJson.countBadges =
+            parseInt(res.headers.get("num-records"), 10) || 0;
+          userBadgesJson.countPages = Math.ceil(
+            userBadgesJson.countBadges / limit
+          );
           userBadgesJson.badges = await res.json();
           resolve(userBadgesJson);
         } catch (e) {
@@ -126,8 +151,8 @@ export const getUserBadges = async (id, limit = 100, page = 1) => {
         }
       })
       .catch(() => {
-        console.log('Error parsing userBadges URL');
-        reject('There was an error trying to make your request');
+        console.log("Error parsing userBadges URL");
+        reject("There was an error trying to make your request");
       });
   });
 };
@@ -144,7 +169,7 @@ export const getTeamInfo = async (id, fetchRoster = true) => {
         } catch (e) {
           reject(e);
         }
-        teamInfoJson.avatarImageURL = 'http:' + teamInfoJson.avatarImageURL;
+        teamInfoJson.avatarImageURL = "http:" + teamInfoJson.avatarImageURL;
         if (fetchRoster) {
           getTeamRoster(id)
             .then((rosterData) => {
@@ -154,7 +179,8 @@ export const getTeamInfo = async (id, fetchRoster = true) => {
               });
 
               resolve(teamInfoJson);
-            }).catch((reason) => {
+            })
+            .catch((reason) => {
               reject(reason);
             });
         } else {
@@ -162,8 +188,8 @@ export const getTeamInfo = async (id, fetchRoster = true) => {
         }
       })
       .catch(() => {
-        console.log('Error obtaining team info');
-        reject('There was an error trying to make your request');
+        console.log("Error obtaining team info");
+        reject("There was an error trying to make your request");
       });
   });
 };
@@ -176,8 +202,11 @@ export const getTeamDonations = async (id, limit = 100, page = 1) => {
     fetch(url)
       .then(async (res) => {
         try {
-          teamDonationsJson.countDonations = parseInt(res.headers.get('num-records'), 10) || 0;
-          teamDonationsJson.countPages = Math.ceil(teamDonationsJson.countDonations / limit);
+          teamDonationsJson.countDonations =
+            parseInt(res.headers.get("num-records"), 10) || 0;
+          teamDonationsJson.countPages = Math.ceil(
+            teamDonationsJson.countDonations / limit
+          );
           teamDonationsJson.donations = await res.json();
         } catch (e) {
           reject(e);
@@ -186,8 +215,8 @@ export const getTeamDonations = async (id, limit = 100, page = 1) => {
         resolve(teamDonationsJson);
       })
       .catch(() => {
-        console.log('Error parsing teamDonations URL');
-        reject('There was an error trying to make your request');
+        console.log("Error parsing teamDonations URL");
+        reject("There was an error trying to make your request");
       });
   });
 };
@@ -195,14 +224,17 @@ export const getTeamDonations = async (id, limit = 100, page = 1) => {
 export const getTeamRoster = async (id, page) => {
   return new Promise((resolve, reject) => {
     const teamRosterJson = {};
-    const offsetCalc = (page && page !== 1) ? ((page - 1) * 100) : null;
+    const offsetCalc = page && page !== 1 ? (page - 1) * 100 : null;
     const url = apiPaths.teamRosterUrl(id, offsetCalc);
 
     fetch(url)
       .then(async (res) => {
         try {
-          teamRosterJson.countMembers = parseInt(res.headers.get('num-records'), 10) || 0;
-          teamRosterJson.countPages = Math.ceil(teamRosterJson.countMembers / 100);
+          teamRosterJson.countMembers =
+            parseInt(res.headers.get("num-records"), 10) || 0;
+          teamRosterJson.countPages = Math.ceil(
+            teamRosterJson.countMembers / 100
+          );
           try {
             teamRosterJson.members = await res.json();
           } catch (e) {
@@ -217,14 +249,14 @@ export const getTeamRoster = async (id, page) => {
         }
 
         teamRosterJson.members.forEach((member) => {
-          member.avatarImageURL = 'https:' + member.avatarImageURL;
+          member.avatarImageURL = "https:" + member.avatarImageURL;
         });
 
         resolve(teamRosterJson);
       })
       .catch(() => {
-        console.log('Error parsing teamRoster URL');
-        reject('There was an error trying to make your request');
+        console.log("Error parsing teamRoster URL");
+        reject("There was an error trying to make your request");
       });
   });
 };
@@ -237,8 +269,11 @@ export const getUserActivity = async (id, limit = 100, page = 1) => {
     fetch(url)
       .then(async (res) => {
         try {
-          userActivityJson.countActivity = parseInt(res.headers.get('num-records'), 10) || 0;
-          userActivityJson.countPages = Math.ceil(userActivityJson.countActivity / limit);
+          userActivityJson.countActivity =
+            parseInt(res.headers.get("num-records"), 10) || 0;
+          userActivityJson.countPages = Math.ceil(
+            userActivityJson.countActivity / limit
+          );
           userActivityJson.activities = await res.json();
           resolve(userActivityJson);
         } catch (e) {
@@ -246,8 +281,8 @@ export const getUserActivity = async (id, limit = 100, page = 1) => {
         }
       })
       .catch(() => {
-        console.log('Error parsing userActivity URL');
-        reject('There was an error trying to make your request');
+        console.log("Error parsing userActivity URL");
+        reject("There was an error trying to make your request");
       });
   });
 };

@@ -14,7 +14,9 @@ const getUserData = async () => {
       `${USER_DATA_KEY}_${currentUID}`
     );
 
-    if (cachedData) {
+    // console.log("cachedData:", cachedData);
+
+    if (cachedData && cachedData != undefined && cachedData !== "null") {
       // If cached data is found, return it
       console.log("Returning cached data");
       return JSON.parse(cachedData);
