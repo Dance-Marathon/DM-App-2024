@@ -43,7 +43,7 @@ import { faCartShopping } from "@fortawesome/free-solid-svg-icons";
 import CrosshairOverImage from "./images/Crosshair Over Image.png";
 import { useNavigation } from "@react-navigation/native";
 
-const MissionDM = () => {
+const MissionDMFix = () => {
   const [timeLeft, setTimeLeft] = useState({
     days: 0,
     hours: 0,
@@ -584,9 +584,7 @@ const MissionDM = () => {
       if (timeLeft === 0 && !roundOverCalledRef.current) {
         roundOverCalledRef.current = true;
         setLoadingBetweenRounds(true);
-        console.log(
-          "Round ended locally. Waiting for backend round processing.",
-        );
+        console.log("Round ended locally. Waiting for backend round processing.");
         await fetchGameStats();
       }
     }, 1000);
@@ -1251,6 +1249,9 @@ const MissionDM = () => {
                     <View style={styles.rulesModalContent}>
                       <View style={styles.rulesHeader}>
                         <Text style={styles.modalTitle}>MissionDM Rules</Text>
+                        <Text style={styles.rulesSubtitle}>
+                          Please review before each round.
+                        </Text>
                       </View>
                       <ScrollView
                         style={styles.rulesScroll}
@@ -1334,7 +1335,7 @@ const MissionDM = () => {
                         </Text>
                         <Text style={[styles.modalText, styles.ruleCallout]}>
                           Make sure to take videos of your eliminations and send
-                          them to @dmatufspam on Instagram!
+                          them to @dmatufmemes on Instagram!
                         </Text>
                         <Text style={[styles.modalText, styles.ruleCallout]}>
                           If any agents are being difficult once eliminated,
@@ -1389,16 +1390,10 @@ const MissionDM = () => {
                     onPress={() => setIsStatsModalVisible(false)}
                   >
                     <View style={styles.modalContainer}>
-                      <View style={styles.codeModalContent}>
-                        <Text style={styles.modalTitle}>Agent Code</Text>
-                        <Text style={styles.codeModalSubtitle}>
-                          Share only after elimination.
-                        </Text>
-                        <View style={styles.codePill}>
-                          <Text style={styles.userCodeText}>{userCode}</Text>
-                        </View>
+                      <View style={styles.modalContent}>
+                        <Text style={styles.userCodeText}>{userCode}</Text>
                         <TouchableOpacity
-                          style={[styles.closeButton, styles.codeCloseButton]}
+                          style={styles.closeButton}
                           onPress={() => setIsStatsModalVisible(false)}
                         >
                           <Text style={styles.closeButtonText}>Close</Text>
@@ -1473,20 +1468,21 @@ const MissionDM = () => {
               >
                 Thanks for playing!
               </Text>
-              {currentRound < 3 && Date.now() < currentRoundStart && (
-                <View style={styles.buttonBox}>
-                  <TouchableOpacity
-                    style={styles.orangeButton}
-                    onPress={() =>
-                      openWebsite(
-                        "https://dance-marathon-at-uf-510104.square.site/product/2026-mission-dm-buy-back/UFMAKVMHVBRG7VPNQMVTPVAC?cp=true&sa=false&sbp=false&q=true",
-                      )
-                    }
-                  >
-                    <Text style={styles.orangeButtonText}>Buy Back In!</Text>
-                  </TouchableOpacity>
-                </View>
-              )}
+              {currentRound == 2 ||
+                (currentRound == 3 && Date.now() < currentRoundStart && (
+                  <View style={styles.buttonBox}>
+                    <TouchableOpacity
+                      style={styles.orangeButton}
+                      onPress={() =>
+                        openWebsite(
+                          "https://dance-marathon-at-uf-510104.square.site/product/2026-mission-dm-buy-back/UFMAKVMHVBRG7VPNQMVTPVAC?cp=true&sa=false&sbp=false&q=true",
+                        )
+                      }
+                    >
+                      <Text style={styles.orangeButtonText}>Buy Back In!</Text>
+                    </TouchableOpacity>
+                  </View>
+                ))}
             </View>
           </View>
         );
@@ -1854,7 +1850,7 @@ const MissionDM = () => {
   }
 };
 
-export default MissionDM;
+export default MissionDMFix;
 
 const styles = StyleSheet.create({
   MissionDMLogo: {
@@ -2252,36 +2248,11 @@ const styles = StyleSheet.create({
     padding: 10,
     marginBottom: 10,
   },
-  codeModalContent: {
-    backgroundColor: "#16263F",
-    borderColor: "#2D4670",
-    borderWidth: 1,
-    padding: 20,
-    borderRadius: 16,
-    width: "86%",
-    alignItems: "center",
-  },
-  codeModalSubtitle: {
-    color: "#B8CAE6",
-    fontSize: 13,
-    marginBottom: 14,
-  },
-  codePill: {
-    width: "100%",
-    backgroundColor: "#1E3354",
-    borderRadius: 12,
-    paddingVertical: 14,
-    paddingHorizontal: 12,
-    borderWidth: 1,
-    borderColor: "#2D4670",
-    marginBottom: 16,
-  },
   userCodeText: {
-    color: "#F6C58E",
+    color: "white",
     fontWeight: "bold",
-    fontSize: 42,
-    letterSpacing: 3,
-    textAlign: "center",
+    fontSize: 48,
+    marginBottom: 20,
   },
   closeButton: {
     backgroundColor: "#f18221",
@@ -2325,10 +2296,6 @@ const styles = StyleSheet.create({
   rulesCloseButton: {
     marginTop: 12,
     marginBottom: 0,
-    width: "100%",
-    paddingVertical: 12,
-  },
-  codeCloseButton: {
     width: "100%",
     paddingVertical: 12,
   },

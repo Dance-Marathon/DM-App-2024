@@ -25,8 +25,13 @@ export const getUserInfo = async (id) => {
     fetch(url)
       .then(async (res) => {
         try {
-          userInfoJson = await res.json();
-          userInfoJson.avatarImageURL = userInfoJson.avatarImageURL;
+          const payload = await res.json();
+          userInfoJson =
+            payload && typeof payload === "object" && !Array.isArray(payload)
+              ? payload
+              : {};
+
+          userInfoJson.avatarImageURL = userInfoJson.avatarImageURL || "";
           userInfoJson.donateURL = `https://events.dancemarathon.com/index.cfm?fuseaction=donordrive.participant&participantID=${id}`;
 
           if (userInfoJson.teamID) {
@@ -39,14 +44,13 @@ export const getUserInfo = async (id) => {
                 reject(reason);
               });
           } else {
-            console.error("Team Info Fetch Error:", reason);
             resolve(userInfoJson);
           }
         } catch (e) {
           reject(e);
         }
       })
-      .catch(() => {
+      .catch((error) => {
         console.error("Fetch Error:", error);
         reject("There was an error trying to make your request");
       });
