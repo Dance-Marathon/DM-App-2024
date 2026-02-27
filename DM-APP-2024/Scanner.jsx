@@ -6,6 +6,7 @@ import {
   StyleSheet,
   Modal,
   TouchableOpacity,
+  ScrollView,
 } from "react-native";
 import CheckBox from "expo-checkbox"; // Updated import
 import { CameraView, Camera } from "expo-camera";
@@ -307,79 +308,64 @@ const Scanner = () => {
     <View
       style={{
         flex: 1,
-        justifyContent: "center",
+        justifyContent: "flex-start",
         alignItems: "center",
         backgroundColor: "#1F1F1F",
       }}
     >
       <View style={styles.container}>
-        <Text style={styles.header}>Scan Spirit Points</Text>
-        <View style={styles.checkboxContainer}>
-          <CheckBox
-            value={option1Checked}
-            onValueChange={setOption1Checked}
-            style={styles.checkbox}
-          />
-          <Text style={styles.optionText}> Checked-In</Text>
-        </View>
-        <View style={styles.checkboxContainer}>
-          <CheckBox
-            value={option2Checked}
-            onValueChange={setOption2Checked}
-            style={styles.checkbox}
-          />
-          <Text style={styles.optionText}> Wore DM Shirt to Check-In</Text>
-        </View>
-        <View style={styles.checkboxContainer}>
-          <CheckBox
-            value={option3Checked}
-            onValueChange={setOption3Checked}
-            style={styles.checkbox}
-          />
-          <Text style={styles.optionText}> Brought A Friend to Check-In</Text>
-        </View>
-        <View style={styles.checkboxContainer}>
-          <CheckBox
-            value={option4Checked}
-            onValueChange={setOption4Checked}
-            style={styles.checkbox}
-          />
-          <Text style={styles.optionText}>
-            {" "}
-            Attended All-Member / Captain Meeting
-          </Text>
-        </View>
-        <View style={styles.checkboxContainer}>
-          <CheckBox
-            value={option5Checked}
-            onValueChange={setOption5Checked}
-            style={styles.checkbox}
-          />
-          <Text style={styles.optionText}> Attended Spirit Night</Text>
-        </View>
-        <View style={styles.checkboxContainer}>
-          <CheckBox
-            value={option6Checked}
-            onValueChange={setOption6Checked}
-            style={styles.checkbox}
-          />
-          <Text style={styles.optionText}> Purchased Merchandise</Text>
-        </View>
-        <View style={styles.checkboxContainer}>
-          <CheckBox
-            value={option7Checked}
-            onValueChange={setOption7Checked}
-            style={styles.checkbox}
-          />
-          <Text style={styles.optionText}> Attended TT Event</Text>
-        </View>
-        <TouchableOpacity
-          onPress={() => setModalVisible(true)}
-          style={[styles.scannerOpen, { alignSelf: "center" }]}
-        >
-          <Text style={styles.openScannerText}>Open Scanner</Text>
-        </TouchableOpacity>
-      </View>
+  <Text style={styles.header}>Scan Spirit Points</Text>
+
+  <ScrollView
+    style={styles.optionsScroll}
+    contentContainerStyle={styles.optionsScrollContent}
+    showsVerticalScrollIndicator
+  >
+    {/* ALL checkbox rows go here */}
+    <View style={styles.checkboxContainer}>
+      <CheckBox value={option1Checked} onValueChange={setOption1Checked} style={styles.checkbox} />
+      <Text style={styles.optionText}> Checked-In</Text>
+    </View>
+
+    <View style={styles.checkboxContainer}>
+      <CheckBox value={option2Checked} onValueChange={setOption2Checked} style={styles.checkbox} />
+      <Text style={styles.optionText}> Wore DM Shirt to Check-In</Text>
+    </View>
+
+    <View style={styles.checkboxContainer}>
+      <CheckBox value={option3Checked} onValueChange={setOption3Checked} style={styles.checkbox} />
+      <Text style={styles.optionText}> Brought A Friend to Check-In</Text>
+    </View>
+
+    <View style={styles.checkboxContainer}>
+      <CheckBox value={option4Checked} onValueChange={setOption4Checked} style={styles.checkbox} />
+      <Text style={styles.optionText}> Attended All-Member / Captain Meeting</Text>
+    </View>
+
+    <View style={styles.checkboxContainer}>
+      <CheckBox value={option5Checked} onValueChange={setOption5Checked} style={styles.checkbox} />
+      <Text style={styles.optionText}> Attended Spirit Night</Text>
+    </View>
+
+    <View style={styles.checkboxContainer}>
+      <CheckBox value={option6Checked} onValueChange={setOption6Checked} style={styles.checkbox} />
+      <Text style={styles.optionText}> Purchased Merchandise</Text>
+    </View>
+
+    <View style={styles.checkboxContainer}>
+      <CheckBox value={option7Checked} onValueChange={setOption7Checked} style={styles.checkbox} />
+      <Text style={styles.optionText}> Attended TT Event</Text>
+    </View>
+  </ScrollView>
+
+  <TouchableOpacity
+    onPress={() => setModalVisible(true)}
+    style={[styles.scannerOpen, { alignSelf: "center" }]}
+  >
+    <Text style={styles.openScannerText}>Open Scanner</Text>
+  </TouchableOpacity>
+</View>
+
       <Modal
         animationType="slide"
         transparent={false}
@@ -436,9 +422,10 @@ const Scanner = () => {
 const styles = StyleSheet.create({
   checkboxContainer: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
     marginBottom: 10,
     marginLeft: 15,
+    marginRight: 15,
   },
   modalContainer: {
     flex: 1,
@@ -508,8 +495,8 @@ const styles = StyleSheet.create({
     elevation: 4,
     shadowOpacity: 1,
     width: 340,
-    maxHeight: 290,
-    marginTop: 5,
+    maxHeight: 360,
+    marginTop: 40,
   },
   header: {
     fontSize: 20,
@@ -527,7 +514,7 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   scannerOpen: {
-    marginTop: 10,
+    marginTop: 40,
     borderRadius: 10,
     backgroundColor: "#f18221",
     width: 140,
@@ -545,7 +532,7 @@ const styles = StyleSheet.create({
     left: 15,
   },
   resultContainer: {
-    marginTop: 20,
+    marginTop: 50,
     padding: 20,
     borderRadius: 9,
     backgroundColor: "#233d72",
@@ -559,6 +546,13 @@ const styles = StyleSheet.create({
     shadowOpacity: 1,
     width: 340,
     maxHeight: 200,
+  },
+  optionsScroll: {
+    maxHeight: 300,     
+  },
+
+  optionsScrollContent: {
+    paddingBottom: 1,
   },
 });
 
