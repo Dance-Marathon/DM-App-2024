@@ -40,6 +40,10 @@ const Scanner = () => {
   const [option5Checked, setOption5Checked] = useState(false);
   const [option6Checked, setOption6Checked] = useState(false);
   const [option7Checked, setOption7Checked] = useState(false);
+  const [option8Checked, setOption8Checked] = useState(false);
+  const [option9Checked, setOption9Checked] = useState(false);
+  const [option10Checked, setOption10Checked] = useState(false);
+  const [option11Checked, setOption11Checked] = useState(false);
 
   const scanLock = useRef(false);
 
@@ -192,6 +196,11 @@ const Scanner = () => {
         },
         { label: "Attended All-Member", checked: option4Checked, points: 1 },
         { label: "Attended Spirit Night", checked: option5Checked, points: 2 },
+        { label: "Bring a friend to Our Day", checked: option8Checked, points: 3 },
+        { label: "Get someone registered as a Miracle Maker", checked: option9Checked, points: 5 },
+        { label: "Register for Mission DM", checked: option10Checked, points: 2 },
+        { label: "Eliminate someone in MissionDM", checked: option11Checked, points: 1 },
+
       ];
 
       const selectedOptions = options.filter((option) => option.checked);
@@ -225,6 +234,10 @@ const Scanner = () => {
     setOption5Checked(false);
     setOption6Checked(false);
     setOption7Checked(false);
+    setOption8Checked(false);
+    setOption9Checked(false);
+    setOption10Checked(false);
+    setOption11Checked(false);
 
     scanLock.current = false;
   };
@@ -355,6 +368,26 @@ const Scanner = () => {
     <View style={styles.checkboxContainer}>
       <CheckBox value={option7Checked} onValueChange={setOption7Checked} style={styles.checkbox} />
       <Text style={styles.optionText}> Attended TT Event</Text>
+    </View>
+
+    <View style={styles.checkboxContainer}>
+      <CheckBox value={option8Checked} onValueChange={setOption8Checked} style={styles.checkbox} />
+      <Text style={styles.optionText}> Bring a friend to Our Day</Text>
+    </View>
+
+    <View style={styles.checkboxContainer}>
+      <CheckBox value={option9Checked} onValueChange={setOption9Checked} style={styles.checkbox} />
+      <Text style={styles.optionText}> Get someone registered as a Miracle Maker</Text>
+    </View>
+
+    <View style={styles.checkboxContainer}>
+      <CheckBox value={option10Checked} onValueChange={setOption10Checked} style={styles.checkbox} />
+      <Text style={styles.optionText}> Register for Mission DM</Text>
+    </View>
+
+    <View style={styles.checkboxContainer}>
+      <CheckBox value={option11Checked} onValueChange={setOption11Checked} style={styles.checkbox} />
+      <Text style={styles.optionText}> Eliminate someone in MissionDM</Text>
     </View>
   </ScrollView>
 
