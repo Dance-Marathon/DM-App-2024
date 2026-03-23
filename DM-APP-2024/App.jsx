@@ -324,7 +324,7 @@ const App = () => {
     <HomeStack.Navigator>
       <HomeStack.Screen
         name={mainEvent ? "HomeME" : "Home"}
-        component={mainEvent ? HomeME : Home}
+        component={mainEvent ? HomeME : HomeME}
         options={{ headerShown: false }}
         initialParams={props.route.params}
       />
