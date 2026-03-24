@@ -406,18 +406,10 @@ const Fundraiser = () => {
           <View style={styles.modalContainer}>
             <TouchableWithoutFeedback>
               <View style={styles.modalView}>
-                <View style={styles.header}>
+                <View style={styles.modalHeader}>
                   <Text style={styles.milestones}>Milestones</Text>
-                  <TouchableOpacity
-                    style={styles.modalClose}
-                    onPress={() => setModalVisible(false)}
-                  >
-                    <FontAwesomeIcon
-                      icon={faX}
-                      size={24}
-                      color="white"
-                      style={styles.closeButton}
-                    />
+                  <TouchableOpacity style={{ marginTop: -30 }} onPress={() => setModalVisible(false)}>
+                      <FontAwesomeIcon icon={faX} size={24} color="white" />
                   </TouchableOpacity>
                 </View>
                 <View style={styles.modalMilestonesContainer}>
@@ -985,7 +977,7 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: "bold",
     color: "white",
-    right: 80,
+    //right: 40,
     top: -10,
   },
   closeIcon: {
@@ -1005,6 +997,16 @@ const styles = StyleSheet.create({
     backgroundColor: "#233D72",
     padding: 20,
     borderRadius: 10,
+  },
+  modalCloseButton: {
+    marginTop: -3,
+  },
+  modalHeader: {
+    width: "100%",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: 10,
   },
   milestoneRow: {
     flexDirection: "row",
