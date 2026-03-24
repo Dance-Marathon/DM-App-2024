@@ -26,7 +26,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 import { faX } from "@fortawesome/free-solid-svg-icons";
 import LogoStyles from "./LogoStyles";
 
-import odomeMap from "./images/ODomeMap2026.png";
+import odomeMap from "./images/ODomeMap2026.jpg";
 
 const Home = ({ route }) => {
   const [modalVisible, setModalVisible] = useState(false);
@@ -410,7 +410,7 @@ const styles = StyleSheet.create({
     shadowColor: "rgba(0, 0, 0, 0.25)",
   },
   eventsBox: {
-    marginTop: 10,
+    marginTop: 20,
     borderRadius: 9,
     backgroundColor: "#233d72",
     width: "85%",
