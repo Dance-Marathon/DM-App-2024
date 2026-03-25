@@ -4,6 +4,8 @@ import { collection, addDoc, getDocs, doc, getDoc } from "firebase/firestore";
 import { auth } from "./AuthManager.js";
 
 const USER_DATA_KEY = "@user_data";
+const hasRequiredUserFields = (data) =>
+  Boolean(data && data.donorID && data.donorLink && data.role);
 
 const getUserData = async () => {
   try {
@@ -17,9 +19,14 @@ const getUserData = async () => {
     // console.log("cachedData:", cachedData);
 
     if (cachedData && cachedData != undefined && cachedData !== "null") {
-      // If cached data is found, return it
-      console.log("Returning cached data");
-      return JSON.parse(cachedData);
+      const parsedCachedData = JSON.parse(cachedData);
+
+      if (hasRequiredUserFields(parsedCachedData)) {
+        console.log("Returning cached data");
+        return parsedCachedData;
+      }
+
+      console.log("Cached user data missing required fields, refreshing...");
     }
 
     // If no cached data is found, fetch from Firestore

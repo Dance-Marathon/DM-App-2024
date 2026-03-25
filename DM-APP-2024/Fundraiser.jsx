@@ -4,6 +4,7 @@ import Toast, { BaseToast } from "react-native-toast-message";
 import {
   View,
   Text,
+  Dimensions,
   Image,
   StyleSheet,
   Linking,
@@ -25,6 +26,7 @@ import * as Progress from "react-native-progress";
 import { Icon } from "react-native-elements";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 import { faX } from "@fortawesome/free-solid-svg-icons";
+import { useNavigation } from "@react-navigation/native";
 import LogoStyles from "./LogoStyles";
 
 // import { getUserData } from "./Firebase/UserManager";
@@ -35,7 +37,11 @@ import { updateDDLink } from "./Firebase/AuthManager";
 import { updateUserData } from "./Firebase/UserManager";
 import { auth } from "./Firebase/AuthManager";
 
+const { width } = Dimensions.get("window");
+const tileWidth = width * 0.85;
+
 const Fundraiser = () => {
+  const navigation = useNavigation();
   //const [userID, setuserID] = useState("");
   //const [userInfo, setUserInfo] = useState({});
   //const [milestoneInfo, setMilestoneInfo] = useState({});
@@ -50,6 +56,7 @@ const Fundraiser = () => {
   const [badgeModalVisible, setBadgeModalVisible] = useState(false);
   const [selectedBadge, setSelectedBadge] = useState(null);
   const [progress, setProgress] = useState(0);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const [accountModalVisable, setAccountModalVisable] = useState(false);
   const [newLink, setNewLink] = useState("");
@@ -293,6 +300,30 @@ const Fundraiser = () => {
     // setSelectedBadge(null); <-- this was causing the modal to show a random badge when it was closed
   };
 
+  const refreshFundraiserData = async () => {
+    if (isRefreshing) {
+      return;
+    }
+
+    try {
+      setIsRefreshing(true);
+      await refetchUserData();
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  const openTeamFundraiser = () => {
+    if (!userInfo?.teamID) {
+      return;
+    }
+
+    navigation.navigate("TeamFundraiser", {
+      teamId: userInfo.teamID,
+      teamName: userInfo.teamName,
+    });
+  };
+
   useEffect(() => {
     if (userInfo && userInfo.sumDonations && userInfo.fundraisingGoal) {
       setProgress(userInfo.sumDonations / userInfo.fundraisingGoal);
@@ -381,7 +412,10 @@ const Fundraiser = () => {
     );
   }
 
-  if (isLoadingUserInfo || isLoadingMilestones || isLoadingDonations) {
+  if (
+    !userInfo &&
+    (isLoadingUserInfo || isLoadingMilestones || isLoadingDonations)
+  ) {
     return <ActivityIndicator size="large" color="#0000ff" />;
   }
 
@@ -466,7 +500,11 @@ const Fundraiser = () => {
               <View style={styles.tagsContainer}>
                 <View style={styles.section}>
                   <FontAwesome name="circle" size={15} color="orange" />
-                  <Text style={styles.tag}>{userInfo.teamName}</Text>
+                  <TouchableOpacity onPress={openTeamFundraiser}>
+                    <Text style={[styles.tag, styles.teamLink]}>
+                      {userInfo.teamName}
+                    </Text>
+                  </TouchableOpacity>
                 </View>
                 <View style={styles.section}>
                   <FontAwesome name="circle" size={15} color="orange" />
@@ -499,10 +537,10 @@ const Fundraiser = () => {
             </Text>
           </View>
 
-          <View style={{ position: "relative", width: 340 }}>
+          <View style={{ position: "relative", width: tileWidth }}>
             <Progress.Bar
               progress={progress}
-              width={340}
+              width={tileWidth}
               borderColor="white"
               color="#233D72"
               height={40}
@@ -629,6 +667,17 @@ const Fundraiser = () => {
             <View style={styles.header}>
               <FontAwesome name="dollar" size={18} color="orange" />
               <Text style={styles.headerText}>DONATIONS</Text>
+              <TouchableOpacity
+                style={styles.headerRefreshButton}
+                onPress={refreshFundraiserData}
+                disabled={isRefreshing}
+              >
+                <FontAwesome
+                  name="refresh"
+                  size={18}
+                  color={isRefreshing ? "rgba(255,255,255,0.6)" : "white"}
+                />
+              </TouchableOpacity>
             </View>
             <View style={{ marginTop: 5, marginLeft: 5, flex: 1 }}>
               <ScrollView>
@@ -781,7 +830,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    width: "80%",
+    width: tileWidth,
     marginTop: 5,
   },
   displayName: {
@@ -795,6 +844,9 @@ const styles = StyleSheet.create({
     marginRight: 5,
     marginLeft: 5,
   },
+  teamLink: {
+    textDecorationLine: "underline",
+  },
   rectangleView: {
     padding: 10,
     borderRadius: 9,
@@ -807,7 +859,7 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 4,
     shadowOpacity: 1,
-    width: 340,
+    width: tileWidth,
     height: 290,
     marginTop: 5,
   },
@@ -928,6 +980,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     flex: 1,
     left: 5,
+  },
+  headerRefreshButton: {
+    padding: 4,
   },
   showAll: {
     color: "white",

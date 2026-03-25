@@ -26,7 +26,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 import { faX } from "@fortawesome/free-solid-svg-icons";
 import LogoStyles from "./LogoStyles";
 
-import odomeMap from "./images/floorplan2025.png";
+import odomeMap from "./images/ODomeMap2026.jpg";
 
 const Home = ({ route }) => {
   const [modalVisible, setModalVisible] = useState(false);
@@ -74,7 +74,7 @@ const Home = ({ route }) => {
   const fetchDates = async () => {
     try {
       const response = await axios.get(
-        `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${range}?key=${apiKey}`
+        `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${range}?key=${apiKey}`,
       );
 
       const rows = response.data.values;
@@ -147,7 +147,7 @@ const Home = ({ route }) => {
       const validItems = fetchedItems.filter((item) => item !== null);
 
       const filteredItems = validItems.filter(
-        (item) => item.datetime.getTime() >= currentDate
+        (item) => item.datetime.getTime() >= currentDate,
       );
 
       filteredItems.sort((a, b) => a.datetime - b.datetime);
@@ -250,7 +250,7 @@ const Home = ({ route }) => {
           style={[styles.METile, { backgroundColor: "#B71B7C" }]}
           onPress={() =>
             Linking.openURL(
-              "https://events.dancemarathon.com/index.cfm?fuseaction=donorDrive.participant&participantID=1223104"
+              "https://events.dancemarathon.com/index.cfm?fuseaction=donorDrive.participant&participantID=1223104",
             )
           }
         >
@@ -261,7 +261,7 @@ const Home = ({ route }) => {
           style={[styles.METile, { backgroundColor: "#EAB90A" }]}
           onPress={() =>
             Linking.openURL(
-              "https://drive.google.com/drive/folders/1e_KKm4u42APaIYhM7ILqxc28bPotKLT9"
+              "https://drive.google.com/drive/folders/1Pd-https://drive.google.com/drive/folders/1Pd-JIqk49PMpz2cn6V-P1WlRrs9cmQ4S-P1WlRrs9cmQ4S?usp=sharing",
             )
           }
         >
@@ -297,7 +297,7 @@ const Home = ({ route }) => {
           >
             <Image
               source={odomeMap}
-              style={{ width: "90%", height: "80%", resizeMode: "contain" }}
+              style={{ width: "90%", height: "90%", resizeMode: "contain" }}
             />
           </View>
         </TouchableWithoutFeedback>
@@ -410,7 +410,7 @@ const styles = StyleSheet.create({
     shadowColor: "rgba(0, 0, 0, 0.25)",
   },
   eventsBox: {
-    marginTop: 10,
+    marginTop: 20,
     borderRadius: 9,
     backgroundColor: "#233d72",
     width: "85%",

@@ -2,18 +2,47 @@ import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
-  Button,
   StyleSheet,
   Modal,
   TouchableOpacity,
   ScrollView,
 } from "react-native";
-import CheckBox from "expo-checkbox"; // Updated import
+import { MultiSelect } from "react-native-element-dropdown";
 import { CameraView, Camera } from "expo-camera";
+import { collection, getDocs, query, where } from "firebase/firestore";
 import axios from "axios";
 import getAccessToken from "./api/googleAuth";
 import { getUserData } from "./Firebase/UserManager";
+import { db } from "./Firebase/firestore";
 import { getUserInfo } from "./api/index";
+
+const DEFAULT_SCANNER_OPTIONS = [
+  { label: "Checked-In", value: "Checked-In", points: 1, sortOrder: 1 },
+  {
+    label: "Wore DM Shirt to Check-In",
+    value: "Wore DM Shirt to Check-In",
+    points: 1,
+    sortOrder: 2,
+  },
+  {
+    label: "Brought A Friend to Check-In",
+    value: "Brought A Friend to Check-In",
+    points: 1,
+    sortOrder: 3,
+  },
+  {
+    label: "Attended All-Member / Captain Meeting",
+    value: "Attended All-Member / Captain Meeting",
+    points: 1,
+    sortOrder: 4,
+  },
+  {
+    label: "Attended Spirit Night",
+    value: "Attended Spirit Night",
+    points: 2,
+    sortOrder: 5,
+  },
+];
 
 const Scanner = () => {
   const [hasPermission, setHasPermission] = useState(null);
@@ -32,20 +61,59 @@ const Scanner = () => {
   const [userInfo, setUserInfo] = useState({});
 
   const [requestStatus, setRequestStatus] = useState("");
-
-  const [option1Checked, setOption1Checked] = useState(false);
-  const [option2Checked, setOption2Checked] = useState(false);
-  const [option3Checked, setOption3Checked] = useState(false);
-  const [option4Checked, setOption4Checked] = useState(false);
-  const [option5Checked, setOption5Checked] = useState(false);
-  const [option6Checked, setOption6Checked] = useState(false);
-  const [option7Checked, setOption7Checked] = useState(false);
-  const [option8Checked, setOption8Checked] = useState(false);
-  const [option9Checked, setOption9Checked] = useState(false);
-  const [option10Checked, setOption10Checked] = useState(false);
-  const [option11Checked, setOption11Checked] = useState(false);
+  const [selectedReasons, setSelectedReasons] = useState([]);
+  const [isDropdownFocus, setIsDropdownFocus] = useState(false);
+  const [scannerOptions, setScannerOptions] = useState(DEFAULT_SCANNER_OPTIONS);
 
   const scanLock = useRef(false);
+
+  const removeSelectedReason = (reasonToRemove) => {
+    setSelectedReasons((current) =>
+      current.filter((reason) => reason !== reasonToRemove),
+    );
+  };
+
+  useEffect(() => {
+    const fetchScannerOptions = async () => {
+      try {
+        const opportunitiesQuery = query(
+          collection(db, "SpiritPoints"),
+          where("active", "==", true),
+        );
+        const querySnapshot = await getDocs(opportunitiesQuery);
+
+        const fetchedOptions = querySnapshot.docs
+          .map((docSnapshot) => {
+            const data = docSnapshot.data();
+            const label = data.label?.trim();
+
+            if (!label) {
+              return null;
+            }
+
+            return {
+              label,
+              value: data.value?.trim() || label,
+              points: Number(data.points) || 0,
+              sortOrder: Number(data.sortOrder) || 999,
+            };
+          })
+          .filter(Boolean)
+          .sort((a, b) => a.sortOrder - b.sortOrder);
+
+        if (fetchedOptions.length > 0) {
+          setScannerOptions(fetchedOptions);
+        } else {
+          setScannerOptions(DEFAULT_SCANNER_OPTIONS);
+        }
+      } catch (error) {
+        console.error("Error fetching scanner opportunities:", error);
+        setScannerOptions(DEFAULT_SCANNER_OPTIONS);
+      }
+    };
+
+    fetchScannerOptions();
+  }, []);
 
   useEffect(() => {
     const getCameraPermissions = async () => {
@@ -79,7 +147,7 @@ const Scanner = () => {
   const fetchData = async () => {
     try {
       const response = await axios.get(
-        `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${range}?key=${apiKey}`
+        `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${range}?key=${apiKey}`,
       );
       setData(response.data.values);
       return response.data.values;
@@ -91,7 +159,7 @@ const Scanner = () => {
   const fetchIndividualData = async () => {
     try {
       const response = await axios.get(
-        `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${range2}?key=${apiKey}`
+        `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${range2}?key=${apiKey}`,
       );
       setIndividualData(response.data.values);
       return response.data.values;
@@ -113,7 +181,7 @@ const Scanner = () => {
     date,
     time,
     giver,
-    value
+    value,
   ) => {
     const SPREADSHEET_ID = "1VTr6Jq_UbrJ1HEUTxCo0TlLvoLXc5PaPagufrzbAAxY";
 
@@ -139,7 +207,7 @@ const Scanner = () => {
     } catch (error) {
       console.error(
         "Error adding row to sheet:",
-        error.response ? error.response.data : error.message
+        error.response ? error.response.data : error.message,
       );
       setRequestStatus("Failed to add row to sheet.");
     }
@@ -182,43 +250,25 @@ const Scanner = () => {
       const ACCESS_TOKEN = await getAccessToken();
       setUserData(extractedData);
 
-      const options = [
-        { label: "Checked-In", checked: option1Checked, points: 1 },
-        {
-          label: "Wore DM Shirt to Check-In",
-          checked: option2Checked,
-          points: 1,
-        },
-        {
-          label: "Brought A Friend to Check-In",
-          checked: option3Checked,
-          points: 1,
-        },
-        { label: "Attended All-Member", checked: option4Checked, points: 1 },
-        { label: "Attended Spirit Night", checked: option5Checked, points: 2 },
-        { label: "Bring a friend to Our Day", checked: option8Checked, points: 3 },
-        { label: "Get someone registered as a Miracle Maker", checked: option9Checked, points: 5 },
-        { label: "Register for Mission DM", checked: option10Checked, points: 2 },
-        { label: "Eliminate someone in MissionDM", checked: option11Checked, points: 1 },
-
-      ];
-
-      const selectedOptions = options.filter((option) => option.checked);
+      const selectedOptions = scannerOptions.filter((option) =>
+        selectedReasons.includes(option.value),
+      );
 
       if (selectedOptions.length > 0) {
-        for (const option of selectedOptions) {
-          const date = getCurrentDate();
-          const time = getCurrentTime();
-          const giver = userInfo.displayName;
+        const date = getCurrentDate();
+        const time = getCurrentTime();
+        const giver = userInfo.displayName;
+
+        for (const selectedOption of selectedOptions) {
           await postRowToSheet(
             ACCESS_TOKEN,
             extractedData.name,
             extractedData.team,
-            option.label,
+            selectedOption.label,
             date,
             time,
             giver,
-            option.points
+            selectedOption.points,
           );
         }
       }
@@ -227,17 +277,7 @@ const Scanner = () => {
     }
     setModalVisible(false);
     setScanned(false);
-    setOption1Checked(false);
-    setOption2Checked(false);
-    setOption3Checked(false);
-    setOption4Checked(false);
-    setOption5Checked(false);
-    setOption6Checked(false);
-    setOption7Checked(false);
-    setOption8Checked(false);
-    setOption9Checked(false);
-    setOption10Checked(false);
-    setOption11Checked(false);
+    setSelectedReasons([]);
 
     scanLock.current = false;
   };
@@ -327,77 +367,64 @@ const Scanner = () => {
       }}
     >
       <View style={styles.container}>
-  <Text style={styles.header}>Scan Spirit Points</Text>
+        <ScrollView
+          style={styles.containerScroll}
+          contentContainerStyle={styles.containerScrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          <Text style={styles.header}>Scan Spirit Points</Text>
+          <Text style={styles.dropdownLabel}>Select reason(s)</Text>
+          <MultiSelect
+            style={[styles.dropdown, isDropdownFocus && styles.dropdownFocused]}
+            placeholderStyle={styles.dropdownPlaceholder}
+            selectedTextStyle={styles.dropdownSelectedText}
+            containerStyle={styles.dropdownContainer}
+            itemTextStyle={styles.dropdownItemText}
+            activeColor="#1F1F1F"
+            visibleSelectedItem={false}
+            data={scannerOptions}
+            labelField="label"
+            valueField="value"
+            placeholder="Choose one or more reasons"
+            value={selectedReasons}
+            onFocus={() => setIsDropdownFocus(true)}
+            onBlur={() => setIsDropdownFocus(false)}
+            onChange={(items) => {
+              setSelectedReasons(items);
+            }}
+          />
+          {selectedReasons.length > 0 && (
+            <View style={styles.selectedReasonsContainer}>
+              {selectedReasons.map((reason) => {
+                const selectedOption = scannerOptions.find(
+                  (option) => option.value === reason,
+                );
 
-  <ScrollView
-    style={styles.optionsScroll}
-    contentContainerStyle={styles.optionsScrollContent}
-    showsVerticalScrollIndicator
-  >
-    {/* ALL checkbox rows go here */}
-    <View style={styles.checkboxContainer}>
-      <CheckBox value={option1Checked} onValueChange={setOption1Checked} style={styles.checkbox} />
-      <Text style={styles.optionText}> Checked-In</Text>
-    </View>
+                return (
+                  <View key={reason} style={styles.selectedReasonPill}>
+                    <Text style={styles.selectedReasonText}>
+                      {selectedOption?.label || reason}
+                    </Text>
+                    <TouchableOpacity
+                      onPress={() => removeSelectedReason(reason)}
+                      style={styles.selectedReasonRemove}
+                    >
+                      <Text style={styles.selectedReasonRemoveText}>x</Text>
+                    </TouchableOpacity>
+                  </View>
+                );
+              })}
+            </View>
+          )}
+        </ScrollView>
 
-    <View style={styles.checkboxContainer}>
-      <CheckBox value={option2Checked} onValueChange={setOption2Checked} style={styles.checkbox} />
-      <Text style={styles.optionText}> Wore DM Shirt to Check-In</Text>
-    </View>
-
-    <View style={styles.checkboxContainer}>
-      <CheckBox value={option3Checked} onValueChange={setOption3Checked} style={styles.checkbox} />
-      <Text style={styles.optionText}> Brought A Friend to Check-In</Text>
-    </View>
-
-    <View style={styles.checkboxContainer}>
-      <CheckBox value={option4Checked} onValueChange={setOption4Checked} style={styles.checkbox} />
-      <Text style={styles.optionText}> Attended All-Member / Captain Meeting</Text>
-    </View>
-
-    <View style={styles.checkboxContainer}>
-      <CheckBox value={option5Checked} onValueChange={setOption5Checked} style={styles.checkbox} />
-      <Text style={styles.optionText}> Attended Spirit Night</Text>
-    </View>
-
-    <View style={styles.checkboxContainer}>
-      <CheckBox value={option6Checked} onValueChange={setOption6Checked} style={styles.checkbox} />
-      <Text style={styles.optionText}> Purchased Merchandise</Text>
-    </View>
-
-    <View style={styles.checkboxContainer}>
-      <CheckBox value={option7Checked} onValueChange={setOption7Checked} style={styles.checkbox} />
-      <Text style={styles.optionText}> Attended TT Event</Text>
-    </View>
-
-    <View style={styles.checkboxContainer}>
-      <CheckBox value={option8Checked} onValueChange={setOption8Checked} style={styles.checkbox} />
-      <Text style={styles.optionText}> Bring a friend to Our Day</Text>
-    </View>
-
-    <View style={styles.checkboxContainer}>
-      <CheckBox value={option9Checked} onValueChange={setOption9Checked} style={styles.checkbox} />
-      <Text style={styles.optionText}> Get someone registered as a Miracle Maker</Text>
-    </View>
-
-    <View style={styles.checkboxContainer}>
-      <CheckBox value={option10Checked} onValueChange={setOption10Checked} style={styles.checkbox} />
-      <Text style={styles.optionText}> Register for Mission DM</Text>
-    </View>
-
-    <View style={styles.checkboxContainer}>
-      <CheckBox value={option11Checked} onValueChange={setOption11Checked} style={styles.checkbox} />
-      <Text style={styles.optionText}> Eliminate someone in MissionDM</Text>
-    </View>
-  </ScrollView>
-
-  <TouchableOpacity
-    onPress={() => setModalVisible(true)}
-    style={[styles.scannerOpen, { alignSelf: "center" }]}
-  >
-    <Text style={styles.openScannerText}>Open Scanner</Text>
-  </TouchableOpacity>
-</View>
+        <TouchableOpacity
+          onPress={() => setModalVisible(true)}
+          style={styles.scannerOpen}
+        >
+          <Text style={styles.openScannerText}>Open Scanner</Text>
+        </TouchableOpacity>
+      </View>
 
       <Modal
         animationType="slide"
@@ -453,13 +480,6 @@ const Scanner = () => {
 };
 
 const styles = StyleSheet.create({
-  checkboxContainer: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    marginBottom: 10,
-    marginLeft: 15,
-    marginRight: 15,
-  },
   modalContainer: {
     flex: 1,
     justifyContent: "center",
@@ -531,6 +551,12 @@ const styles = StyleSheet.create({
     maxHeight: 360,
     marginTop: 40,
   },
+  containerScroll: {
+    maxHeight: 280,
+  },
+  containerScrollContent: {
+    paddingBottom: 12,
+  },
   header: {
     fontSize: 20,
     fontWeight: "bold",
@@ -539,20 +565,91 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     marginTop: 10,
   },
-  optionText: {
+  dropdownLabel: {
+    color: "#fff",
+    fontSize: 16,
+    marginBottom: 8,
+    width: "85%",
+    alignSelf: "center",
+  },
+  dropdown: {
+    minHeight: 50,
+    width: "85%",
+    backgroundColor: "#1F1F1F",
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.2)",
+    paddingHorizontal: 12,
+    alignSelf: "center",
+  },
+  dropdownFocused: {
+    borderColor: "#E2883C",
+  },
+  dropdownPlaceholder: {
+    color: "rgba(255,255,255,0.7)",
+    fontSize: 16,
+  },
+  dropdownSelectedText: {
     color: "#fff",
     fontSize: 16,
   },
-  checkbox: {
-    marginRight: 8,
+  dropdownContainer: {
+    backgroundColor: "#233d72",
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.15)",
+  },
+  dropdownItemText: {
+    color: "#fff",
+    fontSize: 15,
+  },
+  selectedReasonsContainer: {
+    width: "85%",
+    alignSelf: "center",
+    flexDirection: "row",
+    flexWrap: "wrap",
+    marginTop: 10,
+    gap: 8,
+  },
+  selectedReasonPill: {
+    maxWidth: "100%",
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#E2883C",
+    borderRadius: 18,
+    paddingLeft: 12,
+    paddingRight: 8,
+    paddingVertical: 8,
+  },
+  selectedReasonText: {
+    color: "#fff",
+    fontSize: 14,
+    flexShrink: 1,
+    paddingRight: 8,
+  },
+  selectedReasonRemove: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: "rgba(0,0,0,0.18)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  selectedReasonRemoveText: {
+    color: "#fff",
+    fontSize: 12,
+    fontWeight: "bold",
   },
   scannerOpen: {
-    marginTop: 40,
+    marginTop: 16,
     borderRadius: 10,
     backgroundColor: "#f18221",
     width: 140,
     height: 40,
     marginBottom: 10,
+    alignSelf: "center",
+    justifyContent: "center",
+    alignItems: "center",
   },
   openScannerText: {
     textAlign: "center",
@@ -560,9 +657,6 @@ const styles = StyleSheet.create({
     fontFamily: "Outfit-Bold",
     fontWeight: "700",
     color: "#fff",
-    position: "absolute",
-    top: 10,
-    left: 15,
   },
   resultContainer: {
     marginTop: 50,
@@ -579,13 +673,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 1,
     width: 340,
     maxHeight: 200,
-  },
-  optionsScroll: {
-    maxHeight: 300,     
-  },
-
-  optionsScrollContent: {
-    paddingBottom: 1,
   },
 });
 

@@ -7,9 +7,11 @@ import {
 } from "firebase/auth";
 import { app } from "./firebase";
 import { getFirestore, setDoc, doc, deleteDoc } from "firebase/firestore";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const auth = getAuth(app);
 const db = getFirestore(app);
+const USER_DATA_KEY = "@user_data";
 
 const deleteUserAccount = async () => {
   const user = auth.currentUser;
@@ -224,6 +226,17 @@ const handleSignUp = async (
 };
 
 const handleSignOut = async () => {
+  const currentUID = auth.currentUser?.uid;
+
+  if (currentUID) {
+    try {
+      await AsyncStorage.removeItem(`${USER_DATA_KEY}_${currentUID}`);
+      console.log("Cached user data cleared on sign out");
+    } catch (error) {
+      console.error("Error clearing cached user data on sign out:", error);
+    }
+  }
+
   signOut(auth)
     .then(() => {
       console.log("Signed Out successfully!");

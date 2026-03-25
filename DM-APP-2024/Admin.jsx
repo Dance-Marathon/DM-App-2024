@@ -369,200 +369,215 @@ const Admin = ({ route }) => {
         // The "No" button
         { text: "No", style: "cancel" },
       ],
-      { cancelable: false }
+      { cancelable: false },
     );
   };
 
   return (
-    <View
-      style={{
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-        backgroundColor: "#1F1F1F",
-      }}
-    >
-      <View style={styles.notificationsBox}>
-        <View style={styles.header}>
-          <View style={styles.smallCircle} />
-          <Text style={styles.headerText}>NOTIFICATIONS</Text>
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <View
+        style={{
+          flex: 1,
+          justifyContent: "center",
+          alignItems: "center",
+          backgroundColor: "#1F1F1F",
+        }}
+      >
+        <View style={styles.notificationsBox}>
+          <View style={styles.header}>
+            <View style={styles.smallCircle} />
+            <Text style={styles.headerText}>NOTIFICATIONS</Text>
+            <TouchableOpacity
+              style={{
+                position: "absolute",
+                top: 0,
+                right: 20,
+              }}
+              onPress={() => navigation.navigate("MissionDM Admin")}
+            >
+              <FontAwesomeIcon
+                icon={faChildCombatant}
+                color="white"
+                size={20}
+              />
+            </TouchableOpacity>
+          </View>
+          <View>
+            <Text style={[styles.sectionTitle, { marginTop: 5 }]}>Title</Text>
+            <TextInput
+              style={styles.input}
+              onChangeText={(text) => setTitle(text)}
+              placeholder="Enter title here..."
+              autoCapitalize="none"
+              value={title}
+              placeholderTextColor="white"
+            />
+            <Text style={styles.sectionTitle}>Message</Text>
+            <TextInput
+              style={styles.input}
+              onChangeText={(text) => setMessage(text)}
+              placeholder="Enter message here..."
+              autoCapitalize="none"
+              value={message}
+              multiline={true}
+              // numberOfLines={4}
+              placeholderTextColor="white"
+              maxLength={160}
+            />
+            <Text
+              style={{ color: "white", textAlign: "right", marginRight: 15 }}
+            >
+              {message.length}/160
+            </Text>
+          </View>
           <TouchableOpacity
-            style={{
-              position: "absolute",
-              top: 0,
-              right: 20,
-            }}
-            onPress={() => navigation.navigate("MissionDM Admin")}
+            style={[
+              styles.sendButton,
+              {
+                alignSelf: "flex-end",
+                marginRight: 10,
+                marginTop: 5,
+                marginBottom: 10,
+              },
+            ]}
+            onPress={confirmSend}
           >
-            <FontAwesomeIcon icon={faChildCombatant} color="white" size={20} />
+            <Text style={styles.sendMessage}>Send</Text>
           </TouchableOpacity>
         </View>
-        <View>
-          <Text style={[styles.sectionTitle, { marginTop: 5 }]}>Title</Text>
-          <TextInput
-            style={styles.input}
-            onChangeText={(text) => setTitle(text)}
-            placeholder="Enter title here..."
-            autoCapitalize="none"
-            value={title}
-            placeholderTextColor="white"
-          />
-          <Text style={styles.sectionTitle}>Message</Text>
-          <TextInput
-            style={styles.input}
-            onChangeText={(text) => setMessage(text)}
-            placeholder="Enter message here..."
-            autoCapitalize="none"
-            value={message}
-            multiline={true}
-            // numberOfLines={4}
-            placeholderTextColor="white"
-          />
-        </View>
-        <TouchableOpacity
-          style={[
-            styles.sendButton,
-            {
-              alignSelf: "flex-end",
-              marginRight: 10,
-              marginTop: 5,
-              marginBottom: 10,
-            },
-          ]}
-          onPress={confirmSend}
-        >
-          <Text style={styles.sendMessage}>Send</Text>
-        </TouchableOpacity>
-      </View>
 
-      <View style={styles.permsBox}>
-        <View style={styles.header}>
-          <View style={styles.smallCircle} />
-          <Text style={styles.headerText}>SCANNER PERMISSIONS</Text>
-        </View>
-        <View style={styles.currentPermissions}>
-          <Text style={[styles.subHeader, { marginTop: -5 }]}>
-            Currently Selected Roles:
-          </Text>
-          <FlatList
-            data={allowedRoles}
-            keyExtractor={(item, index) => `${item}-${index}`}
-            renderItem={({ item }) => (
-              <Text style={styles.textItem}>- {item}</Text>
-            )}
-          />
-          <Text style={[styles.subHeader, { marginTop: 10 }]}>
-            Team-Based Permissions:
-          </Text>
-          {Object.entries(teamBasedPermissions).map(([role, teams]) => (
-            <View key={role} style={styles.teamSection}>
-              <Text style={styles.textItem}>{role}:</Text>
-              {teams.map((team, index) => (
-                <Text key={`${role}-${team}-${index}`} style={styles.textItem}>
-                  - {team}
-                </Text>
-              ))}
-            </View>
-          ))}
-        </View>
-        <TouchableOpacity
-          style={[
-            styles.accessButton,
-            {
-              alignSelf: "flex-end",
-              marginRight: 10,
-              marginTop: 5,
-              marginBottom: 10,
-            },
-          ]}
-          onPress={() => setModalVisible(true)}
-        >
-          <Text style={styles.accessMessage}>Manage Access</Text>
-        </TouchableOpacity>
-      </View>
-
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.sectionTitle}>Allowed Roles</Text>
+        <View style={styles.permsBox}>
+          <View style={styles.header}>
+            <View style={styles.smallCircle} />
+            <Text style={styles.headerText}>SCANNER PERMISSIONS</Text>
+          </View>
+          <View style={styles.currentPermissions}>
+            <Text style={[styles.subHeader, { marginTop: -5 }]}>
+              Currently Selected Roles:
+            </Text>
             <FlatList
               data={allowedRoles}
               keyExtractor={(item, index) => `${item}-${index}`}
               renderItem={({ item }) => (
-                <View style={styles.listItem}>
-                  <Text style={styles.textItem}>{item}</Text>
-                  <Button
-                    title="Remove"
-                    onPress={() =>
-                      setAllowedRoles((prev) =>
-                        prev.filter((role) => role !== item)
-                      )
-                    }
-                  />
-                </View>
+                <Text style={styles.textItem}>- {item}</Text>
               )}
             />
-            <TextInput
-              style={styles.input}
-              value={newRole}
-              onChangeText={setNewRole}
-              placeholder="Add Role"
-            />
-            <Button
-              title="Add Role"
-              onPress={() => {
-                if (newRole) setAllowedRoles([...allowedRoles, newRole]);
-                setNewRole("");
-              }}
-            />
-
-            <Text style={styles.sectionTitle}>Team-Based Permissions</Text>
-            {Object.keys(teamBasedPermissions).map((role) => (
+            <Text style={[styles.subHeader, { marginTop: 10 }]}>
+              Team-Based Permissions:
+            </Text>
+            {Object.entries(teamBasedPermissions).map(([role, teams]) => (
               <View key={role} style={styles.teamSection}>
-                <Text style={styles.subHeader}>{role}</Text>
-                {teamBasedPermissions[role].map((team, index) => (
-                  <View
+                <Text style={styles.textItem}>{role}:</Text>
+                {teams.map((team, index) => (
+                  <Text
                     key={`${role}-${team}-${index}`}
-                    style={styles.listItem}
+                    style={styles.textItem}
                   >
-                    <Text style={styles.textItem}>{team}</Text>
-                    <Button
-                      title="Remove"
-                      onPress={() => removeTeamPermission(role, team)}
-                    />
-                  </View>
+                    - {team}
+                  </Text>
                 ))}
               </View>
             ))}
-            <TextInput
-              style={styles.input}
-              value={newTeamRole}
-              onChangeText={setNewTeamRole}
-              placeholder="Role (e.g., Assistant Director)"
-            />
-            <TextInput
-              style={styles.input}
-              value={newTeam}
-              onChangeText={setNewTeam}
-              placeholder="Team (e.g., Recruitment)"
-            />
-            <Button title="Add Team Permission" onPress={addTeamPermission} />
-
-            <Button title="Save Changes" onPress={updatePermissions} />
-            <Button
-              title="Close"
-              onPress={() => setModalVisible(false)}
-              color="#FF6347"
-            />
           </View>
+          <TouchableOpacity
+            style={[
+              styles.accessButton,
+              {
+                alignSelf: "flex-end",
+                marginRight: 10,
+                marginTop: 5,
+                marginBottom: 10,
+              },
+            ]}
+            onPress={() => setModalVisible(true)}
+          >
+            <Text style={styles.accessMessage}>Manage Access</Text>
+          </TouchableOpacity>
         </View>
-      </Modal>
-    </View>
+
+        <Modal
+          animationType="slide"
+          transparent={true}
+          visible={modalVisible}
+          onRequestClose={() => setModalVisible(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <Text style={styles.sectionTitle}>Allowed Roles</Text>
+              <FlatList
+                data={allowedRoles}
+                keyExtractor={(item, index) => `${item}-${index}`}
+                renderItem={({ item }) => (
+                  <View style={styles.listItem}>
+                    <Text style={styles.textItem}>{item}</Text>
+                    <Button
+                      title="Remove"
+                      onPress={() =>
+                        setAllowedRoles((prev) =>
+                          prev.filter((role) => role !== item),
+                        )
+                      }
+                    />
+                  </View>
+                )}
+              />
+              <TextInput
+                style={styles.input}
+                value={newRole}
+                onChangeText={setNewRole}
+                placeholder="Add Role"
+              />
+              <Button
+                title="Add Role"
+                onPress={() => {
+                  if (newRole) setAllowedRoles([...allowedRoles, newRole]);
+                  setNewRole("");
+                }}
+              />
+
+              <Text style={styles.sectionTitle}>Team-Based Permissions</Text>
+              {Object.keys(teamBasedPermissions).map((role) => (
+                <View key={role} style={styles.teamSection}>
+                  <Text style={styles.subHeader}>{role}</Text>
+                  {teamBasedPermissions[role].map((team, index) => (
+                    <View
+                      key={`${role}-${team}-${index}`}
+                      style={styles.listItem}
+                    >
+                      <Text style={styles.textItem}>{team}</Text>
+                      <Button
+                        title="Remove"
+                        onPress={() => removeTeamPermission(role, team)}
+                      />
+                    </View>
+                  ))}
+                </View>
+              ))}
+              <TextInput
+                style={styles.input}
+                value={newTeamRole}
+                onChangeText={setNewTeamRole}
+                placeholder="Role (e.g., Assistant Director)"
+              />
+              <TextInput
+                style={styles.input}
+                value={newTeam}
+                onChangeText={setNewTeam}
+                placeholder="Team (e.g., Recruitment)"
+              />
+              <Button title="Add Team Permission" onPress={addTeamPermission} />
+
+              <Button title="Save Changes" onPress={updatePermissions} />
+              <Button
+                title="Close"
+                onPress={() => setModalVisible(false)}
+                color="#FF6347"
+              />
+            </View>
+          </View>
+        </Modal>
+      </View>
+    </TouchableWithoutFeedback>
   );
 };
 export default Admin;
@@ -691,11 +706,9 @@ const styles = StyleSheet.create({
     color: "white",
   },
   notificationsBox: {
-    top: 30,
     borderRadius: 9,
     backgroundColor: "#233d72",
     width: 340,
-    position: "absolute",
     shadowOpacity: 1,
     elevation: 4,
     shadowRadius: 4,
@@ -751,11 +764,10 @@ const styles = StyleSheet.create({
     position: "absolute",
   },
   permsBox: {
-    top: 260,
+    top: 10,
     borderRadius: 9,
     backgroundColor: "#233d72",
     width: 340,
-    position: "absolute",
     shadowOpacity: 1,
     elevation: 4,
     shadowRadius: 4,
