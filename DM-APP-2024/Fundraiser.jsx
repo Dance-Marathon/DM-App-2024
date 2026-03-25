@@ -4,6 +4,7 @@ import Toast, { BaseToast } from "react-native-toast-message";
 import {
   View,
   Text,
+  Dimensions,
   Image,
   StyleSheet,
   Linking,
@@ -35,6 +36,9 @@ import { UserContext } from "./api/calls";
 import { updateDDLink } from "./Firebase/AuthManager";
 import { updateUserData } from "./Firebase/UserManager";
 import { auth } from "./Firebase/AuthManager";
+
+const { width } = Dimensions.get("window");
+const tileWidth = width * 0.85;
 
 const Fundraiser = () => {
   const navigation = useNavigation();
@@ -541,10 +545,10 @@ const Fundraiser = () => {
             </Text>
           </View>
 
-          <View style={{ position: "relative", width: 340 }}>
+          <View style={{ position: "relative", width: tileWidth }}>
             <Progress.Bar
               progress={progress}
-              width={340}
+              width={tileWidth}
               borderColor="white"
               color="#233D72"
               height={40}
@@ -834,7 +838,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    width: "80%",
+    width: tileWidth,
     marginTop: 5,
   },
   displayName: {
@@ -863,7 +867,7 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 4,
     shadowOpacity: 1,
-    width: 340,
+    width: tileWidth,
     height: 290,
     marginTop: 5,
   },

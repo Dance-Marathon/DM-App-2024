@@ -29,6 +29,7 @@ import HomeME from "./HomeME";
 import CalendarPage from "./CalendarPage";
 import Spirit from "./Spirit";
 import Fundraiser from "./Fundraiser";
+import TeamFundraiser from "./TeamFundraiser";
 import About from "./About";
 import Login from "./Login";
 import ForgotPassword from "./ForgotPassword";
@@ -464,6 +465,33 @@ const App = () => {
     </AboutStack.Navigator>
   );
 
+  const FundraiserStack = createStackNavigator();
+
+  const FundraiserStackScreen = () => (
+    <FundraiserStack.Navigator>
+      <FundraiserStack.Screen
+        name="FundraiserHome"
+        component={Fundraiser}
+        options={{ headerShown: false }}
+      />
+      <FundraiserStack.Screen
+        name="TeamFundraiser"
+        component={TeamFundraiser}
+        options={({ route }) => ({
+          title: "",
+          headerStyle: {
+            backgroundColor: "#1f1f1f",
+            borderBottomWidth: 0,
+          },
+          headerTransparent: true,
+          headerTintColor: "white",
+          headerShadowVisible: false,
+          headerBackTitleVisible: false,
+        })}
+      />
+    </FundraiserStack.Navigator>
+  );
+
   if (appDisabled) {
     return (
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
@@ -584,9 +612,10 @@ const App = () => {
               )} */}
               <Tab.Screen
                 name="Fundraiser"
-                component={Fundraiser}
+                component={FundraiserStackScreen}
                 options={{
                   headerShown: false,
+                  unmountOnBlur: true,
                   tabBarIcon: ({ color, size }) => (
                     <Icon name="money" type="font-awesome" color={color} />
                   ),

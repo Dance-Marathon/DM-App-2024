@@ -3,6 +3,7 @@ import {
   View,
   Text,
   Linking,
+  Dimensions,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
@@ -26,6 +27,9 @@ import { useNavigation } from "@react-navigation/native";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 import { faX } from "@fortawesome/free-solid-svg-icons";
 import { faXTwitter } from "@fortawesome/free-brands-svg-icons";
+
+const { width } = Dimensions.get("window");
+const tileWidth = width * 0.85;
 
 const About = () => {
   const [response, setResponse] = useState(false);
@@ -439,9 +443,9 @@ const styles = StyleSheet.create({
     backgroundColor: "#233563",
   },
   boxes: {
-    alignSelf: "stretch",
+    width: tileWidth,
     padding: 5,
-    marginHorizontal: 20,
+    alignSelf: "center",
     marginVertical: 5,
     borderRadius: 9,
     backgroundColor: "#233d72",
@@ -455,14 +459,13 @@ const styles = StyleSheet.create({
     shadowColor: "rgba(0, 0, 0, 0.25)",
   },
   title: {
-    alignSelf: "stretch",
-    paddingHorizontal: 20,
+    width: tileWidth,
+    alignSelf: "center",
     color: "white",
     textAlign: "left",
     fontSize: 16,
     fontWeight: "bold",
     marginTop: 15,
-    marginLeft: 10,
   },
   button: {
     backgroundColor: "#233D72",
@@ -625,9 +628,9 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   accountBox: {
-    alignSelf: "stretch",
+    width: tileWidth,
+    alignSelf: "center",
     padding: 10,
-    marginHorizontal: 20,
     marginVertical: 5,
     borderRadius: 9,
     backgroundColor: "#233d72",
@@ -647,7 +650,7 @@ const styles = StyleSheet.create({
     flex: 1,
     borderRadius: 10,
     backgroundColor: "#f18221",
-    width: "90%",
+    width: tileWidth,
   },
   errorText: {
     color: "white",

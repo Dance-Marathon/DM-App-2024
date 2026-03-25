@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
+  Dimensions,
   Image,
   Linking,
   ScrollView,
@@ -16,6 +17,8 @@ import { getTeamDonations, getTeamRoster, getUserInfo } from "./api";
 import { apiPaths } from "./api/api-paths";
 
 const DOMAIN_STUB = "https://events.dancemarathon.com";
+const { width } = Dimensions.get("window");
+const tileWidth = width * 0.85;
 
 const normalizeAvatarUrl = (url, fallbackDomain = DOMAIN_STUB) => {
   if (!url) {
@@ -354,7 +357,7 @@ const TeamFundraiser = ({ route }) => {
 
       <Progress.Bar
         progress={progress}
-        width={340}
+        width={tileWidth}
         borderColor="white"
         color="#233D72"
         height={40}
@@ -456,7 +459,9 @@ const TeamFundraiser = ({ route }) => {
             ))
           ) : (
             <View style={styles.emptyState}>
-              <Text style={styles.emptyText}>No team donations to display.</Text>
+              <Text style={styles.emptyText}>
+                No team donations to display.
+              </Text>
             </View>
           )}
         </ScrollView>
@@ -470,7 +475,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#1F1F1F",
     alignItems: "center",
-    paddingBottom: 20,
+    paddingBottom: 12,
   },
   logo: {
     marginTop: 70,
@@ -486,8 +491,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     width: 350,
-    marginTop: 20,
-    marginBottom: 16,
+    marginTop: 8,
+    marginBottom: 6,
   },
   profileText: {
     flex: 1,
@@ -503,13 +508,13 @@ const styles = StyleSheet.create({
   },
   displayName: {
     fontWeight: "bold",
-    fontSize: 24,
+    fontSize: 22,
     color: "white",
   },
   section: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 5,
+    marginTop: 2,
   },
   tag: {
     fontSize: 14,
@@ -520,20 +525,20 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    width: 340,
-    marginTop: 12,
-    marginBottom: 8,
+    width: tileWidth,
+    marginTop: 8,
+    marginBottom: 6,
   },
   amountText: {
     color: "white",
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "bold",
   },
   buttonContainer: {
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    marginTop: 14,
+    marginTop: 10,
   },
   showDonordrivePageButton: {
     backgroundColor: "#E2883C",
@@ -559,9 +564,9 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 4,
     shadowOpacity: 1,
-    width: 340,
-    height: 200,
-    marginTop: 16,
+    width: tileWidth,
+    height: 188,
+    marginTop: 12,
   },
   header: {
     flexDirection: "row",
