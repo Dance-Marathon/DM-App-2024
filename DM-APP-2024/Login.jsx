@@ -123,6 +123,9 @@ const Login = ({ route }) => {
           >
             <View style={styles.centeredView}>
               <View style={styles.modalView}>
+                <TouchableOpacity style={styles.closeButton} onPress={closeDDModal}>
+                  <Text style={styles.closeText}>×</Text>
+                </TouchableOpacity>
                 <Text style={styles.modalHeader}>
                   How to Find Your DonorDrive Link
                 </Text>
@@ -142,7 +145,6 @@ const Login = ({ route }) => {
                 <Text style={styles.modalText}>
                   6. Paste that link in the app
                 </Text>
-                <Button title="Close" onPress={closeDDModal} />
               </View>
             </View>
           </Modal>
@@ -250,23 +252,19 @@ const Login = ({ route }) => {
               </View>
             )}
             {!create && (
-              <View>
+              <View style={styles.bottomSection}>
                 <TouchableOpacity onPress={openDDModal}>
                   <Text style={styles.DDlink}>
                     Where do I find my DonorDrive Link?
                   </Text>
                 </TouchableOpacity>
-                <Text style={styles.signUp}>
-                  Already A User?
-                  <TouchableOpacity
-                    style={{ marginBottom: -3 }}
-                    onPress={() => {
-                      setCreate(true);
-                    }}
-                  >
-                    <Text style={{ color: "#61A0DA" }}> Log In!</Text>
-                  </TouchableOpacity>
-                </Text>
+
+                <View style={styles.loginRow}>
+                  <Text style={styles.signUp}>Already a user?</Text>
+                    <TouchableOpacity onPress={() => setCreate(true)}>
+                  <Text style={styles.signUpLink}> Log In!</Text>
+                    </TouchableOpacity>
+                </View>
               </View>
             )}
           </View>
@@ -298,6 +296,7 @@ const styles = StyleSheet.create({
   },
   inputTop: {
     height: 40,
+    color: '#adadad',
     borderColor: "black",
     borderWidth: 1,
     marginBottom: 15,
@@ -313,6 +312,7 @@ const styles = StyleSheet.create({
   },
   inputMiddle: {
     height: 40,
+    color: '#adadad',
     borderColor: "black",
     borderWidth: 1,
     paddingHorizontal: 10,
@@ -326,12 +326,17 @@ const styles = StyleSheet.create({
   },
   inputBottom: {
     height: 40,
+    color: '#adadad',
     borderColor: "black",
     borderWidth: 1,
     paddingHorizontal: 10,
     borderRadius: 5,
     backgroundColor: "#D9D9D9",
     marginTop: 15,
+  },
+  bottomSection: {
+     marginTop: 12,
+     alignItems: 'center',
   },
   loginButton: {
     backgroundColor: "#E2883C",
@@ -365,12 +370,12 @@ const styles = StyleSheet.create({
   DDlink: {
     color: "#61A0DA",
     textAlign: "center",
-    marginBottom: 2,
+    marginBottom: 1,
   },
   signUp: {
     color: "black",
     textAlign: "center",
-    marginTop: 5,
+    marginTop: 1,
   },
   logoBig: {
     width: 350,
@@ -402,10 +407,12 @@ const styles = StyleSheet.create({
     marginRight: 5,
   },
   placeholderStyle: {
-    fontSize: 16,
+    color: '#adadad',
+    fontSize: 14,
   },
   selectedTextStyle: {
-    fontSize: 16,
+    color: '#adadad',
+    fontSize: 14,
   },
   iconStyle: {
     width: 20,
@@ -417,7 +424,7 @@ const styles = StyleSheet.create({
   },
   modalView: {
     margin: 20,
-    backgroundColor: "white",
+    backgroundColor: "#233563",
     borderRadius: 20,
     padding: 35,
     alignItems: "center",
@@ -430,6 +437,17 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 5,
   },
+  closeButton: {
+    position: 'absolute',
+    top: 10,
+    right: 15,
+    zIndex: 1,
+  },
+  closeText: {
+    color: 'white',
+    fontSize: 24,
+    fontWeight: 'bold',
+  },
   centeredView: {
     flex: 1,
     justifyContent: "center",
@@ -437,12 +455,14 @@ const styles = StyleSheet.create({
     marginTop: 22,
   },
   modalHeader: {
+    color: "#D9D9D9",
     fontSize: 16,
     fontWeight: "bold",
     textAlign: "center",
     marginBottom: 20,
   },
   modalText: {
+    color: "#D9D9D9",
     fontSize: 14,
     textAlign: "left",
     alignSelf: "stretch",
@@ -461,6 +481,12 @@ const styles = StyleSheet.create({
   signUpLink: {
     color: "#61A0DA",
     textAlign: "center",
+  },
+  loginRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center', // keeps it centered horizontally
+    marginTop: 13,
   },
 });
 
