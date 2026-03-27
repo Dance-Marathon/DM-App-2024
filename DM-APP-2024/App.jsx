@@ -140,6 +140,7 @@ const App = () => {
   const [appDisabled, setAppDisabled] = useState(false);
   const [image, setImage] = useState(null);
   const [mainEvent, setMainEvent] = useState(false);
+  const [permissionsLoaded, setPermissionsLoaded] = useState(false);
 
   useEffect(() => {
     const docRef = doc(db, "Permissions", "tempData");
@@ -159,7 +160,10 @@ const App = () => {
       } else {
         console.error("Document does not exist!");
         setAppDisabled(false);
+        setMainEvent(false);
       }
+
+      setPermissionsLoaded(true);
     });
 
     return () => unsubscribe();
@@ -315,7 +319,7 @@ const App = () => {
     }
   }, [expoPushToken, auth.currentUser]);
 
-  if (loading) {
+  if (loading || !permissionsLoaded) {
     return null;
   }
 

@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect } from "react";
+import React, { createContext, useState, useEffect, useCallback } from "react";
 import {
   getUserInfo,
   getUserMilestones,
@@ -64,13 +64,22 @@ export const UserProvider = ({ children }) => {
   //     setIsLoadingUserInfo(false);
   //   }
   // };
-  const refetchUserData = async () => {
+  const refetchUserData = useCallback(async (options = {}) => {
     setIsLoadingUserInfo(true);
     setIsLoadingMilestones(true);
     setIsLoadingDonations(true);
 
     try {
-      const userData = await getUserData();
+      const userData = await getUserData(options);
+      if (!userData) {
+        setUserID(null);
+        setRole(null);
+        setUserInfo(null);
+        setMilestoneInfo(null);
+        setDonationInfo(null);
+        setBadgeInfo(null);
+        return;
+      }
       console.log("userData: ", JSON.stringify(userData));
       setUserID(userData.donorID);
       setRole(userData.role);
@@ -94,7 +103,7 @@ export const UserProvider = ({ children }) => {
       setIsLoadingMilestones(false);
       setIsLoadingDonations(false);
     }
-  };
+  }, []);
 
   // 2. Replace the initial useEffect with a call to the new function
   useEffect(() => {

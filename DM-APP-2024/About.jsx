@@ -23,7 +23,7 @@ import {
 import { Dropdown } from "react-native-element-dropdown";
 import { clearUserDataCache, updateUserData } from "./Firebase/UserManager";
 import { UserContext } from "./api/calls";
-import { useNavigation } from "@react-navigation/native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 import { faX } from "@fortawesome/free-solid-svg-icons";
 import { faXTwitter } from "@fortawesome/free-brands-svg-icons";
@@ -41,6 +41,12 @@ const About = () => {
   const navigation = useNavigation();
 
   const [linkError, setLinkError] = useState("");
+
+  useFocusEffect(
+    React.useCallback(() => {
+      refetchUserData({ forceRefresh: true });
+    }, [refetchUserData])
+  );
 
   // Organization role options
   const roles = [
@@ -139,7 +145,7 @@ const About = () => {
     const currentUID = auth.currentUser.uid;
     await updateRole(currentUID, newRole);
     await updateUserData();
-    await refetchUserData();
+    await refetchUserData({ forceRefresh: true });
     toggleAccountModel();
   };
 

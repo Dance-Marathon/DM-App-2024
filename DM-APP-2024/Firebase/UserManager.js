@@ -7,26 +7,29 @@ const USER_DATA_KEY = "@user_data";
 const hasRequiredUserFields = (data) =>
   Boolean(data && data.donorID && data.donorLink && data.role);
 
-const getUserData = async () => {
+const getUserData = async (options = {}) => {
   try {
     const currentUID = auth.currentUser.uid;
+    const { forceRefresh = false } = options;
 
-    // Check if user data exists in AsyncStorage first
-    const cachedData = await AsyncStorage.getItem(
-      `${USER_DATA_KEY}_${currentUID}`
-    );
+    if (!forceRefresh) {
+      // Check if user data exists in AsyncStorage first
+      const cachedData = await AsyncStorage.getItem(
+        `${USER_DATA_KEY}_${currentUID}`
+      );
 
-    // console.log("cachedData:", cachedData);
+      // console.log("cachedData:", cachedData);
 
-    if (cachedData && cachedData != undefined && cachedData !== "null") {
-      const parsedCachedData = JSON.parse(cachedData);
+      if (cachedData && cachedData != undefined && cachedData !== "null") {
+        const parsedCachedData = JSON.parse(cachedData);
 
-      if (hasRequiredUserFields(parsedCachedData)) {
-        console.log("Returning cached data");
-        return parsedCachedData;
+        if (hasRequiredUserFields(parsedCachedData)) {
+          console.log("Returning cached data");
+          return parsedCachedData;
+        }
+
+        console.log("Cached user data missing required fields, refreshing...");
       }
-
-      console.log("Cached user data missing required fields, refreshing...");
     }
 
     // If no cached data is found, fetch from Firestore

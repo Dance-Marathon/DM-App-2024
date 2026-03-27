@@ -247,10 +247,10 @@ const Home = ({ route }) => {
           <Text style={{ color: "white", fontSize: 10 }}>O'Dome Map</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.METile, { backgroundColor: "#B71B7C" }]}
+          style={[styles.METile, { backgroundColor: "#7825c7" }]}
           onPress={() =>
             Linking.openURL(
-              "https://events.dancemarathon.com/index.cfm?fuseaction=donorDrive.participant&participantID=1223104",
+              "https://events.dancemarathon.com/participant/songrequests",
             )
           }
         >
@@ -261,7 +261,7 @@ const Home = ({ route }) => {
           style={[styles.METile, { backgroundColor: "#EAB90A" }]}
           onPress={() =>
             Linking.openURL(
-              "https://drive.google.com/drive/folders/1Pd-https://drive.google.com/drive/folders/1Pd-JIqk49PMpz2cn6V-P1WlRrs9cmQ4S-P1WlRrs9cmQ4S?usp=sharing",
+              "https://drive.google.com/drive/folders/1Pd-JIqk49PMpz2cn6V-P1WlRrs9cmQ4S",
             )
           }
         >
