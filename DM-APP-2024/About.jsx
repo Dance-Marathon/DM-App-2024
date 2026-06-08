@@ -33,7 +33,7 @@ const About = () => {
   const [newRole, setNewRole] = useState("");
   const [accountModalVisable, setAccountModalVisable] = useState(false);
   const [isFocus, setIsFocus] = useState(false);
-  const { role, refetchUserData } = useContext(UserContext);
+  const { role, isAdmin, refetchUserData } = useContext(UserContext);
   const navigation = useNavigation();
 
   const [linkError, setLinkError] = useState("");
@@ -355,7 +355,7 @@ const About = () => {
             buttonStyle={styles.lastButton}
           />
         </View>
-        {role === "Admin" ? (
+        {isAdmin ? (
           <TouchableOpacity
             style={styles.adminButton}
             onPress={() => navigation.navigate("Admin")}
