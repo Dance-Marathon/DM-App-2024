@@ -209,6 +209,7 @@ const handleSignUp = async (
           email: email,
           password: password,
           role: role,
+          isAdmin: false,
           uid: user.uid,
           donorLink: donorDriveLink,
           donorID: extractParticipantID(donorDriveLink),

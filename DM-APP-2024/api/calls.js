@@ -12,6 +12,7 @@ export const UserContext = createContext();
 export const UserProvider = ({ children }) => {
   const [userID, setUserID] = useState(null);
   const [role, setRole] = useState(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [userInfo, setUserInfo] = useState(null);
   const [milestoneInfo, setMilestoneInfo] = useState(null);
   const [donationInfo, setDonationInfo] = useState(null);
@@ -83,6 +84,7 @@ export const UserProvider = ({ children }) => {
       console.log("userData: ", JSON.stringify(userData));
       setUserID(userData.donorID);
       setRole(userData.role);
+      setIsAdmin(userData.isAdmin === true);
 
       const [userInfoData, milestonesData, donationsData, badgesData] =
         await Promise.all([
@@ -163,6 +165,7 @@ export const UserProvider = ({ children }) => {
       value={{
         userID,
         role,
+        isAdmin,
         userInfo,
         milestoneInfo,
         donationInfo,
