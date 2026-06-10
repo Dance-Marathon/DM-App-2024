@@ -19,6 +19,8 @@ import {
   deleteUserAccount,
   updateDDLink,
   updateRole,
+  updateOrganization,
+  updateCaptainTeam,
 } from "./Firebase/AuthManager";
 import { Dropdown } from "react-native-element-dropdown";
 import { clearUserDataCache, updateUserData } from "./Firebase/UserManager";
@@ -35,10 +37,15 @@ const About = () => {
   const [response, setResponse] = useState(false);
   const [newLink, setNewLink] = useState("");
   const [newRole, setNewRole] = useState("");
+  const [newOrg, setNewOrg] = useState("");
+  const [newCaptainTeam, setNewCaptainTeam] = useState("");
   const [accountModalVisable, setAccountModalVisable] = useState(false);
   const [isFocus, setIsFocus] = useState(false);
+  const [isOrgFocus, setIsOrgFocus] = useState(false);
+  const [isCaptainTeamFocus, setIsCaptainTeamFocus] = useState(false);
   const { role, isAdmin, refetchUserData } = useContext(UserContext);
   const navigation = useNavigation();
+  const isGuest = !auth.currentUser;
 
   const [linkError, setLinkError] = useState("");
 
@@ -149,6 +156,87 @@ const About = () => {
     toggleAccountModel();
   };
 
+  const changeOrganization = async () => {
+    const currentUID = auth.currentUser.uid;
+    await updateOrganization(currentUID, newOrg);
+    await updateUserData();
+    toggleAccountModel();
+  };
+
+  const changeCaptainTeam = async () => {
+    const currentUID = auth.currentUser.uid;
+    await updateCaptainTeam(currentUID, newCaptainTeam);
+    await updateUserData();
+    toggleAccountModel();
+  };
+
+  const organizations = [
+    { label: "Alpha Chi Omega", value: "Alpha Chi Omega" },
+    { label: "Delta Delta Delta", value: "Delta Delta Delta" },
+    { label: "Kappa Alpha Theta", value: "Kappa Alpha Theta" },
+    { label: "Alpha Delta Pi", value: "Alpha Delta Pi" },
+    { label: "Delta Gamma", value: "Delta Gamma" },
+    { label: "Kappa Delta", value: "Kappa Delta" },
+    { label: "Sigma Kappa", value: "Sigma Kappa" },
+    { label: "Alpha Epsilon Phi", value: "Alpha Epsilon Phi" },
+    { label: "Delta Nu Zeta", value: "Delta Nu Zeta" },
+    { label: "Kappa Kappa Gamma", value: "Kappa Kappa Gamma" },
+    { label: "Alpha Epsilon Pi", value: "Alpha Epsilon Pi" },
+    { label: "Sigma Phi Epsilon", value: "Sigma Phi Epsilon" },
+    { label: "Delta Sigma Phi", value: "Delta Sigma Phi" },
+    { label: "Kappa Sigma", value: "Kappa Sigma" },
+    { label: "Delta Tau Delta", value: "Delta Tau Delta" },
+    { label: "Lambda Chi Alpha", value: "Lambda Chi Alpha" },
+    { label: "Tau Epsilon Phi", value: "Tau Epsilon Phi" },
+    { label: "Alpha Phi", value: "Alpha Phi" },
+    { label: "Delta Zeta", value: "Delta Zeta" },
+    { label: "Sigma Alpha Epsilon", value: "Sigma Alpha Epsilon" },
+    { label: "Tau Kappa Epsilon", value: "Tau Kappa Epsilon" },
+    { label: "Phi Delta Theta", value: "Phi Delta Theta" },
+    { label: "Gamma Eta", value: "Gamma Eta" },
+    { label: "Phi Kappa Tau", value: "Phi Kappa Tau" },
+    { label: "Gamma Phi Beta", value: "Gamma Phi Beta" },
+    { label: "Phi Mu", value: "Phi Mu" },
+    { label: "Pi Beta Phi", value: "Pi Beta Phi" },
+    { label: "UF Honors Program", value: "UF Honors Program" },
+    { label: "Chi Omega", value: "Chi Omega" },
+    { label: "Pi Kappa Alpha", value: "Pi Kappa Alpha" },
+    { label: "Chi Phi", value: "Chi Phi" },
+    { label: "Innovation Academy", value: "Innovation Academy" },
+    { label: "Kappa Alpha Order", value: "Kappa Alpha Order" },
+    { label: "Zeta Beta Tau", value: "Zeta Beta Tau" },
+    { label: "Zeta Tau Alpha", value: "Zeta Tau Alpha" },
+    { label: "AMSA", value: "AMSA" },
+    { label: "Catholic Gators", value: "Catholic Gators" },
+    { label: "Delta Chi", value: "Delta Chi" },
+    { label: "Kappa Phi Epsilon", value: "Kappa Phi Epsilon" },
+    { label: "Phi Gamma Delta", value: "Phi Gamma Delta" },
+    { label: "Theta Chi", value: "Theta Chi" },
+    { label: "UF Law", value: "UF Law" },
+    { label: "UF PaCE", value: "UF PaCE" },
+    { label: "Footprints: Buddy and Support Program", value: "Footprints: Buddy and Support Program" },
+    { label: "Hispanic Student Association", value: "Hispanic Student Association" },
+    { label: "Team Hope", value: "Team Hope" },
+  ];
+
+  const captainTeams = [
+    { label: "N/A", value: "N/A" },
+    { label: "Digital Marketing", value: "Digital Marketing" },
+    { label: "Event Management", value: "Event Management" },
+    { label: "Family Relations", value: "Family Relations" },
+    { label: "Finance", value: "Finance" },
+    { label: "Hospitality", value: "Hospitality" },
+    { label: "Leadership Development", value: "Leadership Development" },
+    { label: "Marathon Relations", value: "Marathon Relations" },
+    { label: "Member Development", value: "Member Development" },
+    { label: "Merchandise", value: "Merchandise" },
+    { label: "Morale", value: "Morale" },
+    { label: "Multimedia", value: "Multimedia" },
+    { label: "Public Relations", value: "Public Relations" },
+    { label: "Recruitment", value: "Recruitment" },
+    { label: "Sponsorships", value: "Sponsorships" },
+  ];
+
   // Toggles account modal visibility
   const toggleAccountModel = () => {
     setLinkError("");
@@ -171,28 +259,47 @@ const About = () => {
       >
         <Text style={styles.title}>ACCOUNT</Text>
         <View style={styles.accountBox}>
-          <View style={styles.buttonContainer}>
-            <TouchableOpacity
-              style={styles.updateAccountButton}
-              onPress={toggleAccountModel}
-            >
-              <Text style={styles.buttonText}>Update Account Info</Text>
-            </TouchableOpacity>
-          </View>
-          <View style={styles.buttonContainer}>
-            <TouchableOpacity
-              style={styles.signOutButton}
-              onPress={() => handleSignOut()}
-            >
-              <Text style={styles.buttonText}>Sign Out</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.deleteAccountButton}
-              onPress={() => confirmDeletion()}
-            >
-              <Text style={styles.buttonText}>Delete Account</Text>
-            </TouchableOpacity>
-          </View>
+          {isGuest ? (
+            <View style={styles.buttonContainer}>
+              <TouchableOpacity
+                style={styles.updateAccountButton}
+                onPress={() => navigation.navigate("Login")}
+              >
+                <Text style={styles.buttonText}>Sign In</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.updateAccountButton, { marginLeft: 10 }]}
+                onPress={() => navigation.navigate("Login", { signUpMode: true })}
+              >
+                <Text style={styles.buttonText}>Sign Up</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <>
+              <View style={styles.buttonContainer}>
+                <TouchableOpacity
+                  style={styles.updateAccountButton}
+                  onPress={toggleAccountModel}
+                >
+                  <Text style={styles.buttonText}>Update Account Info</Text>
+                </TouchableOpacity>
+              </View>
+              <View style={styles.buttonContainer}>
+                <TouchableOpacity
+                  style={styles.signOutButton}
+                  onPress={() => handleSignOut()}
+                >
+                  <Text style={styles.buttonText}>Sign Out</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.deleteAccountButton}
+                  onPress={() => confirmDeletion()}
+                >
+                  <Text style={styles.buttonText}>Delete Account</Text>
+                </TouchableOpacity>
+              </View>
+            </>
+          )}
         </View>
         <Text style={styles.title}>FOLLOW US</Text>
         <View style={styles.boxes}>
@@ -432,6 +539,58 @@ const About = () => {
                   onPress={changeRole}
                 >
                   <Text style={styles.modalButtonText}>Update Role</Text>
+                </TouchableOpacity>
+                <Dropdown
+                  style={styles.dropdown}
+                  placeholderStyle={styles.placeholderStyle}
+                  selectedTextStyle={styles.selectedTextStyle}
+                  inputSearchStyle={styles.inputSearchStyle}
+                  iconStyle={styles.iconStyle}
+                  containerStyle={styles.dropdownContainer}
+                  data={organizations}
+                  search
+                  maxHeight={300}
+                  labelField="label"
+                  valueField="value"
+                  placeholder={!isOrgFocus ? "Select Your Organization" : "..."}
+                  searchPlaceholder="Search..."
+                  value={newOrg}
+                  onChange={(item) => {
+                    setNewOrg(item.value);
+                    setIsOrgFocus(false);
+                  }}
+                />
+                <TouchableOpacity
+                  style={styles.updateButton}
+                  onPress={changeOrganization}
+                >
+                  <Text style={styles.modalButtonText}>Update Organization</Text>
+                </TouchableOpacity>
+                <Dropdown
+                  style={styles.dropdown}
+                  placeholderStyle={styles.placeholderStyle}
+                  selectedTextStyle={styles.selectedTextStyle}
+                  inputSearchStyle={styles.inputSearchStyle}
+                  iconStyle={styles.iconStyle}
+                  containerStyle={styles.dropdownContainer}
+                  data={captainTeams}
+                  search
+                  maxHeight={300}
+                  labelField="label"
+                  valueField="value"
+                  placeholder={!isCaptainTeamFocus ? "Select Your Captain Team" : "..."}
+                  searchPlaceholder="Search..."
+                  value={newCaptainTeam}
+                  onChange={(item) => {
+                    setNewCaptainTeam(item.value);
+                    setIsCaptainTeamFocus(false);
+                  }}
+                />
+                <TouchableOpacity
+                  style={styles.updateButton}
+                  onPress={changeCaptainTeam}
+                >
+                  <Text style={styles.modalButtonText}>Update Captain Team</Text>
                 </TouchableOpacity>
               </View>
             </TouchableWithoutFeedback>

@@ -496,6 +496,33 @@ const App = () => {
     </FundraiserStack.Navigator>
   );
 
+  const GuestAboutStack = createStackNavigator();
+
+  const GuestAboutStackScreen = () => (
+    <GuestAboutStack.Navigator>
+      <GuestAboutStack.Screen
+        name="About"
+        component={About}
+        options={{
+          headerStyle: { backgroundColor: "#1f1f1f", borderBottomWidth: 0 },
+          headerShadowVisible: false,
+          headerTintColor: "white",
+        }}
+      />
+      <GuestAboutStack.Screen
+        name="Login"
+        component={Login}
+        initialParams={{ expoPushToken: expoPushToken }}
+        options={{ headerShown: false }}
+      />
+      <GuestAboutStack.Screen
+        name="ForgotPassword"
+        component={ForgotPassword}
+        options={{ headerShown: false }}
+      />
+    </GuestAboutStack.Navigator>
+  );
+
   if (appDisabled) {
     return (
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
@@ -654,19 +681,37 @@ const App = () => {
               />
             </Tab.Navigator>
           ) : (
-            <Stack.Navigator initialRouteName="Login">
-              <Stack.Screen
-                name="Login"
-                component={Login}
-                options={{ headerShown: false }}
+            <Tab.Navigator
+              screenOptions={{
+                tabBarStyle: { backgroundColor: "#233563" },
+                headerStyle: { backgroundColor: "#233563" },
+                tabBarActiveTintColor: "orange",
+                tabBarInactiveTintColor: "white",
+                headerTintColor: "white",
+              }}
+            >
+              <Tab.Screen
+                name="Home"
+                component={HomeStackScreen}
                 initialParams={{ expoPushToken: expoPushToken }}
+                options={{
+                  headerShown: false,
+                  tabBarIcon: ({ color, size }) => (
+                    <Icon name="home" type="font-awesome" color={color} />
+                  ),
+                }}
               />
-              <Stack.Screen
-                name="ForgotPassword"
-                component={ForgotPassword}
-                options={{ headerShown: false }}
+              <Tab.Screen
+                name="About"
+                component={GuestAboutStackScreen}
+                options={{
+                  headerShown: false,
+                  tabBarIcon: ({ color, size }) => (
+                    <Icon name="address-card" type="font-awesome" color={color} />
+                  ),
+                }}
               />
-            </Stack.Navigator>
+            </Tab.Navigator>
           )}
         </NavigationContainer>
       </UserProvider>
