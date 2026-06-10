@@ -9,6 +9,7 @@ const hasRequiredUserFields = (data) =>
 
 const getUserData = async (options = {}) => {
   try {
+    if (!auth.currentUser) return null;
     const currentUID = auth.currentUser.uid;
     const { forceRefresh = false } = options;
 

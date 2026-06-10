@@ -66,6 +66,8 @@ const Fundraiser = () => {
   const {
     userID,
     role,
+    organization,
+    captainTeam,
     userInfo,
     milestoneInfo,
     donationInfo,
@@ -498,18 +500,22 @@ const Fundraiser = () => {
             <View>
               <Text style={styles.displayName}>{userInfo.displayName}</Text>
               <View style={styles.tagsContainer}>
-                <View style={styles.section}>
-                  <FontAwesome name="circle" size={15} color="orange" />
-                  <TouchableOpacity onPress={openTeamFundraiser}>
-                    <Text style={[styles.tag, styles.teamLink]}>
-                      {userInfo.teamName}
-                    </Text>
-                  </TouchableOpacity>
-                </View>
+                {captainTeam && captainTeam !== "N/A" ? (
+                  <View style={styles.section}>
+                    <FontAwesome name="circle" size={15} color="orange" />
+                    <Text style={styles.tag}>{captainTeam}</Text>
+                  </View>
+                ) : null}
                 <View style={styles.section}>
                   <FontAwesome name="circle" size={15} color="orange" />
                   <Text style={styles.tag}>{role}</Text>
                 </View>
+                {organization ? (
+                  <View style={styles.section}>
+                    <FontAwesome name="circle" size={15} color="orange" />
+                    <Text style={styles.tag}>{organization}</Text>
+                  </View>
+                ) : null}
               </View>
             </View>
           </View>
