@@ -28,13 +28,11 @@ const Login = ({ route }) => {
   const [donorDriveLink, setDonorDriveLink] = useState("");
   const [create, setCreate] = useState(!signUpMode);
   const [role, setRole] = useState("");
-  const [organization, setOrganization] = useState("");
   const [captainTeam, setCaptainTeam] = useState("");
   const [loginFailed, setLoginFailed] = useState(false);
   const [signUpField, setSignUpField] = useState(false);
   const navigation = useNavigation();
   const [isFocus, setIsFocus] = useState(false);
-  const [isOrgFocus, setIsOrgFocus] = useState(false);
   const [isCaptainTeamFocus, setIsCaptainTeamFocus] = useState(false);
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [ddModalVisable, setDDModalVisable] = useState(false);
@@ -72,7 +70,6 @@ const Login = ({ route }) => {
       role,
       donorDriveLink,
       expoPushToken,
-      organization,
       captainTeam
     );
 
@@ -91,55 +88,6 @@ const Login = ({ route }) => {
     { label: "Assistant Director", value: "Assistant Director" },
     { label: "Overall", value: "Overall" },
     { label: "Manager", value: "Manager" },
-  ];
-
-  const organizations = [
-    { label: "Alpha Chi Omega", value: "Alpha Chi Omega" },
-    { label: "Delta Delta Delta", value: "Delta Delta Delta" },
-    { label: "Kappa Alpha Theta", value: "Kappa Alpha Theta" },
-    { label: "Alpha Delta Pi", value: "Alpha Delta Pi" },
-    { label: "Delta Gamma", value: "Delta Gamma" },
-    { label: "Kappa Delta", value: "Kappa Delta" },
-    { label: "Sigma Kappa", value: "Sigma Kappa" },
-    { label: "Alpha Epsilon Phi", value: "Alpha Epsilon Phi" },
-    { label: "Delta Nu Zeta", value: "Delta Nu Zeta" },
-    { label: "Kappa Kappa Gamma", value: "Kappa Kappa Gamma" },
-    { label: "Alpha Epsilon Pi", value: "Alpha Epsilon Pi" },
-    { label: "Sigma Phi Epsilon", value: "Sigma Phi Epsilon" },
-    { label: "Delta Sigma Phi", value: "Delta Sigma Phi" },
-    { label: "Kappa Sigma", value: "Kappa Sigma" },
-    { label: "Delta Tau Delta", value: "Delta Tau Delta" },
-    { label: "Lambda Chi Alpha", value: "Lambda Chi Alpha" },
-    { label: "Tau Epsilon Phi", value: "Tau Epsilon Phi" },
-    { label: "Alpha Phi", value: "Alpha Phi" },
-    { label: "Delta Zeta", value: "Delta Zeta" },
-    { label: "Sigma Alpha Epsilon", value: "Sigma Alpha Epsilon" },
-    { label: "Tau Kappa Epsilon", value: "Tau Kappa Epsilon" },
-    { label: "Phi Delta Theta", value: "Phi Delta Theta" },
-    { label: "Gamma Eta", value: "Gamma Eta" },
-    { label: "Phi Kappa Tau", value: "Phi Kappa Tau" },
-    { label: "Gamma Phi Beta", value: "Gamma Phi Beta" },
-    { label: "Phi Mu", value: "Phi Mu" },
-    { label: "Pi Beta Phi", value: "Pi Beta Phi" },
-    { label: "UF Honors Program", value: "UF Honors Program" },
-    { label: "Chi Omega", value: "Chi Omega" },
-    { label: "Pi Kappa Alpha", value: "Pi Kappa Alpha" },
-    { label: "Chi Phi", value: "Chi Phi" },
-    { label: "Innovation Academy", value: "Innovation Academy" },
-    { label: "Kappa Alpha Order", value: "Kappa Alpha Order" },
-    { label: "Zeta Beta Tau", value: "Zeta Beta Tau" },
-    { label: "Zeta Tau Alpha", value: "Zeta Tau Alpha" },
-    { label: "AMSA", value: "AMSA" },
-    { label: "Catholic Gators", value: "Catholic Gators" },
-    { label: "Delta Chi", value: "Delta Chi" },
-    { label: "Kappa Phi Epsilon", value: "Kappa Phi Epsilon" },
-    { label: "Phi Gamma Delta", value: "Phi Gamma Delta" },
-    { label: "Theta Chi", value: "Theta Chi" },
-    { label: "UF Law", value: "UF Law" },
-    { label: "UF PaCE", value: "UF PaCE" },
-    { label: "Footprints: Buddy and Support Program", value: "Footprints: Buddy and Support Program" },
-    { label: "Hispanic Student Association", value: "Hispanic Student Association" },
-    { label: "Team Hope", value: "Team Hope" },
   ];
 
   const captainTeams = [
@@ -287,28 +235,6 @@ const Login = ({ route }) => {
                   onChange={(item) => {
                     setRole(item.value);
                     setIsFocus(false);
-                  }}
-                />
-              )}
-
-              {!create && (
-                <Dropdown
-                  style={styles.dropdown}
-                  placeholderStyle={styles.placeholderStyle}
-                  selectedTextStyle={styles.selectedTextStyle}
-                  inputSearchStyle={styles.inputSearchStyle}
-                  iconStyle={styles.iconStyle}
-                  data={organizations}
-                  search
-                  maxHeight={300}
-                  labelField="label"
-                  valueField="value"
-                  placeholder={!isOrgFocus ? "Select Your Organization" : "..."}
-                  searchPlaceholder="Search..."
-                  value={organization}
-                  onChange={(item) => {
-                    setOrganization(item.value);
-                    setIsOrgFocus(false);
                   }}
                 />
               )}

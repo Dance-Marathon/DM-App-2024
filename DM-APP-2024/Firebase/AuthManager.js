@@ -195,7 +195,6 @@ const handleSignUp = async (
   role,
   donorDriveLink,
   expopushtoken,
-  organization,
   captainTeam
 ) => {
   try {
@@ -211,7 +210,6 @@ const handleSignUp = async (
           password: password,
           role: role,
           isAdmin: false,
-          organization: organization || "",
           captainTeam: captainTeam || "",
           uid: user.uid,
           donorLink: donorDriveLink,
@@ -228,17 +226,6 @@ const handleSignUp = async (
     console.error("Error creating user:", error.message);
   }
 };
-
-async function updateOrganization(userId, newOrg) {
-  try {
-    const currentUID = auth.currentUser.uid;
-    const docRef = doc(db, "Users", currentUID);
-    await setDoc(docRef, { organization: newOrg }, { merge: true });
-    console.log(`Organization ${newOrg} added to user ${userId}`);
-  } catch (error) {
-    console.error("Error updating organization:", error);
-  }
-}
 
 async function updateCaptainTeam(userId, newTeam) {
   try {
@@ -282,6 +269,5 @@ export {
   addUserExpoPushToken,
   updateDDLink,
   updateRole,
-  updateOrganization,
   updateCaptainTeam,
 };

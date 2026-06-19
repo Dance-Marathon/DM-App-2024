@@ -13,7 +13,6 @@ export const UserProvider = ({ children }) => {
   const [userID, setUserID] = useState(null);
   const [role, setRole] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [organization, setOrganization] = useState("");
   const [captainTeam, setCaptainTeam] = useState("");
   const [userInfo, setUserInfo] = useState(null);
   const [milestoneInfo, setMilestoneInfo] = useState(null);
@@ -87,7 +86,6 @@ export const UserProvider = ({ children }) => {
       setUserID(userData.donorID);
       setRole(userData.role);
       setIsAdmin(userData.isAdmin === true);
-      setOrganization(userData.organization || "");
       setCaptainTeam(userData.captainTeam || "");
 
       const [userInfoData, milestonesData, donationsData, badgesData] =
@@ -170,7 +168,6 @@ export const UserProvider = ({ children }) => {
         userID,
         role,
         isAdmin,
-        organization,
         captainTeam,
         userInfo,
         milestoneInfo,
