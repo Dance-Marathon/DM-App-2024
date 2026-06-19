@@ -66,7 +66,6 @@ const Fundraiser = () => {
   const {
     userID,
     role,
-    organization,
     captainTeam,
     userInfo,
     milestoneInfo,
@@ -510,10 +509,10 @@ const Fundraiser = () => {
                   <FontAwesome name="circle" size={15} color="orange" />
                   <Text style={styles.tag}>{role}</Text>
                 </View>
-                {organization ? (
+                {userInfo.teamName ? (
                   <View style={styles.section}>
                     <FontAwesome name="circle" size={15} color="orange" />
-                    <Text style={styles.tag}>{organization}</Text>
+                    <Text style={styles.tag}>{userInfo.teamName}</Text>
                   </View>
                 ) : null}
               </View>
