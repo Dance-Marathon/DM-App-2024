@@ -196,6 +196,7 @@ const Admin = ({ route }) => {
   const [newTeamRole, setNewTeamRole] = useState("");
   const [newTeam, setNewTeam] = useState("");
   const [modalVisible, setModalVisible] = useState(false);
+  const [enrolled, setEnrolled] = useState(false);
 
   const navigation = useNavigation();
   const { expoPushToken } = route.params;
@@ -211,6 +212,18 @@ const Admin = ({ route }) => {
       }
     };
     fetchPermissions();
+  }, []);
+
+  useEffect(() => {
+    const fetchEnrolled = async () => {
+      if (!auth.currentUser) return;
+      const docRef = doc(db, "Users", auth.currentUser.uid);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        setEnrolled(!!docSnap.data().inMissionDM);
+      }
+    };
+    fetchEnrolled();
   }, []);
 
   const updatePermissions = async () => {
@@ -375,32 +388,37 @@ const Admin = ({ route }) => {
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-      <View
-        style={{
-          flex: 1,
+      <ScrollView
+        contentContainerStyle={{
+          flexGrow: 1,
           justifyContent: "center",
           alignItems: "center",
           backgroundColor: "#1F1F1F",
+          paddingVertical: 24,
         }}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
         <View style={styles.notificationsBox}>
           <View style={styles.header}>
             <View style={styles.smallCircle} />
             <Text style={styles.headerText}>NOTIFICATIONS</Text>
-            <TouchableOpacity
-              style={{
-                position: "absolute",
-                top: 0,
-                right: 20,
-              }}
-              onPress={() => navigation.navigate("MissionDM Admin")}
-            >
-              <FontAwesomeIcon
-                icon={faChildCombatant}
-                color="white"
-                size={20}
-              />
-            </TouchableOpacity>
+            {enrolled && (
+              <TouchableOpacity
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  right: 20,
+                }}
+                onPress={() => navigation.navigate("MissionDM Admin")}
+              >
+                <FontAwesomeIcon
+                  icon={faChildCombatant}
+                  color="white"
+                  size={20}
+                />
+              </TouchableOpacity>
+            )}
           </View>
           <View>
             <Text style={[styles.sectionTitle, { marginTop: 5 }]}>Title</Text>
@@ -451,17 +469,17 @@ const Admin = ({ route }) => {
             <View style={styles.smallCircle} />
             <Text style={styles.headerText}>SCANNER PERMISSIONS</Text>
           </View>
-          <View style={styles.currentPermissions}>
+          <ScrollView
+            style={[styles.currentPermissions, { maxHeight: 160 }]}
+            nestedScrollEnabled
+            showsVerticalScrollIndicator={false}
+          >
             <Text style={[styles.subHeader, { marginTop: -5 }]}>
               Currently Selected Roles:
             </Text>
-            <FlatList
-              data={allowedRoles}
-              keyExtractor={(item, index) => `${item}-${index}`}
-              renderItem={({ item }) => (
-                <Text style={styles.textItem}>- {item}</Text>
-              )}
-            />
+            {allowedRoles.map((item, index) => (
+              <Text key={`${item}-${index}`} style={styles.textItem}>- {item}</Text>
+            ))}
             <Text style={[styles.subHeader, { marginTop: 10 }]}>
               Team-Based Permissions:
             </Text>
@@ -478,7 +496,7 @@ const Admin = ({ route }) => {
                 ))}
               </View>
             ))}
-          </View>
+          </ScrollView>
           <TouchableOpacity
             style={[
               styles.accessButton,
@@ -503,80 +521,113 @@ const Admin = ({ route }) => {
         >
           <View style={styles.modalOverlay}>
             <View style={styles.modalContent}>
-              <Text style={styles.sectionTitle}>Allowed Roles</Text>
-              <FlatList
-                data={allowedRoles}
-                keyExtractor={(item, index) => `${item}-${index}`}
-                renderItem={({ item }) => (
-                  <View style={styles.listItem}>
-                    <Text style={styles.textItem}>{item}</Text>
-                    <Button
-                      title="Remove"
+              <View style={styles.modalHeader}>
+                <View style={styles.smallCircle} />
+                <Text style={styles.headerText}>MANAGE ACCESS</Text>
+                <TouchableOpacity
+                  style={styles.modalCloseBtn}
+                  onPress={() => setModalVisible(false)}
+                >
+                  <Text style={styles.modalCloseBtnText}>✕</Text>
+                </TouchableOpacity>
+              </View>
+
+              <ScrollView
+                keyboardShouldPersistTaps="handled"
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={styles.modalScrollContent}
+              >
+                <Text style={styles.subHeader}>Currently Selected Roles:</Text>
+                {allowedRoles.map((item, index) => (
+                  <View key={`${item}-${index}`} style={styles.modalRow}>
+                    <Text style={styles.textItem}>- {item}</Text>
+                    <TouchableOpacity
+                      style={styles.removeBtn}
                       onPress={() =>
                         setAllowedRoles((prev) =>
                           prev.filter((role) => role !== item),
                         )
                       }
-                    />
-                  </View>
-                )}
-              />
-              <TextInput
-                style={styles.input}
-                value={newRole}
-                onChangeText={setNewRole}
-                placeholder="Add Role"
-              />
-              <Button
-                title="Add Role"
-                onPress={() => {
-                  if (newRole) setAllowedRoles([...allowedRoles, newRole]);
-                  setNewRole("");
-                }}
-              />
-
-              <Text style={styles.sectionTitle}>Team-Based Permissions</Text>
-              {Object.keys(teamBasedPermissions).map((role) => (
-                <View key={role} style={styles.teamSection}>
-                  <Text style={styles.subHeader}>{role}</Text>
-                  {teamBasedPermissions[role].map((team, index) => (
-                    <View
-                      key={`${role}-${team}-${index}`}
-                      style={styles.listItem}
                     >
-                      <Text style={styles.textItem}>{team}</Text>
-                      <Button
-                        title="Remove"
-                        onPress={() => removeTeamPermission(role, team)}
-                      />
-                    </View>
-                  ))}
+                      <Text style={styles.removeBtnText}>Remove</Text>
+                    </TouchableOpacity>
+                  </View>
+                ))}
+                <View style={styles.modalInputRow}>
+                  <TextInput
+                    style={styles.modalInput}
+                    value={newRole}
+                    onChangeText={setNewRole}
+                    placeholder="New role..."
+                    placeholderTextColor="rgba(255,255,255,0.4)"
+                  />
+                  <TouchableOpacity
+                    style={styles.modalAddBtn}
+                    onPress={() => {
+                      if (newRole) setAllowedRoles([...allowedRoles, newRole]);
+                      setNewRole("");
+                    }}
+                  >
+                    <Text style={styles.modalBtnText}>Add</Text>
+                  </TouchableOpacity>
                 </View>
-              ))}
-              <TextInput
-                style={styles.input}
-                value={newTeamRole}
-                onChangeText={setNewTeamRole}
-                placeholder="Role (e.g., Assistant Director)"
-              />
-              <TextInput
-                style={styles.input}
-                value={newTeam}
-                onChangeText={setNewTeam}
-                placeholder="Team (e.g., Recruitment)"
-              />
-              <Button title="Add Team Permission" onPress={addTeamPermission} />
 
-              <Button title="Save Changes" onPress={updatePermissions} />
-              <Button
-                title="Close"
-                onPress={() => setModalVisible(false)}
-                color="#FF6347"
-              />
+                <View style={styles.modalDivider} />
+
+                <Text style={styles.subHeader}>Team-Based Permissions:</Text>
+                {Object.keys(teamBasedPermissions).map((role) => (
+                  <View key={role} style={styles.teamSection}>
+                    <Text style={styles.textItem}>{role}:</Text>
+                    {teamBasedPermissions[role].map((team, index) => (
+                      <View
+                        key={`${role}-${team}-${index}`}
+                        style={styles.modalRow}
+                      >
+                        <Text style={styles.textItem}>- {team}</Text>
+                        <TouchableOpacity
+                          style={styles.removeBtn}
+                          onPress={() => removeTeamPermission(role, team)}
+                        >
+                          <Text style={styles.removeBtnText}>Remove</Text>
+                        </TouchableOpacity>
+                      </View>
+                    ))}
+                  </View>
+                ))}
+                <TextInput
+                  style={styles.modalInput}
+                  value={newTeamRole}
+                  onChangeText={setNewTeamRole}
+                  placeholder="Role (e.g., Assistant Director)"
+                  placeholderTextColor="rgba(255,255,255,0.4)"
+                />
+                <TextInput
+                  style={[styles.modalInput, { marginTop: 8 }]}
+                  value={newTeam}
+                  onChangeText={setNewTeam}
+                  placeholder="Team (e.g., Recruitment)"
+                  placeholderTextColor="rgba(255,255,255,0.4)"
+                />
+                <TouchableOpacity
+                  style={[styles.accessButton, { alignSelf: "flex-end", marginTop: 8 }]}
+                  onPress={addTeamPermission}
+                >
+                  <Text style={styles.accessMessage}>Add Team</Text>
+                </TouchableOpacity>
+
+                <View style={styles.modalDivider} />
+
+                <TouchableOpacity
+                  style={[styles.accessButton, { alignSelf: "flex-end" }]}
+                  onPress={updatePermissions}
+                >
+                  <Text style={styles.accessMessage}>Save Changes</Text>
+                </TouchableOpacity>
+              </ScrollView>
             </View>
           </View>
         </Modal>
-      </View>
+      </ScrollView>
     </TouchableWithoutFeedback>
   );
 };
@@ -764,7 +815,7 @@ const styles = StyleSheet.create({
     position: "absolute",
   },
   permsBox: {
-    top: 10,
+    top: 25,
     borderRadius: 9,
     backgroundColor: "#233d72",
     width: 340,
@@ -797,14 +848,96 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.5)", // Semi-transparent background
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
   },
   modalContent: {
-    width: "80%",
-    padding: 20,
-    backgroundColor: "#233D72",
-    borderRadius: 10,
+    width: 340,
+    maxHeight: "78%",
+    backgroundColor: "#233d72",
+    borderRadius: 9,
+    shadowOpacity: 1,
+    elevation: 4,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 4 },
+    shadowColor: "rgba(0, 0, 0, 0.25)",
+  },
+  modalHeader: {
+    flexDirection: "row",
     alignItems: "center",
+    marginBottom: 5,
+    paddingTop: 12,
+    paddingHorizontal: 14,
+  },
+  modalCloseBtn: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: "rgba(255,255,255,0.15)",
+    alignItems: "center",
+    justifyContent: "center",
+    marginLeft: "auto",
+  },
+  modalCloseBtnText: {
+    color: "white",
+    fontSize: 12,
+    fontWeight: "bold",
+  },
+  modalScrollContent: {
+    paddingHorizontal: 14,
+    paddingBottom: 16,
+  },
+  modalRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginVertical: 3,
+  },
+  modalInputRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginTop: 8,
+  },
+  modalInput: {
+    flex: 1,
+    height: 40,
+    borderColor: "white",
+    borderWidth: 1,
+    borderRadius: 5,
+    paddingHorizontal: 10,
+    backgroundColor: "#1F1F1F",
+    color: "white",
+    fontSize: 14,
+  },
+  modalAddBtn: {
+    borderRadius: 10,
+    backgroundColor: "#f18221",
+    height: 40,
+    paddingHorizontal: 14,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalBtnText: {
+    color: "#fff",
+    fontSize: 15,
+    fontWeight: "700",
+    textAlign: "center",
+  },
+  modalDivider: {
+    height: 1,
+    backgroundColor: "rgba(255,255,255,0.2)",
+    marginVertical: 12,
+  },
+  removeBtn: {
+    backgroundColor: "rgba(200,50,50,0.8)",
+    borderRadius: 6,
+    paddingVertical: 4,
+    paddingHorizontal: 9,
+  },
+  removeBtnText: {
+    color: "white",
+    fontSize: 12,
+    fontWeight: "bold",
   },
   modalText: {
     fontSize: 18,

@@ -478,7 +478,7 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
   },
   logo: {
-    marginTop: 70,
+    marginTop: 100,
   },
   loadingContainer: {
     flex: 1,

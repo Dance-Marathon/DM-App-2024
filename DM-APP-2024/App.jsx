@@ -491,6 +491,7 @@ const App = () => {
           headerTintColor: "white",
           headerShadowVisible: false,
           headerBackTitleVisible: false,
+          headerBackTitle: "",
         })}
       />
     </FundraiserStack.Navigator>
