@@ -512,7 +512,11 @@ const Fundraiser = () => {
                 {userInfo.teamName ? (
                   <View style={styles.section}>
                     <FontAwesome name="circle" size={15} color="orange" />
-                    <Text style={styles.tag}>{userInfo.teamName}</Text>
+                    <TouchableOpacity onPress={openTeamFundraiser}>
+                      <Text style={[styles.tag, styles.teamLink]}>
+                        {userInfo.teamName}
+                      </Text>
+                    </TouchableOpacity>
                   </View>
                 ) : null}
               </View>

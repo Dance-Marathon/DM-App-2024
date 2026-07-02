@@ -47,7 +47,7 @@ const GenerateQRCode = ({ route }) => {
 
   const navigation = useNavigation();
 
-  const { role, userInfo } = useContext(UserContext);
+  const { role, userInfo, captainTeam } = useContext(UserContext);
 
   // useEffect(() => {
   //   getUserData()
@@ -83,6 +83,13 @@ const GenerateQRCode = ({ route }) => {
     fullTeamLeaderboard && userInfo
       ? fullTeamLeaderboard.find(
           (team) => team[0] === userInfo.teamName
+        )?.[1] || 0
+      : 0;
+
+  const captainTeamScore =
+    fullTeamLeaderboard && captainTeam && captainTeam !== "N/A"
+      ? fullTeamLeaderboard.find(
+          (team) => team[0] === captainTeam
         )?.[1] || 0
       : 0;
 
@@ -232,6 +239,20 @@ const GenerateQRCode = ({ route }) => {
                 {userInfo.teamName}'s Points: {userTeamScore}
               </Text>
             </View>
+            {captainTeam && captainTeam !== "N/A" && (
+              <View style={styles.pointsText}>
+                <Text
+                  style={{
+                    color: "#EB9F68",
+                    fontSize: 16,
+                    fontWeight: "bold",
+                    marginTop: 5,
+                  }}
+                >
+                  {captainTeam}'s Points: {captainTeamScore}
+                </Text>
+              </View>
+            )}
           </>
         )}
         {/* <View style={styles.pointsText}>
