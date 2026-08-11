@@ -1,10 +1,8 @@
 import React, { useContext, useState, useEffect } from "react";
-import FontAwesome from "react-native-vector-icons/FontAwesome";
 import Toast, { BaseToast } from "react-native-toast-message";
 import {
   View,
   Text,
-  Dimensions,
   Image,
   StyleSheet,
   Linking,
@@ -14,45 +12,43 @@ import {
   TouchableWithoutFeedback,
   ActivityIndicator,
   TextInput,
+  Share,
 } from "react-native";
-// import {
-//   getUserInfo,
-//   getUserMilestones,
-//   getUserDonations,
-//   getUserBadges,
-// } from "./api/index";
 import * as Clipboard from "expo-clipboard";
 import * as Progress from "react-native-progress";
 import { Icon } from "react-native-elements";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 import { faX } from "@fortawesome/free-solid-svg-icons";
-import { useNavigation } from "@react-navigation/native";
-import LogoStyles from "./LogoStyles";
-
-// import { getUserData } from "./Firebase/UserManager";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { UserContext } from "./api/calls";
 
 import { updateDDLink } from "./Firebase/AuthManager";
 import { updateUserData } from "./Firebase/UserManager";
 import { auth } from "./Firebase/AuthManager";
+import TopBar from "./TopBar";
+import { colors, card } from "./theme";
+import { MANAGER_TEAM_GROUPS, TEAM_TAB_SINGLE_ROLES } from "./constants";
+import FundraiserTeam from "./FundraiserTeam";
+import TeamFundraiserView from "./TeamFundraiserView";
 
-const { width } = Dimensions.get("window");
-const tileWidth = width * 0.85;
+const currency = (n) =>
+  `$${(n || 0).toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+
+const getInitials = (name) => {
+  if (!name) return "?";
+  const parts = name.trim().split(/\s+/);
+  const initials = parts.slice(0, 2).map((p) => p[0]?.toUpperCase());
+  return initials.join("") || "?";
+};
 
 const Fundraiser = () => {
-  const navigation = useNavigation();
-  //const [userID, setuserID] = useState("");
-  //const [userInfo, setUserInfo] = useState({});
-  //const [milestoneInfo, setMilestoneInfo] = useState({});
+  const insets = useSafeAreaInsets();
   const [milestoneIndex, setMilestoneIndex] = useState(0);
   const [modalVisible, setModalVisible] = useState(false);
   const [allMilestones, setAllMilestones] = useState({});
-  //const [role, setRole] = useState("");
-  //const [donationInfo, setDonationInfo] = useState({});
   const [allDonations, setAllDonations] = useState({});
   const [sortedDonations, setSortedDonations] = useState([allDonations]);
-  //const [badgeInfo, setBadgeInfo] = useState({ badges: [] });
   const [badgeModalVisible, setBadgeModalVisible] = useState(false);
   const [selectedBadge, setSelectedBadge] = useState(null);
   const [progress, setProgress] = useState(0);
@@ -62,6 +58,7 @@ const Fundraiser = () => {
   const [newLink, setNewLink] = useState("");
 
   const [linkError, setLinkError] = useState("");
+  const [activeTab, setActiveTab] = useState("Personal");
 
   const {
     userID,
@@ -77,30 +74,15 @@ const Fundraiser = () => {
     refetchUserData,
   } = useContext(UserContext);
 
-  const variables = {
-    userID,
-    role,
-    userInfo,
-    milestoneInfo,
-    donationInfo,
-    badgeInfo,
-    isLoadingUserInfo,
-    isLoadingMilestones,
-    isLoadingDonations,
-    refetchUserData,
-  };
-
   const toastConfig = {
     success: (props) => (
       <BaseToast
         {...props}
-        style={{
-          borderLeftColor: "#EB9F68",
-        }}
+        style={{ borderLeftColor: colors.orange }}
         contentContainerStyle={{ paddingHorizontal: 15 }}
         text1Style={{
-          color: "black",
-          fontSize: 20,
+          color: colors.text,
+          fontSize: 16,
           fontWeight: "bold",
           textAlign: "center",
         }}
@@ -108,73 +90,9 @@ const Fundraiser = () => {
     ),
   };
 
-  Object.entries(variables).forEach(([key, value]) => {
-    if (value === undefined) {
-      console.log(`${key} is undefined`);
-    }
-  });
-
-  //const [isLoadingUserInfo, setIsLoadingUserInfo] = useState(true);
-  //const [isLoadingMilestones, setIsLoadingMilestones] = useState(true);
-  //const [isLoadingDonations, setIsLoadingDonations] = useState(true);
-  const isAllDataLoaded =
-    !isLoadingUserInfo && !isLoadingMilestones && !isLoadingDonations;
-
-  // useEffect(() => {
-  //   getUserData()
-  //     .then((userData) => {
-  //       setuserID(userData.donorID);
-  //       setRole(userData.role);
-  //       return getUserInfo(userData.donorID);
-  //     })
-  //     .then((userInfoData) => {
-  //       setUserInfo(userInfoData);
-  //       setIsLoadingUserInfo(false);
-  //     })
-  //     .catch((err) => {
-  //       console.error("Error fetching user info:", err);
-  //       setIsLoadingUserInfo(false);
-  //     });
-  // }, []);
-
-  // useEffect(() => {
-  //   if (userID) {
-  //     getUserMilestones(userID)
-  //       .then((milestonesData) => {
-  //         setMilestoneInfo(milestonesData);
-  //         setIsLoadingMilestones(false);
-  //       })
-  //       .catch((err) => {
-  //         console.error("Error fetching milestones:", err);
-  //         setIsLoadingMilestones(false);
-  //       });
-  //   }
-  // }, [userID]);
-
-  // useEffect(() => {
-  //   if (userID) {
-  //     getUserDonations(userID)
-  //       .then((donationsData) => {
-  //         setDonationInfo(donationsData);
-  //         setIsLoadingDonations(false);
-  //       })
-  //       .catch((err) => {
-  //         console.error("Error fetching donations:", err);
-  //         setIsLoadingDonations(false);
-  //       });
-  //   }
-  // }, [userID]);
-
-  // useEffect(() => {
-  //   getUserBadges(userID)
-  //     .then((data) => {
-  //       setBadgeInfo(data);
-  //       console.log("Fetched Badges:", data);
-  //     })
-  //     .catch((err) => {
-  //       console.error("Error fetching badges:", err);
-  //     });
-  // }, [userID]);
+  const isMultiTeamManager = Boolean(MANAGER_TEAM_GROUPS[role]);
+  const isSingleTeamRole = TEAM_TAB_SINGLE_ROLES.includes(role);
+  const showTeamTab = isMultiTeamManager || isSingleTeamRole;
 
   const toggleAccountModel = () => {
     setLinkError("");
@@ -183,7 +101,6 @@ const Fundraiser = () => {
   };
 
   const changeLink = async () => {
-    console.log("Changing link");
     setLinkError("");
 
     if (!newLink) {
@@ -191,31 +108,15 @@ const Fundraiser = () => {
       return;
     }
 
-    // const currentUID = auth.currentUser.uid;
-    // if (newLink !== "") {
-    //   await updateDDLink(currentUID, newLink);
-    // }
-    // await updateUserData();
-    // await refetchUserData();
-    // toggleAccountModel();
     try {
       const currentUID = auth.currentUser.uid;
-
-      // Attempt to update. This will throw if the link is invalid.
       await updateDDLink(currentUID, newLink);
-
-      // These only run if updateDDLink was successful
       await updateUserData();
       await refetchUserData();
-
-      // Success: Clear input and close modal
       setNewLink("");
       setLinkError("");
       toggleAccountModel();
     } catch (error) {
-      //console.error("Link update failed:", error.message);
-
-      // Catch the error thrown by AuthManager and display the message
       setLinkError(error.message);
     }
   };
@@ -228,7 +129,7 @@ const Fundraiser = () => {
     if (userID && userInfo?.numMilestones) {
       for (let i = 0; i < userInfo.numMilestones; i++) {
         const milestone = milestoneInfo?.milestones?.[i];
-        if (!milestone) continue; // Skip if milestone is null/undefined
+        if (!milestone) continue;
 
         if (userInfo.sumDonations < milestone.amount) {
           break;
@@ -264,15 +165,12 @@ const Fundraiser = () => {
     }
   }, [userID, userInfo, donationInfo]);
 
-  // Method to sort the donations by their createdDateUTC in descending order
   useEffect(() => {
     const sorted = sortedDonations.sort((a, b) => {
-      // Convert the createdDateUTC strings to Date objects for comparison
       const dateA = new Date(a.createdDateUTC);
       const dateB = new Date(b.createdDateUTC);
-      return dateB - dateA; // Subtract to get the descending order
+      return dateB - dateA;
     });
-    // Update the state with the sorted list of donations
     setSortedDonations(sorted);
   }, []);
 
@@ -284,11 +182,19 @@ const Fundraiser = () => {
           type: "success",
           text1: "DonorDrive Link Copied!",
           position: "bottom",
-          visibilityTime: 3000, // Auto-hide in 3 seconds
+          visibilityTime: 3000,
           autoHide: true,
         });
       })
       .catch((err) => console.error("Error copying to clipboard:", err));
+  };
+
+  const shareFundraiser = () => {
+    if (!userInfo?.donateURL) return;
+    Share.share({
+      message: userInfo.donateURL,
+      url: userInfo.donateURL,
+    }).catch((err) => console.error("Error sharing fundraiser:", err));
   };
 
   const openBadgeModal = (badge) => {
@@ -298,7 +204,6 @@ const Fundraiser = () => {
 
   const closeBadgeModal = () => {
     setBadgeModalVisible(false);
-    // setSelectedBadge(null); <-- this was causing the modal to show a random badge when it was closed
   };
 
   const refreshFundraiserData = async () => {
@@ -314,786 +219,600 @@ const Fundraiser = () => {
     }
   };
 
-  const openTeamFundraiser = () => {
-    if (!userInfo?.teamID) {
-      return;
-    }
-
-    navigation.navigate("TeamFundraiser", {
-      teamId: userInfo.teamID,
-      teamName: userInfo.teamName,
-    });
-  };
-
   useEffect(() => {
     if (userInfo && userInfo.sumDonations && userInfo.fundraisingGoal) {
       setProgress(userInfo.sumDonations / userInfo.fundraisingGoal);
     }
-    console.log("Progress:", progress);
   }, [userInfo]);
 
-  // if (!isAllDataLoaded) {
-  //   return (
-  //     <View style={styles.container}>
-  //       <Text style={{ color: "white", fontSize: 18 }}>Loading...</Text>
-  //     </View>
-  //   );
-  // }
-
-  if (!userID) {
-    return (
-      <View
-        style={{
-          flex: 1,
-          justifyContent: "center",
-          alignItems: "center",
-          backgroundColor: "#1F1F1F",
-        }}
-      >
-        <Text
-          style={{
-            color: "white",
-            fontSize: 18,
-            textAlign: "center",
-            marginBottom: 15,
-            width: "80%",
-          }}
-        >
-          Your DonorDrive link is not working. Please update it below!
-        </Text>
-        <TouchableOpacity
-          style={styles.updateLinkButton}
-          onPress={toggleAccountModel}
-        >
-          <Text style={{ color: "white", fontSize: 16, fontWeight: "bold" }}>
-            Update Link
+  const renderPersonalTab = () => {
+    if (!userID) {
+      return (
+        <View style={styles.brokenLinkContainer}>
+          <Text style={styles.brokenLinkText}>
+            Your DonorDrive link is not working. Please update it below!
           </Text>
-        </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.updateLinkButton}
+            onPress={toggleAccountModel}
+          >
+            <Text style={styles.updateLinkButtonText}>Update Link</Text>
+          </TouchableOpacity>
 
+          <Modal
+            visible={accountModalVisable}
+            transparent={true}
+            animationType="fade"
+          >
+            <TouchableWithoutFeedback onPress={toggleAccountModel}>
+              <View style={styles.modalBackground}>
+                <TouchableWithoutFeedback>
+                  <View style={styles.modalView}>
+                    <TouchableOpacity
+                      style={styles.closeButton}
+                      onPress={toggleAccountModel}
+                    >
+                      <FontAwesomeIcon icon={faX} color={colors.text} size={18} />
+                    </TouchableOpacity>
+                    {linkError ? (
+                      <Text style={styles.errorText}>{linkError}</Text>
+                    ) : null}
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Enter new DonorDrive link"
+                      placeholderTextColor={colors.textMuted}
+                      value={newLink}
+                      onChangeText={(text) => {
+                        setNewLink(text);
+                        setLinkError("");
+                      }}
+                    />
+                    <TouchableOpacity
+                      style={styles.updateButton}
+                      onPress={changeLink}
+                    >
+                      <Text style={styles.modalButtonText}>Update Link</Text>
+                    </TouchableOpacity>
+                  </View>
+                </TouchableWithoutFeedback>
+              </View>
+            </TouchableWithoutFeedback>
+          </Modal>
+        </View>
+      );
+    }
+
+    if (
+      !userInfo &&
+      (isLoadingUserInfo || isLoadingMilestones || isLoadingDonations)
+    ) {
+      return (
+        <ActivityIndicator
+          size="large"
+          color={colors.navy}
+          style={{ marginTop: 40 }}
+        />
+      );
+    }
+
+    if (!userInfo || !allMilestones) {
+      return null;
+    }
+
+    return (
+      <ScrollView
+        contentContainerStyle={[
+          styles.personalBody,
+          { paddingBottom: 40 + insets.bottom },
+        ]}
+      >
         <Modal
-          visible={accountModalVisable}
-          transparent={true}
           animationType="fade"
+          transparent={true}
+          visible={modalVisible}
+          onRequestClose={() => setModalVisible(false)}
         >
-          <TouchableWithoutFeedback onPress={toggleAccountModel}>
+          <TouchableWithoutFeedback onPress={() => setModalVisible(false)}>
             <View style={styles.modalBackground}>
               <TouchableWithoutFeedback>
                 <View style={styles.modalView}>
-                  <TouchableOpacity
-                    style={styles.closeButton}
-                    onPress={toggleAccountModel}
-                  >
-                    <FontAwesomeIcon icon={faX} color="white" size={20} />
-                  </TouchableOpacity>
-                  {linkError ? (
-                    <Text style={styles.errorText}>{linkError}</Text>
-                  ) : null}
-                  <TextInput
-                    style={[styles.input, linkError && styles.inputError]} // Highlight if error
-                    placeholder="Enter new DonorDrive link"
-                    placeholderTextColor="rgba(255, 255, 255, 0.5)"
-                    value={newLink}
-                    onChangeText={(text) => {
-                      setNewLink(text);
-                      setLinkError(""); // Clear error when typing
-                    }}
-                  />
-                  <TouchableOpacity
-                    style={styles.updateButton}
-                    onPress={changeLink}
-                  >
-                    <Text style={styles.modalButtonText}>Update Link</Text>
-                  </TouchableOpacity>
+                  <View style={styles.modalHeader}>
+                    <Text style={styles.milestonesTitle}>Milestones</Text>
+                    <TouchableOpacity onPress={() => setModalVisible(false)}>
+                      <FontAwesomeIcon icon={faX} size={18} color={colors.text} />
+                    </TouchableOpacity>
+                  </View>
+                  <View style={styles.modalMilestonesContainer}>
+                    {Array.isArray(allMilestones) &&
+                    userInfo.numMilestones > 0 ? (
+                      allMilestones.map((milestone, index) => (
+                        <View key={index} style={styles.milestoneRow}>
+                          <Icon
+                            name={
+                              milestone.fundraisingGoal <= userInfo.sumDonations
+                                ? "check-square"
+                                : "square"
+                            }
+                            type="font-awesome-5"
+                            size={20}
+                            color={colors.navy}
+                            style={{ marginRight: 10 }}
+                          />
+                          <Text style={styles.milestoneAmount}>
+                            ${milestone.fundraisingGoal}
+                          </Text>
+                          <Text style={styles.milestoneDescription}>
+                            {milestone.description}
+                          </Text>
+                        </View>
+                      ))
+                    ) : (
+                      <Text style={styles.noMilestonesText}>
+                        No milestones to display
+                      </Text>
+                    )}
+                  </View>
                 </View>
               </TouchableWithoutFeedback>
             </View>
           </TouchableWithoutFeedback>
         </Modal>
-      </View>
-    );
-  }
 
-  if (
-    !userInfo &&
-    (isLoadingUserInfo || isLoadingMilestones || isLoadingDonations)
-  ) {
-    return <ActivityIndicator size="large" color="#0000ff" />;
-  }
-
-  return (
-    <View
-      style={{
-        flex: 1,
-        alignItems: "center",
-        backgroundColor: "#1F1F1F",
-      }}
-    >
-      <Modal
-        animationType="fade"
-        transparent={true}
-        visible={modalVisible}
-        onRequestClose={() => {
-          Alert.alert("Modal has been closed.");
-          setModalVisible(!modalVisible);
-        }}
-      >
-        <TouchableWithoutFeedback onPress={() => setModalVisible(false)}>
-          <View style={styles.modalContainer}>
-            <TouchableWithoutFeedback>
-              <View style={styles.modalView}>
-                <View style={styles.modalHeader}>
-                  <Text style={styles.milestones}>Milestones</Text>
-                  <TouchableOpacity style={{ marginTop: -30 }} onPress={() => setModalVisible(false)}>
-                      <FontAwesomeIcon icon={faX} size={24} color="white" />
-                  </TouchableOpacity>
-                </View>
-                <View style={styles.modalMilestonesContainer}>
-                  {Array.isArray(allMilestones) &&
-                  userInfo.numMilestones > 0 ? (
-                    allMilestones.map((milestone, index) => (
-                      <View key={index} style={styles.milestoneRow}>
-                        <Icon
-                          name={
-                            milestone.fundraisingGoal <= userInfo.sumDonations
-                              ? "check-square"
-                              : "square"
-                          }
-                          type="font-awesome-5"
-                          size={24}
-                          color="white"
-                          style={{ marginRight: 10 }}
-                        />
-                        <Text style={styles.milestoneAmount}>
-                          ${milestone.fundraisingGoal}
-                        </Text>
-                        <Text style={styles.milestoneDescription}>
-                          {milestone.description}
-                        </Text>
-                      </View>
-                    ))
-                  ) : (
-                    <Text style={{ color: "white" }}>
-                      No milestones to display
-                    </Text>
-                  )}
-                </View>
-              </View>
-            </TouchableWithoutFeedback>
-          </View>
-        </TouchableWithoutFeedback>
-      </Modal>
-
-      <Image
-        style={LogoStyles.logo}
-        resizeMode="contain"
-        source={require("./images/PrimaryLogo.png")}
-      />
-
-      {userInfo && allMilestones && (
-        <View style={styles.info}>
-          <View style={styles.profileContainer}>
+        <View style={styles.profileRow}>
+          {userInfo.avatarImageURL ? (
             <Image
               source={{ uri: userInfo.avatarImageURL }}
               style={styles.avatar}
             />
-            <View>
-              <Text style={styles.displayName}>{userInfo.displayName}</Text>
-              <View style={styles.tagsContainer}>
-                {captainTeam && captainTeam !== "N/A" ? (
-                  <View style={styles.section}>
-                    <FontAwesome name="circle" size={15} color="orange" />
-                    <Text style={styles.tag}>{captainTeam}</Text>
-                  </View>
-                ) : null}
-                <View style={styles.section}>
-                  <FontAwesome name="circle" size={15} color="orange" />
-                  <Text style={styles.tag}>{role}</Text>
+          ) : (
+            <View style={styles.avatarFallback}>
+              <Text style={styles.avatarInitials}>
+                {getInitials(userInfo.displayName)}
+              </Text>
+            </View>
+          )}
+          <View style={styles.profileInfo}>
+            <Text style={styles.displayName} numberOfLines={1}>
+              {userInfo.displayName}
+            </Text>
+            <Text style={styles.roleText}>{role}</Text>
+            <View style={styles.tagsRow}>
+              {captainTeam && captainTeam !== "N/A" && (
+                <View style={styles.tagPill}>
+                  <Text style={styles.tagPillText}>{captainTeam}</Text>
                 </View>
-                {userInfo.teamName ? (
-                  <View style={styles.section}>
-                    <FontAwesome name="circle" size={15} color="orange" />
-                    <TouchableOpacity onPress={openTeamFundraiser}>
-                      <Text style={[styles.tag, styles.teamLink]}>
-                        {userInfo.teamName}
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
-                ) : null}
-              </View>
+              )}
+              {userInfo.teamName ? (
+                <View style={styles.tagPill}>
+                  <Text style={styles.tagPillText}>{userInfo.teamName}</Text>
+                </View>
+              ) : null}
             </View>
           </View>
+        </View>
 
-          <View style={styles.textContainer}>
-            <Text
-              style={{
-                color: "white",
-                marginBottom: 5,
-                fontSize: 16,
-                fontWeight: "bold",
-              }}
-            >
-              ${userInfo.sumDonations} RAISED
-            </Text>
-            <Text
-              style={{
-                color: "white",
-                marginBottom: 5,
-                fontSize: 16,
-                fontWeight: "bold",
-              }}
-            >
-              GOAL ${userInfo.fundraisingGoal}
-            </Text>
-          </View>
-
-          <View style={{ position: "relative", width: tileWidth }}>
+        <View style={styles.heroCard}>
+          <Text style={styles.heroRaised}>
+            {currency(userInfo.sumDonations)} raised
+          </Text>
+          <View style={{ position: "relative" }}>
             <Progress.Bar
               progress={progress}
-              width={tileWidth}
-              borderColor="white"
-              color="#233D72"
-              height={40}
-              borderRadius={25}
-              backgroundColor="white"
+              width={null}
+              height={10}
+              borderWidth={0}
+              unfilledColor="rgba(255,255,255,0.25)"
+              color={colors.orange}
+              style={styles.progressBar}
             />
-            <View style={styles.milestonesContainer}>
-              {userInfo.numMilestones > 0 &&
-                milestoneInfo.milestones.map((milestone, index) => {
-                  const milestonePosition = Math.min(
-                    milestone.fundraisingGoal / userInfo.fundraisingGoal,
-                    1
-                  );
-                  return (
-                    <View
-                      key={index}
-                      style={[
-                        styles.milestoneMarker,
-                        {
-                          left: `${milestonePosition * 100}%`,
-                          transform: [{ translateX: -4 }, { translateY: -18 }],
-                        },
-                      ]}
-                    >
-                      <Text style={styles.milestoneText}>
-                        {milestone.amount}
-                      </Text>
-                    </View>
-                  );
-                })}
-            </View>
           </View>
-
-          <View style={styles.textContainer}>
-            {allMilestones?.[milestoneIndex + 1]?.fundraisingGoal ? (
-              <Text
-                style={{
-                  color: "white",
-                  marginBottom: 5,
-                  fontSize: 12,
-                }}
-              >
-                NEXT MILESTONE: $
-                {allMilestones[milestoneIndex + 1].fundraisingGoal}
-              </Text>
-            ) : (
-              <Text
-                style={{
-                  color: "white",
-                  marginBottom: 5,
-                  fontSize: 12,
-                }}
-              >
-                All Milestones Complete!
-              </Text>
-            )}
+          <Text style={styles.heroSubtext}>
+            {allDonations?.length || 0} donors · goal {currency(userInfo.fundraisingGoal)}
+          </Text>
+          <View style={styles.milestoneFooter}>
+            <Text style={styles.milestoneFooterText}>
+              {allMilestones?.[milestoneIndex + 1]?.fundraisingGoal
+                ? `Next milestone: $${allMilestones[milestoneIndex + 1].fundraisingGoal}`
+                : "All milestones complete!"}
+            </Text>
             <TouchableOpacity onPress={() => setModalVisible(true)}>
               <Text style={styles.showAll}>Show All</Text>
             </TouchableOpacity>
           </View>
+        </View>
 
-          <ScrollView
-            horizontal
-            style={{
-              marginTop: 10,
-              maxHeight: 50,
-              maxWidth: 340,
-            }}
-          >
-            {badgeInfo.badges && badgeInfo.badges.length > 0 ? (
-              badgeInfo.badges.map((badge, index) => (
-                <TouchableOpacity
-                  key={index}
-                  onPress={() => openBadgeModal(badge)}
-                >
-                  <Image
-                    source={{ uri: badge.badgeImageURL }}
-                    style={styles.image}
-                  />
-                </TouchableOpacity>
-              ))
-            ) : (
-              <View />
-            )}
-          </ScrollView>
-
-          {selectedBadge && (
-            <Modal
-              animationType="fade"
-              transparent={true}
-              visible={badgeModalVisible}
-              onRequestClose={closeBadgeModal}
-            >
-              <TouchableWithoutFeedback onPress={closeBadgeModal}>
-                <View style={styles.modalContainer}>
-                  <TouchableWithoutFeedback>
-                    <View style={styles.badgeView}>
-                      <View style={[styles.header, { marginBottom: -10 }]}>
-                        <TouchableOpacity
-                          style={[styles.modalClose, { marginLeft: 110 }]}
-                          onPress={closeBadgeModal}
-                        >
-                          <FontAwesomeIcon icon={faX} size={24} color="white" />
-                        </TouchableOpacity>
-                      </View>
-                      <Text style={styles.modalTitle}>
-                        {selectedBadge.title}
-                      </Text>
-                      <Text style={styles.modalDescription}>
-                        {selectedBadge.description}
-                      </Text>
-                      <Image
-                        source={{ uri: selectedBadge.badgeImageURL }}
-                        style={styles.modalImage}
-                      />
-                    </View>
-                  </TouchableWithoutFeedback>
-                </View>
-              </TouchableWithoutFeedback>
-            </Modal>
-          )}
-
-          <View style={styles.rectangleView}>
-            <View style={styles.header}>
-              <FontAwesome name="dollar" size={18} color="orange" />
-              <Text style={styles.headerText}>DONATIONS</Text>
-              <TouchableOpacity
-                style={styles.headerRefreshButton}
-                onPress={refreshFundraiserData}
-                disabled={isRefreshing}
-              >
-                <FontAwesome
-                  name="refresh"
-                  size={18}
-                  color={isRefreshing ? "rgba(255,255,255,0.6)" : "white"}
+        {badgeInfo?.badges && badgeInfo.badges.length > 0 && (
+          <ScrollView horizontal style={styles.badgeScroll} showsHorizontalScrollIndicator={false}>
+            {badgeInfo.badges.map((badge, index) => (
+              <TouchableOpacity key={index} onPress={() => openBadgeModal(badge)}>
+                <Image
+                  source={{ uri: badge.badgeImageURL }}
+                  style={styles.badgeImage}
                 />
               </TouchableOpacity>
-            </View>
-            <View style={{ marginTop: 5, marginLeft: 5, flex: 1 }}>
-              <ScrollView>
-                {Array.isArray(allDonations) && allDonations.length > 0 ? (
-                  allDonations.map((donation, index) => {
-                    const donatorName = donation.displayName
-                      ? donation.displayName
-                      : "Anonymous";
-                    const cleanedDonatorName = donatorName
-                      .replace("Dance Marathon at UF", "")
-                      .trim();
-                    return (
-                      <Text
-                        style={{ fontSize: 16, color: "white" }}
-                        key={index}
-                      >
-                        • {cleanedDonatorName} - ${donation.amount}
-                      </Text>
-                    );
-                  })
-                ) : (
-                  <View
-                    style={{
-                      flex: 1,
-                      justifyContent: "center",
-                      alignItems: "center",
-                      top: 100,
-                    }}
-                  >
-                    <Text style={{ color: "white" }}>
-                      It's empty in here...
-                    </Text>
-                  </View>
-                )}
-              </ScrollView>
-            </View>
-          </View>
+            ))}
+          </ScrollView>
+        )}
 
-          <View style={styles.buttonContainer}>
-            <TouchableOpacity
-              style={styles.showDonordrivePageButton}
-              onPress={() => Linking.openURL(userInfo.donateURL)}
-            >
-              <Text style={styles.buttonText}>DonorDrive</Text>
+        {selectedBadge && (
+          <Modal
+            animationType="fade"
+            transparent={true}
+            visible={badgeModalVisible}
+            onRequestClose={closeBadgeModal}
+          >
+            <TouchableWithoutFeedback onPress={closeBadgeModal}>
+              <View style={styles.modalBackground}>
+                <TouchableWithoutFeedback>
+                  <View style={styles.badgeView}>
+                    <TouchableOpacity
+                      style={styles.badgeModalClose}
+                      onPress={closeBadgeModal}
+                    >
+                      <FontAwesomeIcon icon={faX} size={18} color={colors.text} />
+                    </TouchableOpacity>
+                    <Text style={styles.badgeModalTitle}>
+                      {selectedBadge.title}
+                    </Text>
+                    <Text style={styles.badgeModalDescription}>
+                      {selectedBadge.description}
+                    </Text>
+                    <Image
+                      source={{ uri: selectedBadge.badgeImageURL }}
+                      style={styles.badgeModalImage}
+                    />
+                  </View>
+                </TouchableWithoutFeedback>
+              </View>
+            </TouchableWithoutFeedback>
+          </Modal>
+        )}
+
+        <View style={[card, styles.donationsCard]}>
+          <View style={styles.donationsHeader}>
+            <Text style={styles.sectionTitle}>DONATIONS</Text>
+            <TouchableOpacity onPress={refreshFundraiserData} disabled={isRefreshing}>
+              <Icon
+                name="refresh"
+                type="font-awesome"
+                size={16}
+                color={isRefreshing ? colors.textMuted : colors.navy}
+              />
             </TouchableOpacity>
           </View>
-          <TouchableOpacity
-            onPress={copyToClipboard}
-            style={styles.copyToClipboard}
-          >
-            <Icon name="link" type="font-awesome-5" color="white" />
-          </TouchableOpacity>
-          <Toast />
+          {Array.isArray(allDonations) && allDonations.length > 0 ? (
+            allDonations.map((donation, index) => {
+              const donatorName = donation.displayName
+                ? donation.displayName
+                : "Anonymous";
+              const cleanedDonatorName = donatorName
+                .replace("Dance Marathon at UF", "")
+                .trim();
+              return (
+                <View
+                  key={index}
+                  style={[
+                    styles.donationRow,
+                    index < allDonations.length - 1 && styles.donationRowDivider,
+                  ]}
+                >
+                  <Text style={styles.donationName} numberOfLines={1}>
+                    {cleanedDonatorName}
+                  </Text>
+                  <Text style={styles.donationAmount}>{currency(donation.amount)}</Text>
+                </View>
+              );
+            })
+          ) : (
+            <Text style={styles.emptyDonations}>It's empty in here...</Text>
+          )}
         </View>
+
+        <View style={styles.actionsRow}>
+          <TouchableOpacity
+            style={styles.donorDriveButton}
+            onPress={() => Linking.openURL(userInfo.donateURL)}
+          >
+            <Text style={styles.donorDriveButtonText}>DonorDrive</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.copyButton} onPress={copyToClipboard}>
+            <Icon name="link" type="font-awesome-5" color={colors.navy} size={16} />
+          </TouchableOpacity>
+        </View>
+
+        <TouchableOpacity style={styles.shareButton} onPress={shareFundraiser}>
+          <Text style={styles.shareButtonText}>Share my fundraiser</Text>
+        </TouchableOpacity>
+
+        <Toast />
+      </ScrollView>
+    );
+  };
+
+  return (
+    <View style={styles.screen}>
+      <TopBar />
+
+      <View style={styles.tabBar}>
+        <TouchableOpacity
+          style={[styles.tabButton, activeTab === "Personal" && styles.tabButtonActive]}
+          onPress={() => setActiveTab("Personal")}
+        >
+          <Text style={[styles.tabButtonText, activeTab === "Personal" && styles.tabButtonTextActive]}>
+            Personal
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tabButton, activeTab === "Organization" && styles.tabButtonActive]}
+          onPress={() => setActiveTab("Organization")}
+        >
+          <Text style={[styles.tabButtonText, activeTab === "Organization" && styles.tabButtonTextActive]}>
+            Organization
+          </Text>
+        </TouchableOpacity>
+        {showTeamTab && (
+          <TouchableOpacity
+            style={[styles.tabButton, activeTab === "Team" && styles.tabButtonActive]}
+            onPress={() => setActiveTab("Team")}
+          >
+            <Text style={[styles.tabButtonText, activeTab === "Team" && styles.tabButtonTextActive]}>
+              Team
+            </Text>
+          </TouchableOpacity>
+        )}
+      </View>
+
+      {activeTab === "Personal" && renderPersonalTab()}
+      {activeTab === "Organization" && (
+        <TeamFundraiserView teamId={userInfo?.teamID} />
       )}
+      {activeTab === "Team" && showTeamTab && (
+        <FundraiserTeam role={role} captainTeam={captainTeam} />
+      )}
+
       <Toast config={toastConfig} />
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  screen: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#233563",
+    backgroundColor: colors.pageBackground,
   },
-  avatar: {
-    width: 100,
-    height: 100,
-  },
-  imageContainer: {
-    justifyContent: "center",
-    alignItems: "center",
-    marginTop: 10,
-    marginBottom: 10,
-  },
-  tagsContainer: {
-    minWidth: "85%",
-    maxWidth: "85%",
-    display: "flex",
+  tabBar: {
     flexDirection: "row",
-    flexWrap: "wrap",
-  },
-  textInput: {
-    width: 150,
-    height: 40,
-    borderWidth: 1,
-    borderColor: "#999",
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    marginTop: 10,
-  },
-  centeredView: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    marginTop: 22,
-  },
-  badgeView: {
-    backgroundColor: "#233D72",
-    padding: 20,
+    backgroundColor: colors.cardBackground,
+    margin: 16,
     borderRadius: 10,
-    alignItems: "center",
-    width: 300,
-    maxHeight: 400,
-  },
-  button: {
-    borderRadius: 20,
-    padding: 10,
-    elevation: 2,
-  },
-  buttonOpen: {
-    backgroundColor: "#F194FF",
-  },
-  buttonClose: {
-    backgroundColor: "#2196F3",
-  },
-  textStyle: {
-    color: "white",
-    fontWeight: "bold",
-    textAlign: "center",
-  },
-  modalText: {
-    marginBottom: 15,
-    textAlign: "center",
-  },
-  info: {
-    alignItems: "center",
-    marginBottom: 20,
-    marginTop: 20,
-  },
-  profileContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    width: 350,
-    justifyContent: "left",
-    marginBottom: 10,
-  },
-  avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    marginRight: 10,
-    borderWidth: 1,
-    borderColor: "white",
-    marginLeft: 5,
-  },
-  textContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    width: tileWidth,
-    marginTop: 5,
-  },
-  displayName: {
-    fontWeight: "bold",
-    fontSize: 24,
-    color: "white",
-  },
-  tag: {
-    fontSize: 14,
-    color: "white",
-    marginRight: 5,
-    marginLeft: 5,
-  },
-  teamLink: {
-    textDecorationLine: "underline",
-  },
-  rectangleView: {
-    padding: 10,
-    borderRadius: 9,
-    backgroundColor: "#233d72",
-    shadowColor: "rgba(0, 0, 0, 0.25)",
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowRadius: 4,
-    elevation: 4,
-    shadowOpacity: 1,
-    width: tileWidth,
-    height: 290,
-    marginTop: 5,
-  },
-  showMilestoneButton: {
-    backgroundColor: "#E2883C",
-    padding: 8,
-    borderRadius: 5,
-    marginLeft: 10,
-    marginBottom: 10,
-    marginTop: 10,
-    flex: 1,
-  },
-  buttonText: {
-    color: "white",
-    textAlign: "center",
-    fontWeight: "bold",
-    fontSize: 18,
-  },
-  image: {
-    width: 40,
-    height: 40,
-    marginRight: 10,
-    borderRadius: 10,
-  },
-  copyImage: {
-    width: 40,
-    height: 40,
-    marginRight: 10,
-    borderRadius: 10,
-  },
-  modalContainer: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  modalContent: {
-    backgroundColor: "#fff",
-    padding: 20,
-    borderRadius: 10,
-    alignItems: "center",
-    width: "80%",
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    marginBottom: 10,
-    color: "white",
-  },
-  modalDescription: {
-    fontSize: 16,
-    textAlign: "center",
-    marginBottom: 10,
-    color: "white",
-  },
-  modalImage: {
-    width: 150,
-    height: 150,
-    marginVertical: 10,
-  },
-  closeButton: {
-    top: 0,
-    right: -10,
-  },
-  closeButtonText: {
-    color: "#fff",
-    fontWeight: "bold",
-  },
-  dmlogo: {
-    top: 30,
-    width: "90%",
-    height: 75,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  smallCircle: {
-    width: 15,
-    height: 15,
-    borderRadius: 50,
-    backgroundColor: "#EB9F68",
-    marginRight: 5,
-  },
-  section: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 5,
-  },
-  milestonesContainer: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 40,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  milestoneMarker: {
-    position: "absolute",
-    top: "90%",
-    width: 8,
-    height: 8,
-    borderRadius: 50,
-    backgroundColor: "#B8B5B5",
-  },
-  milestoneText: {
-    position: "absolute",
-    top: -20,
-    fontSize: 12,
-    color: "white",
-    textAlign: "center",
-  },
-  headerText: {
-    color: "white",
-    fontWeight: "bold",
-    fontSize: 16,
-    flex: 1,
-    left: 5,
-  },
-  headerRefreshButton: {
     padding: 4,
+    borderWidth: 0.5,
+    borderColor: colors.cardBorder,
   },
-  showAll: {
-    color: "white",
-    fontSize: 12,
-    textDecorationLine: "underline",
-    marginTop: -5,
-  },
-  buttonContainer: {
-    flexDirection: "row",
-    justifyContent: "center",
+  tabButton: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 8,
     alignItems: "center",
-    //width: "60%",
-    marginTop: 10,
   },
-  showDonordrivePageButton: {
-    backgroundColor: "#E2883C",
+  tabButtonActive: {
+    backgroundColor: colors.navy,
+  },
+  tabButtonText: {
+    color: colors.textSecondary,
+    fontWeight: "600",
+    fontSize: 13,
+  },
+  tabButtonTextActive: {
+    color: "white",
+  },
+  personalBody: {
+    paddingHorizontal: 16,
+    paddingBottom: 40,
+  },
+  brokenLinkContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 24,
+  },
+  brokenLinkText: {
+    color: colors.text,
+    fontSize: 16,
+    textAlign: "center",
+    marginBottom: 16,
+  },
+  updateLinkButton: {
+    backgroundColor: colors.orange,
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 10,
-    //alignItems: "center",
-    //justifyContent: "center",
   },
-  copyToClipboard: {
-    position: "absolute",
-    right: "18%",
-    bottom: 6,
+  updateLinkButtonText: {
+    color: "white",
+    fontSize: 15,
+    fontWeight: "700",
   },
-  touchable: {
-    // width: 40,
-    // height: 40,
+  profileRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  avatar: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    marginRight: 14,
+  },
+  avatarFallback: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    marginRight: 14,
+    backgroundColor: colors.navy,
     alignItems: "center",
     justifyContent: "center",
   },
-  closeImage: {
-    right: 6,
-    resizeMode: "contain",
-  },
-  chainImage: {
-    resizeMode: "contain",
-  },
-  buttonText: {
+  avatarInitials: {
     color: "white",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  milestones: {
     fontSize: 24,
-    fontWeight: "bold",
+    fontWeight: "700",
+  },
+  profileInfo: {
+    flex: 1,
+  },
+  displayName: {
+    fontWeight: "700",
+    fontSize: 19,
+    color: colors.text,
+  },
+  roleText: {
+    color: colors.textSecondary,
+    fontSize: 13,
+    marginTop: 2,
+  },
+  tagsRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    marginTop: 6,
+  },
+  tagPill: {
+    backgroundColor: colors.lightBlue,
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    marginRight: 6,
+    marginTop: 4,
+  },
+  tagPillText: {
+    color: colors.navy,
+    fontSize: 11,
+    fontWeight: "600",
+  },
+  heroCard: {
+    backgroundColor: colors.navy,
+    borderRadius: 12,
+    padding: 18,
+    marginBottom: 16,
+  },
+  heroRaised: {
     color: "white",
-    //right: 40,
-    top: -10,
+    fontSize: 24,
+    fontWeight: "800",
+    marginBottom: 12,
   },
-  closeIcon: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "white",
-    textAlign: "center",
-  },
-  modalClose: {
-    justifyContent: "right",
-    alignItems: "center",
-    left: 75,
-    top: -10,
-  },
-  modalMilestonesContainer: {
+  progressBar: {
     width: "100%",
-    backgroundColor: "#233D72",
-    padding: 20,
-    borderRadius: 10,
   },
-  modalCloseButton: {
-    marginTop: -3,
+  heroSubtext: {
+    color: "rgba(255,255,255,0.7)",
+    fontSize: 12,
+    marginTop: 8,
   },
-  modalHeader: {
-    width: "100%",
+  milestoneFooter: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: 10,
+    alignItems: "center",
+    marginTop: 12,
   },
-  milestoneRow: {
+  milestoneFooterText: {
+    color: "rgba(255,255,255,0.85)",
+    fontSize: 12,
+  },
+  showAll: {
+    color: colors.orange,
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  badgeScroll: {
+    marginBottom: 16,
+    maxHeight: 50,
+  },
+  badgeImage: {
+    width: 40,
+    height: 40,
+    marginRight: 10,
+    borderRadius: 10,
+  },
+  donationsCard: {
+    padding: 16,
+    marginBottom: 16,
+  },
+  donationsHeader: {
     flexDirection: "row",
+    justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 8,
   },
-  milestoneAmount: {
-    fontWeight: "bold",
-    color: "white",
-    fontSize: 16,
-    width: 80,
+  sectionTitle: {
+    color: colors.textSecondary,
+    fontSize: 12,
+    fontWeight: "700",
+    letterSpacing: 1,
   },
-  milestoneDescription: {
-    color: "white",
+  donationRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingVertical: 8,
+  },
+  donationRowDivider: {
+    borderBottomWidth: 1,
+    borderBottomColor: colors.cardBorder,
+  },
+  donationName: {
+    color: colors.text,
     fontSize: 14,
     flex: 1,
-    marginLeft: 10,
+    marginRight: 8,
   },
-  milestoneSquare: {
-    width: 16,
-    height: 16,
-    marginLeft: 10,
-    borderRadius: 2,
+  donationAmount: {
+    color: colors.orange,
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  emptyDonations: {
+    color: colors.textSecondary,
+    fontSize: 14,
+    textAlign: "center",
+    paddingVertical: 16,
+  },
+  actionsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 12,
+  },
+  donorDriveButton: {
+    backgroundColor: colors.orange,
+    paddingVertical: 12,
+    paddingHorizontal: 28,
+    borderRadius: 10,
+    marginRight: 12,
+  },
+  donorDriveButtonText: {
+    color: "white",
+    fontSize: 15,
+    fontWeight: "700",
+  },
+  copyButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 10,
+    backgroundColor: colors.lightBlue,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  shareButton: {
+    borderWidth: 1.5,
+    borderColor: colors.orange,
+    paddingVertical: 12,
+    borderRadius: 10,
+    alignItems: "center",
+  },
+  shareButtonText: {
+    color: colors.orange,
+    fontWeight: "700",
+    fontSize: 15,
   },
   modalBackground: {
     flex: 1,
@@ -1102,12 +821,72 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   modalView: {
-    width: "80%",
-    backgroundColor: "#233d72",
-    borderRadius: 20,
+    width: "85%",
+    backgroundColor: "white",
+    borderRadius: 16,
     padding: 20,
-    paddingTop: 50,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
     alignItems: "center",
+    marginBottom: 12,
+  },
+  milestonesTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: colors.text,
+  },
+  modalMilestonesContainer: {
+    width: "100%",
+  },
+  milestoneRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  milestoneAmount: {
+    fontWeight: "700",
+    color: colors.text,
+    fontSize: 14,
+    width: 70,
+  },
+  milestoneDescription: {
+    color: colors.textSecondary,
+    fontSize: 13,
+    flex: 1,
+    marginLeft: 8,
+  },
+  noMilestonesText: {
+    color: colors.textSecondary,
+  },
+  badgeView: {
+    backgroundColor: "white",
+    padding: 20,
+    borderRadius: 16,
+    alignItems: "center",
+    width: 280,
+  },
+  badgeModalClose: {
+    alignSelf: "flex-end",
+    marginBottom: 6,
+  },
+  badgeModalTitle: {
+    fontSize: 17,
+    fontWeight: "700",
+    marginBottom: 8,
+    color: colors.text,
+  },
+  badgeModalDescription: {
+    fontSize: 14,
+    textAlign: "center",
+    marginBottom: 10,
+    color: colors.textSecondary,
+  },
+  badgeModalImage: {
+    width: 130,
+    height: 130,
+    marginVertical: 6,
   },
   closeButton: {
     position: "absolute",
@@ -1115,38 +894,34 @@ const styles = StyleSheet.create({
     right: 20,
   },
   input: {
-    height: 40,
-    borderColor: "rgba(255, 255, 255, 0.8)",
+    height: 44,
+    borderColor: colors.cardBorder,
     borderWidth: 1,
     paddingHorizontal: 10,
-    borderRadius: 5,
-    backgroundColor: "#1e1e1e",
-    width: "95%",
-    color: "white",
-    fontSize: 16,
+    borderRadius: 8,
+    backgroundColor: colors.pageBackground,
+    width: "100%",
+    color: colors.text,
+    fontSize: 15,
+    marginTop: 20,
   },
   updateButton: {
-    backgroundColor: "#E2883C",
-    padding: 10,
-    borderRadius: 5,
-    marginTop: 10,
+    backgroundColor: colors.orange,
+    padding: 12,
+    borderRadius: 8,
+    marginTop: 12,
+    alignItems: "center",
   },
   modalButtonText: {
     color: "white",
     textAlign: "center",
-    fontWeight: "bold",
-  },
-  updateLinkButton: {
-    backgroundColor: "#f18221",
-    paddingVertical: 10,
-    paddingHorizontal: 15,
-    borderRadius: 8,
+    fontWeight: "700",
   },
   errorText: {
-    color: "white",
+    color: colors.danger,
     marginBottom: 10,
     textAlign: "center",
-    fontSize: 14,
+    fontSize: 13,
   },
 });
 

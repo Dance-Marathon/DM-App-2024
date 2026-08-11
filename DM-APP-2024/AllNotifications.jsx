@@ -1,8 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
-  Image,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
@@ -11,6 +10,8 @@ import {
 } from "react-native";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 import { faX } from "@fortawesome/free-solid-svg-icons";
+import { Icon } from "react-native-elements";
+import { colors, card } from "./theme";
 
 const AllNotifications = ({ route }) => {
   const { notifications } = route.params;
@@ -25,29 +26,31 @@ const AllNotifications = ({ route }) => {
   };
 
   return (
-    <View
-      style={{
-        flex: 1,
-        alignItems: "center",
-        backgroundColor: "#1F1F1F",
-      }}
-    >
-      <ScrollView style={{ width: "100%" }}>
-        <View style={{ alignItems: "center", paddingBottom: 50}}>
-          {notifications.map((notification, index) => (
+    <View style={styles.screen}>
+      <ScrollView contentContainerStyle={styles.body}>
+        {notifications.length > 0 ? (
+          notifications.map((notification, index) => (
             <TouchableOpacity
-            key={index}
-            onPress={() => handleNotificationClick(notification)}
-            style={{ width: "100%", alignItems: "center" }}
-          >
-            <View key={index} style={styles.notificationContainer}>
-                <Text style={styles.notificationTitle}>
+              key={index}
+              onPress={() => handleNotificationClick(notification)}
+              style={[card, styles.notificationCard]}
+            >
+              <View style={styles.bellIconWrap}>
+                <Icon name="bell" type="font-awesome" color={colors.navy} size={16} />
+              </View>
+              <View style={styles.notificationInfo}>
+                <Text style={styles.notificationTitle} numberOfLines={1}>
                   {notification.title}
                 </Text>
-            </View>
+                <Text style={styles.notificationMeta} numberOfLines={1}>
+                  {notification.date} at {notification.time}
+                </Text>
+              </View>
             </TouchableOpacity>
-          ))}
-        </View>
+          ))
+        ) : (
+          <Text style={styles.emptyText}>No notifications yet</Text>
+        )}
       </ScrollView>
 
       <Modal
@@ -57,30 +60,33 @@ const AllNotifications = ({ route }) => {
         onRequestClose={() => setNotificationModalVisible(false)}
       >
         <TouchableWithoutFeedback
-          onPress={() => setNotificationModalVisible(false)}>
-        <View style={[styles.modalContainer, {position: "relative"}]}>
-          <View style={styles.modalContent}>
-            {selectedNotification && (
-              <>
-                <Text style={[styles.notificationTitle, { marginTop: 0, fontSize: 20 }]}>
-                  {selectedNotification.title}
-                </Text>
-                <Text style={styles.dateTime}>
-                  {selectedNotification.date} at {selectedNotification.time}
-                </Text>
-                <Text style={styles.description}>
-                  {selectedNotification.message}
-                </Text>
-              </>
-            )}
-            <TouchableOpacity
-              style={styles.modalClose}
-              onPress={() => setNotificationModalVisible(false)}
-            >
-              <FontAwesomeIcon icon={faX} color="white" size={20} />
-            </TouchableOpacity>
+          onPress={() => setNotificationModalVisible(false)}
+        >
+          <View style={styles.modalContainer}>
+            <TouchableWithoutFeedback>
+              <View style={styles.modalContent}>
+                <TouchableOpacity
+                  style={styles.modalClose}
+                  onPress={() => setNotificationModalVisible(false)}
+                >
+                  <FontAwesomeIcon icon={faX} color={colors.text} size={18} />
+                </TouchableOpacity>
+                {selectedNotification && (
+                  <>
+                    <Text style={styles.modalTitle}>
+                      {selectedNotification.title}
+                    </Text>
+                    <Text style={styles.dateTime}>
+                      {selectedNotification.date} at {selectedNotification.time}
+                    </Text>
+                    <Text style={styles.description}>
+                      {selectedNotification.message}
+                    </Text>
+                  </>
+                )}
+              </View>
+            </TouchableWithoutFeedback>
           </View>
-        </View>
         </TouchableWithoutFeedback>
       </Modal>
     </View>
@@ -88,64 +94,47 @@ const AllNotifications = ({ route }) => {
 };
 
 const styles = StyleSheet.create({
-  detailsBox: {
-    top: 180,
-    borderRadius: 9,
-    backgroundColor: "#233d72",
-    width: 340,
-    height: 460,
-    position: "absolute",
-    shadowOpacity: 1,
-    elevation: 4,
-    shadowRadius: 4,
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowColor: "rgba(0, 0, 0, 0.25)",
-    padding: 20,
+  screen: {
+    flex: 1,
+    backgroundColor: colors.pageBackground,
   },
-  modalClose: {
-    position: "absolute",
-    right: 10,
-    top: 10,
+  body: {
+    padding: 16,
+    paddingBottom: 40,
   },
-  notificationContainer: {
-    backgroundColor: "#233d72",
+  notificationCard: {
+    flexDirection: "row",
     alignItems: "center",
-    height: 40,
-    width: "90%",
-    borderRadius: 10,
-    overflow: "hidden",
+    padding: 14,
     marginBottom: 10,
-    shadowColor: "rgba(0, 0, 0, 0.25)",
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowRadius: 4,
-    elevation: 4,
-    shadowOpacity: 1,
-    top: 25,
+  },
+  bellIconWrap: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: colors.lightBlue,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 12,
+  },
+  notificationInfo: {
+    flex: 1,
   },
   notificationTitle: {
-    color: "white",
-    fontSize: 16,
-    marginVertical: 10,
+    color: colors.text,
+    fontSize: 15,
+    fontWeight: "600",
   },
-  dateTime: {
-    color: "white",
-    fontSize: 14,
-    marginBottom: 10,
+  notificationMeta: {
+    color: colors.textSecondary,
+    fontSize: 12,
+    marginTop: 2,
   },
-  location: {
-    color: "white",
+  emptyText: {
+    color: colors.textSecondary,
     fontSize: 14,
-    marginBottom: 10,
-  },
-  description: {
-    color: "white",
-    fontSize: 14,
+    textAlign: "center",
+    marginTop: 24,
   },
   modalContainer: {
     flex: 1,
@@ -154,25 +143,32 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0, 0, 0, 0.5)",
   },
   modalContent: {
-    backgroundColor: "#233d72",
+    backgroundColor: "white",
     padding: 20,
-    borderRadius: 10,
+    borderRadius: 16,
     width: "85%",
-    alignItems: "center",
   },
-  modalText: {
-    fontSize: 16,
-    marginBottom: 20,
+  modalClose: {
+    position: "absolute",
+    right: 16,
+    top: 16,
   },
-  eventsList: {
-    paddingTop: 10,
+  modalTitle: {
+    color: colors.text,
+    fontSize: 18,
+    fontWeight: "700",
+    marginTop: 8,
+    marginBottom: 6,
   },
-  closeButton: {
-    backgroundColor: "#f18221",
-    padding: 10,
-    borderRadius: 10,
-    width: 80,
-    alignItems: "center",
+  dateTime: {
+    color: colors.textSecondary,
+    fontSize: 13,
+    marginBottom: 10,
+  },
+  description: {
+    color: colors.text,
+    fontSize: 14,
+    lineHeight: 20,
   },
 });
 
