@@ -1,33 +1,29 @@
 import React, { useState, useEffect, useContext } from "react";
-import FontAwesome from "react-native-vector-icons/FontAwesome";
 import {
   View,
   StyleSheet,
-  Button,
   Text,
   Modal,
   TouchableOpacity,
   TouchableWithoutFeedback,
-  Image,
+  ScrollView,
+  useWindowDimensions,
 } from "react-native";
 import QRCode from "react-native-qrcode-svg";
-import { getUserData } from "./Firebase/UserManager";
-import { getUserInfo } from "./api/index";
 import axios from "axios";
 import { sheetsAPIKey } from "./api/apiKeys";
 import { Icon } from "react-native-elements";
 import { useNavigation } from "@react-navigation/native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "./Firebase/AuthManager";
 import { UserContext } from "./api/calls";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 import { faX } from "@fortawesome/free-solid-svg-icons";
-import LogoStyles from "./LogoStyles";
+import TopBar from "./TopBar";
+import { colors, card } from "./theme";
 
-const GenerateQRCode = ({ route }) => {
-  // const [userIDState, setUserIDState] = useState("");
-  // const [userInfo, setUserInfo] = useState({});
-  // const [, setUserInfo] = useState({});
+const GenerateQRCode = () => {
   const [qrVisible, setQrVisible] = useState(false);
   const [leaderboard, setLeaderboard] = useState([]);
   const [individualLeaderboard, setIndividualLeaderboard] = useState([]);
@@ -36,48 +32,23 @@ const GenerateQRCode = ({ route }) => {
     []
   );
   const SPREADSHEET_ID = "1VTr6Jq_UbrJ1HEUTxCo0TlLvoLXc5PaPagufrzbAAxY";
-  const range = `Sheet1!A2:B100`;
+  const range = `Sheet1!A2:E100`; // A/B = organization team + points, D/E = captain team + points
   const individualRange = `Sheet2!A2:B600`;
   const apiKey = sheetsAPIKey;
-  const [scannerVisible, setScannerVisible] = useState(false);
+  const [canGiveSpiritPoints, setCanGiveSpiritPoints] = useState(false);
   const [scannerPermissions, setScannerPermissions] = useState({
     allowedRoles: [],
     teamBasedPermissions: {},
   });
 
   const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
+  const { width: windowWidth } = useWindowDimensions();
+  const qrSize = Math.min(280, windowWidth * 0.65);
+  const actionButtonGap = 10;
+  const actionRowWidth = windowWidth - 32; // matches sheetContent's 16px side padding
 
   const { role, userInfo, captainTeam } = useContext(UserContext);
-
-  // useEffect(() => {
-  //   getUserData()
-  //     .then((data) => {
-  //       setUserIDState(data.donorID);
-  //     })
-  //     .catch((err) => {
-  //       console.error(err);
-  //     });
-  // }, []);
-
-  // useEffect(() => {
-  //   if (userIDState) {
-  //     getUserInfo(userIDState)
-  //       .then((data) => {
-  //         setUserInfo(data);
-  //       })
-  //       .catch((err) => {
-  //         console.error(err);
-  //       });
-  //   }
-  // }, [userIDState]);
-
-  // const userTeamScore =
-  //   fullTeamLeaderboard.find((team) => team[0] === userInfo.teamName)?.[1] || 0;
-
-  // const individualScore =
-  //   fullIndividualLeaderboard.find(
-  //     (individual) => individual[0] === userInfo.displayName
-  //   )?.[1] || 0;
 
   const userTeamScore =
     fullTeamLeaderboard && userInfo
@@ -86,11 +57,11 @@ const GenerateQRCode = ({ route }) => {
         )?.[1] || 0
       : 0;
 
+  const hasCaptainTeam = Boolean(captainTeam) && captainTeam !== "N/A";
+
   const captainTeamScore =
     fullTeamLeaderboard && captainTeam && captainTeam !== "N/A"
-      ? fullTeamLeaderboard.find(
-          (team) => team[0] === captainTeam
-        )?.[1] || 0
+      ? fullTeamLeaderboard.find((team) => team[3] === captainTeam)?.[4] || 0
       : 0;
 
   const individualScore =
@@ -106,13 +77,14 @@ const GenerateQRCode = ({ route }) => {
         `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${range}?key=${apiKey}`
       );
 
-      setFullTeamLeaderboard(response.data.values);
+      const rows = response.data.values || [];
+      setFullTeamLeaderboard(rows);
 
-      const sortedData = response.data.values
+      const sortedData = rows
         .filter((row) => row[1])
         .map((row) => [row[0], parseInt(row[1], 10)])
         .sort((a, b) => b[1] - a[1])
-        .slice(0, 3);
+        .slice(0, 5);
       setLeaderboard(sortedData);
     } catch (error) {
       console.error("Error fetching leaderboard data", error);
@@ -125,9 +97,10 @@ const GenerateQRCode = ({ route }) => {
         `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${individualRange}?key=${apiKey}`
       );
 
-      setFullIndividualLeaderboard(response.data.values);
+      const rows = response.data.values || [];
+      setFullIndividualLeaderboard(rows);
 
-      const sortedData = response.data.values
+      const sortedData = rows
         .filter((row) => row[1])
         .map((row) => [row[0], parseInt(row[1], 10)])
         .sort((a, b) => b[1] - a[1])
@@ -160,10 +133,10 @@ const GenerateQRCode = ({ route }) => {
             permissions.allowedRoles.includes(role) ||
             (permissions.teamBasedPermissions[role] &&
               permissions.teamBasedPermissions[role].includes(
-                userInfo.teamName
+                captainTeam
               ));
 
-          setScannerVisible(isAllowed);
+          setCanGiveSpiritPoints(isAllowed);
         } else {
           console.log("No permissions found for Scanner.");
         }
@@ -173,210 +146,186 @@ const GenerateQRCode = ({ route }) => {
     };
 
     fetchScannerPermissions();
-  }, [userInfo]);
+  }, [userInfo, role, captainTeam]);
 
-  console.log("Scanner Permissions:", scannerVisible);
-
-  // const isUserInfoEmpty = Object.keys(userInfo).length === 0;
   const isUserInfoEmpty = Object.keys(userInfo || {}).length === 0;
 
-  // const qrData = `name: ${userInfo.displayName}, team: ${userInfo.teamName}`;
   const qrData = isUserInfoEmpty
-    ? "" // Use empty string for QR code if data is missing
-    : `name: ${userInfo.displayName}, team: ${userInfo.teamName}`;
+    ? ""
+    : `name: ${userInfo.displayName}, team: ${userInfo.teamName}, captainTeam: ${captainTeam || "N/A"}`;
+
+  const actionButtonWidth = canGiveSpiritPoints
+    ? (actionRowWidth - actionButtonGap) / 2
+    : actionRowWidth * 0.7;
+
+  const maxOrgScore = leaderboard.length > 0 ? leaderboard[0][1] : 0;
+  const rankBadgeColors = [colors.gold, colors.silver, colors.bronze];
 
   return (
-    <View
-      style={{
-        flex: 1,
-        alignItems: "center",
-        backgroundColor: "#1F1F1F",
-      }}
-    >
-      <Image
-        style={LogoStyles.logo}
-        resizeMode="contain"
-        source={require("./images/PrimaryLogo.png")}
-      />
-      <View style={styles.pointsBox}>
-        <View style={styles.header}>
-          <FontAwesome name="star" size={20} color="orange" />
-          <Text style={styles.headerText}>MY POINTS</Text>
-        </View>
-        {isUserInfoEmpty ? (
-          <View style={styles.pointsText}>
-            <Text
-              style={{
-                color: "white",
-                fontSize: 20,
-                textAlign: "center",
-                paddingHorizontal: 20,
-                marginTop: 15,
-              }}
-            >
-              Please update your DonorDrive link in the Fundraising tab to earn
-              points
+    <View style={styles.screen}>
+      <TopBar />
+
+      <View style={styles.heroBand}>
+        <View style={styles.statsRow}>
+          <View style={styles.statCard}>
+            <Text style={styles.statLabel}>Personal</Text>
+            <Text style={styles.statValuePersonal}>{individualScore}</Text>
+            <Text style={styles.statSubtitle} numberOfLines={1}>
+              {userInfo?.displayName || ""}
             </Text>
           </View>
-        ) : (
-          <>
-            <View style={styles.pointsText}>
-              <Text
-                style={{ color: "white", fontSize: 48, fontWeight: "bold" }}
-              >
-                {individualScore}
+          {hasCaptainTeam && (
+            <View style={styles.statCard}>
+              <Text style={styles.statLabel}>Captain Team</Text>
+              <Text style={styles.statValue}>{captainTeamScore}</Text>
+              <Text style={styles.statSubtitle} numberOfLines={1}>
+                {captainTeam}
               </Text>
             </View>
-            <View style={styles.pointsText}>
-              <Text
-                style={{
-                  color: "white",
-                  fontSize: 16,
-                  fontWeight: "bold",
-                  marginTop: 5,
-                }}
-              >
-                {userInfo.teamName}'s Points: {userTeamScore}
-              </Text>
-            </View>
-            {captainTeam && captainTeam !== "N/A" && (
-              <View style={styles.pointsText}>
-                <Text
-                  style={{
-                    color: "#EB9F68",
-                    fontSize: 16,
-                    fontWeight: "bold",
-                    marginTop: 5,
-                  }}
-                >
-                  {captainTeam}'s Points: {captainTeamScore}
-                </Text>
-              </View>
-            )}
-          </>
-        )}
-        {/* <View style={styles.pointsText}>
-          <Text style={{ color: "white", fontSize: 48, fontWeight: "bold" }}>
-            {individualScore}
-          </Text>
-        </View>
-        <View style={styles.pointsText}>
-          <Text
-            style={{
-              color: "white",
-              fontSize: 16,
-              fontWeight: "bold",
-              marginTop: 5,
-            }}
-          >
-            {userInfo.teamName}'s Points: {userTeamScore}
-          </Text>
-        </View> */}
-        <View style={styles.header}>
-          {scannerVisible ? (
-            <TouchableOpacity
-              onPress={() => navigation.navigate("Scanner")}
-              style={{ marginLeft: 6, marginTop: 13 }}
-            >
-              <Icon
-                name="camera"
-                type="font-awesome-5"
-                color="white"
-                size={28}
-              />
-            </TouchableOpacity>
-          ) : (
-            <View style={{ width: 24 }} />
           )}
-          <TouchableOpacity
-            style={[
-              styles.qrButton,
-              { alignSelf: "flex-end", marginRight: 18, marginTop: 10 },
-            ]}
-            onPress={() => setQrVisible(!qrVisible)}
-          >
-            <Text style={styles.showQrCode}>Show QR Code</Text>
-          </TouchableOpacity>
+          <View style={styles.statCard}>
+            <Text style={styles.statLabel}>Organization</Text>
+            <Text style={styles.statValue}>{userTeamScore}</Text>
+            <Text style={styles.statSubtitle} numberOfLines={1}>
+              {userInfo?.teamName || ""}
+            </Text>
+          </View>
         </View>
       </View>
-      <View style={styles.leaderboardBox}>
-        <View style={styles.header}>
-          <FontAwesome name="trophy" size={18} color="orange" />
-          <Text style={styles.headerText}>LEADERBOARD</Text>
-        </View>
-        <View style={styles.bothLeaderboards}>
-          <View style={styles.leaderboardWrapper}>
-            <Text style={styles.leaderboardTitle}>Organizations</Text>
-            <View style={styles.leaderboardContainer}>
-              {leaderboard.map((team, index) => (
+
+      <View style={styles.sheet}>
+        <ScrollView
+          contentContainerStyle={[
+            styles.sheetContent,
+            { paddingBottom: 40 + insets.bottom },
+          ]}
+        >
+          {isUserInfoEmpty && (
+            <View style={[card, styles.noticeCard]}>
+              <Text style={styles.noticeText}>
+                Please update your DonorDrive link in the DonorDrive tab to
+                earn points.
+              </Text>
+            </View>
+          )}
+
+          <View
+            style={[
+              styles.actionRow,
+              !canGiveSpiritPoints && styles.actionRowCentered,
+            ]}
+          >
+            <TouchableOpacity
+              style={[
+                styles.actionButton,
+                styles.receiveButton,
+                { width: actionButtonWidth },
+              ]}
+              onPress={() => setQrVisible(true)}
+            >
+              <Icon name="qrcode" type="font-awesome" color="white" size={18} />
+              <Text
+                style={styles.actionButtonText}
+                numberOfLines={1}
+                ellipsizeMode="tail"
+              >
+                Receive Spirit Points
+              </Text>
+            </TouchableOpacity>
+            {canGiveSpiritPoints && (
+              <TouchableOpacity
+                style={[
+                  styles.actionButton,
+                  styles.giveButton,
+                  { width: actionButtonWidth },
+                ]}
+                onPress={() => navigation.navigate("Scanner")}
+              >
+                <Icon name="camera" type="font-awesome-5" color="white" size={18} />
+                <Text
+                  style={styles.actionButtonText}
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+                >
+                  Give Spirit Points
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
+
+          <Text style={styles.sectionTitle}>ORGANIZATION LEADERBOARD</Text>
+          <View style={[card, styles.leaderboardCard]}>
+            {leaderboard.map((team, index) => {
+              const isYou = userInfo?.teamName && team[0] === userInfo.teamName;
+              const progress = maxOrgScore > 0 ? team[1] / maxOrgScore : 0;
+              return (
                 <View
                   key={index}
                   style={[
-                    styles.leaderboardItem,
-                    index === leaderboard.length - 1 && {
-                      borderBottomWidth: 0,
-                    },
+                    styles.leaderboardRow,
+                    index < leaderboard.length - 1 && styles.leaderboardRowDivider,
                   ]}
                 >
-                  <Text style={styles.leaderboardText}>
-                    {index + 1}. {team[0]} - {team[1]}
-                  </Text>
+                  <View
+                    style={[
+                      styles.rankBadge,
+                      index < 3 && { backgroundColor: rankBadgeColors[index] },
+                    ]}
+                  >
+                    <Text style={styles.rankBadgeText}>{index + 1}</Text>
+                  </View>
+                  <View style={styles.leaderboardInfo}>
+                    <View style={styles.leaderboardNameRow}>
+                      <Text style={styles.leaderboardName} numberOfLines={1}>
+                        {team[0]}
+                      </Text>
+                      {isYou && (
+                        <View style={styles.youPill}>
+                          <Text style={styles.youPillText}>you</Text>
+                        </View>
+                      )}
+                    </View>
+                    <View style={styles.progressTrack}>
+                      <View
+                        style={[
+                          styles.progressFill,
+                          {
+                            width: `${Math.max(progress * 100, 4)}%`,
+                            backgroundColor: isYou ? colors.orange : colors.navy,
+                          },
+                        ]}
+                      />
+                    </View>
+                  </View>
+                  <Text style={styles.leaderboardPoints}>{team[1]}</Text>
                 </View>
-              ))}
-            </View>
+              );
+            })}
+            {leaderboard.length === 0 && (
+              <Text style={styles.noticeText}>Leaderboard unavailable</Text>
+            )}
           </View>
-          <View style={styles.leaderboardWrapper}>
-            <Text style={styles.leaderboardTitle}>Individuals</Text>
-            <View style={styles.leaderboardContainer}>
-              {individualLeaderboard.map((individual, index) => (
-                <View
-                  key={index}
-                  style={[
-                    styles.leaderboardItem,
-                    index === individualLeaderboard.length - 1 && {
-                      borderBottomWidth: 0,
-                    },
-                  ]}
-                >
-                  <Text style={styles.leaderboardText}>
-                    {index + 1}. {individual[0]} - {individual[1]}
-                  </Text>
-                </View>
-              ))}
-            </View>
-          </View>
-        </View>
+        </ScrollView>
       </View>
 
       <Modal
-        // animationType="slide"
         animationType="fade"
         transparent={true}
         visible={qrVisible}
-        onRequestClose={() => {
-          setQrVisible(false);
-        }}
+        onRequestClose={() => setQrVisible(false)}
       >
         <TouchableWithoutFeedback onPress={() => setQrVisible(false)}>
           <View style={styles.modalBackground}>
             <TouchableWithoutFeedback>
               <View style={styles.modalContainer}>
-                <View style={styles.header}>
-                  {/* <Text style={styles.qrCode}>QR Code</Text> */}
-                  <TouchableOpacity
-                    style={styles.closeButton}
-                    onPress={() => setQrVisible(false)}
-                  >
-                    <FontAwesomeIcon icon={faX} size={24} color="white" />
-                  </TouchableOpacity>
-                </View>
-                <View
-                  style={{
-                    backgroundColor: "white",
-                    padding: 5,
-                  }}
+                <TouchableOpacity
+                  style={styles.closeButton}
+                  onPress={() => setQrVisible(false)}
                 >
-                  <QRCode value={qrData} size={300} />
+                  <FontAwesomeIcon icon={faX} size={18} color={colors.text} />
+                </TouchableOpacity>
+                <View style={styles.qrWrapper}>
+                  <QRCode value={qrData} size={qrSize} />
                 </View>
               </View>
             </TouchableWithoutFeedback>
@@ -388,6 +337,175 @@ const GenerateQRCode = ({ route }) => {
 };
 
 const styles = StyleSheet.create({
+  screen: {
+    flex: 1,
+    backgroundColor: colors.navy,
+  },
+  heroBand: {
+    backgroundColor: colors.navy,
+    paddingHorizontal: 16,
+    paddingBottom: 20,
+    paddingTop: 8,
+  },
+  statsRow: {
+    flexDirection: "row",
+    gap: 10,
+  },
+  statCard: {
+    flex: 1,
+    backgroundColor: "rgba(255,255,255,0.12)",
+    borderRadius: 12,
+    padding: 12,
+    alignItems: "center",
+  },
+  statLabel: {
+    color: "rgba(255,255,255,0.7)",
+    fontSize: 10,
+    fontWeight: "700",
+    letterSpacing: 0.5,
+    textTransform: "uppercase",
+  },
+  statValue: {
+    color: "white",
+    fontSize: 26,
+    fontWeight: "800",
+    marginTop: 6,
+  },
+  statValuePersonal: {
+    color: colors.orange,
+    fontSize: 26,
+    fontWeight: "800",
+    marginTop: 6,
+  },
+  statSubtitle: {
+    color: "rgba(255,255,255,0.7)",
+    fontSize: 11,
+    marginTop: 4,
+    textAlign: "center",
+  },
+  sheet: {
+    flex: 1,
+    backgroundColor: colors.pageBackground,
+    borderTopLeftRadius: 12,
+    borderTopRightRadius: 12,
+  },
+  sheetContent: {
+    padding: 16,
+    paddingBottom: 40,
+  },
+  noticeCard: {
+    padding: 16,
+    marginBottom: 16,
+  },
+  noticeText: {
+    color: colors.textSecondary,
+    fontSize: 14,
+    textAlign: "center",
+  },
+  actionRow: {
+    flexDirection: "row",
+    gap: 10,
+    marginBottom: 20,
+  },
+  actionRowCentered: {
+    justifyContent: "center",
+  },
+  actionButton: {
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 4,
+    paddingVertical: 10,
+    paddingHorizontal: 4,
+    borderRadius: 10,
+  },
+  receiveButton: {
+    backgroundColor: colors.navy,
+  },
+  giveButton: {
+    backgroundColor: colors.orange,
+  },
+  actionButtonText: {
+    color: "white",
+    fontSize: 12,
+    fontWeight: "700",
+    textAlign: "center",
+  },
+  sectionTitle: {
+    color: colors.textSecondary,
+    fontSize: 12,
+    fontWeight: "700",
+    letterSpacing: 1,
+    marginBottom: 8,
+  },
+  leaderboardCard: {
+    padding: 12,
+  },
+  leaderboardRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 12,
+  },
+  leaderboardRowDivider: {
+    borderBottomWidth: 1,
+    borderBottomColor: colors.cardBorder,
+  },
+  rankBadge: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: colors.lightBlue,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 10,
+  },
+  rankBadgeText: {
+    color: colors.navy,
+    fontWeight: "800",
+    fontSize: 12,
+  },
+  leaderboardInfo: {
+    flex: 1,
+    marginRight: 10,
+  },
+  leaderboardNameRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 6,
+  },
+  leaderboardName: {
+    color: colors.text,
+    fontSize: 14,
+    fontWeight: "600",
+    flexShrink: 1,
+  },
+  youPill: {
+    backgroundColor: colors.lightOrange,
+    borderRadius: 8,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    marginLeft: 6,
+  },
+  youPillText: {
+    color: colors.orange,
+    fontSize: 10,
+    fontWeight: "700",
+  },
+  progressTrack: {
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: colors.lightBlue,
+    overflow: "hidden",
+  },
+  progressFill: {
+    height: "100%",
+    borderRadius: 3,
+  },
+  leaderboardPoints: {
+    color: colors.orange,
+    fontSize: 15,
+    fontWeight: "800",
+  },
   modalBackground: {
     flex: 1,
     backgroundColor: "rgba(0, 0, 0, 0.5)",
@@ -395,174 +513,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   modalContainer: {
-    backgroundColor: "#233D72",
-    padding: 20,
-    borderRadius: 10,
+    backgroundColor: "white",
+    padding: 24,
+    borderRadius: 16,
     alignItems: "center",
   },
   closeButton: {
-    bottom: 20,
-    left: 140,
-    justifyContent: "right",
-    alignItems: "center",
+    alignSelf: "flex-end",
+    marginBottom: 12,
   },
-  closeButtonText: {
-    color: "#fff",
-    fontSize: 16,
-  },
-  headerText: {
-    fontSize: 24,
-    fontWeight: "bold",
-    marginBottom: 20,
-    marginTop: 20,
-    color: "white",
-    textAlign: "center",
-  },
-  pointsBox: {
-    marginTop: 20,
-    borderRadius: 9,
-    backgroundColor: "#233d72",
-    width: "85%",
-    // height: 180,
-    minHeight: 180,
-    paddingBottom: 10,
-    shadowOpacity: 1,
-    elevation: 4,
-    shadowRadius: 4,
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowColor: "rgba(0, 0, 0, 0.25)",
-  },
-  leaderboardBox: {
-    borderRadius: 9,
-    backgroundColor: "#233d72",
-    width: "85%",
-    height: 370,
-    marginTop: 30,
-    shadowOpacity: 1,
-    elevation: 4,
-    shadowRadius: 4,
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowColor: "rgba(0, 0, 0, 0.25)",
-  },
-  dmlogo: {
-    top: -280,
-    width: "90%",
-    height: 75,
-  },
-  spiritpoints: {
-    top: 150,
-    fontSize: 24,
-    fontWeight: "700",
-    fontFamily: "Outfit-Bold",
-    textAlign: "left",
-    height: 28,
-    alignItems: "center",
-    display: "flex",
-    color: "#fff",
-    left: 27,
-    position: "absolute",
-  },
-  closeButtonText: {
-    color: "white",
-    fontWeight: "bold",
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 10,
-    left: 10,
-    top: 10,
-  },
-  headerText: {
-    color: "white",
-    fontWeight: "bold",
-    fontSize: 16,
-    flex: 1,
-    left: 5,
-  },
-  smallCircle: {
-    width: 15,
-    height: 15,
-    borderRadius: 50,
-    backgroundColor: "#EB9F68",
-  },
-  pointsText: {
-    alignItems: "center",
-    justifyContent: "center",
-    top: 2,
-  },
-  qrButton: {
-    borderRadius: 10,
-    backgroundColor: "#f18221",
-    width: 140,
-    height: 40,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  showQrCode: {
-    textAlign: "center",
-    fontSize: 16,
-    fontFamily: "Outfit-Bold",
-    fontWeight: "700",
-    color: "#fff",
-    position: "absolute",
-  },
-  closeIcon: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "white",
-    textAlign: "center",
-  },
-  qrCode: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "white",
-    right: 110,
-    bottom: 20,
-  },
-  leaderboardTitle: {
-    fontSize: 14,
-    fontWeight: "bold",
-    color: "white",
-    marginBottom: 2,
-    textAlign: "left",
-    left: 2,
-  },
-  bothLeaderboards: {
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "flex-start",
-    width: "100%",
-    paddingHorizontal: 20,
-    marginTop: 25,
-  },
-  leaderboardWrapper: {
-    width: "100%",
-    marginBottom: 20,
-  },
-  leaderboardContainer: {
-    backgroundColor: "#233563",
-    borderRadius: 10,
-    padding: 10,
-    width: "100%",
-    borderColor: "white",
-    borderWidth: 1,
-  },
-  leaderboardItem: {
-    paddingVertical: 5,
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(255, 255, 255, 0.1)",
-  },
-  leaderboardText: {
-    fontSize: 16,
-    color: "#fff",
+  qrWrapper: {
+    backgroundColor: "white",
   },
 });
 

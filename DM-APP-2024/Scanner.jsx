@@ -15,6 +15,7 @@ import getAccessToken from "./api/googleAuth";
 import { getUserData } from "./Firebase/UserManager";
 import { db } from "./Firebase/firestore";
 import { getUserInfo } from "./api/index";
+import { colors, card } from "./theme";
 
 const DEFAULT_SCANNER_OPTIONS = [
   { label: "Checked-In", value: "Checked-In", points: 1, sortOrder: 1 },
@@ -182,13 +183,17 @@ const Scanner = () => {
     time,
     giver,
     value,
+    captainTeam,
   ) => {
     const SPREADSHEET_ID = "1VTr6Jq_UbrJ1HEUTxCo0TlLvoLXc5PaPagufrzbAAxY";
 
     try {
       const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/Sheet3:append?valueInputOption=RAW`;
 
-      const rowData = [recipient, team, reason, date, time, giver, value];
+      // captainTeam is always appended as the 8th (last) column, never
+      // inserted mid-row — keeps "Value" and everything before it at their
+      // existing fixed positions for anything else reading Sheet3.
+      const rowData = [recipient, team, reason, date, time, giver, value, captainTeam];
 
       const postData = {
         values: [rowData],
@@ -269,6 +274,7 @@ const Scanner = () => {
             time,
             giver,
             selectedOption.points,
+            extractedData.captainTeam,
           );
         }
       }
@@ -348,8 +354,15 @@ const Scanner = () => {
       const parts = data.split(", ");
       const namePart = parts[0].split("name: ")[1];
       const teamPart = parts[1].split("team: ")[1];
+      // Older QR codes won't have this segment at all; missing, blank, or
+      // "N/A" all normalize to "N/A" so the org write is never blocked.
+      const captainTeamPart = parts[2]?.split("captainTeam: ")[1];
       if (namePart && teamPart) {
-        return { name: namePart, team: teamPart };
+        return {
+          name: namePart,
+          team: teamPart,
+          captainTeam: captainTeamPart || "N/A",
+        };
       }
       return null;
     } catch (error) {
@@ -358,20 +371,9 @@ const Scanner = () => {
   };
 
   return (
-    <View
-      style={{
-        flex: 1,
-        justifyContent: "flex-start",
-        alignItems: "center",
-        backgroundColor: "#1F1F1F",
-      }}
-    >
-      <View style={styles.container}>
-        <ScrollView
-          style={styles.containerScroll}
-          contentContainerStyle={styles.containerScrollContent}
-          showsVerticalScrollIndicator={false}
-        >
+    <View style={styles.screen}>
+      <ScrollView contentContainerStyle={styles.screenContent}>
+        <View style={[card, styles.container]}>
           <Text style={styles.header}>Scan Spirit Points</Text>
           <Text style={styles.dropdownLabel}>Select reason(s)</Text>
           <MultiSelect
@@ -380,7 +382,7 @@ const Scanner = () => {
             selectedTextStyle={styles.dropdownSelectedText}
             containerStyle={styles.dropdownContainer}
             itemTextStyle={styles.dropdownItemText}
-            activeColor="#1F1F1F"
+            activeColor={colors.lightBlue}
             visibleSelectedItem={false}
             data={scannerOptions}
             labelField="label"
@@ -416,15 +418,31 @@ const Scanner = () => {
               })}
             </View>
           )}
-        </ScrollView>
 
-        <TouchableOpacity
-          onPress={() => setModalVisible(true)}
-          style={styles.scannerOpen}
-        >
-          <Text style={styles.openScannerText}>Open Scanner</Text>
-        </TouchableOpacity>
-      </View>
+          <TouchableOpacity
+            onPress={() => setModalVisible(true)}
+            style={styles.scannerOpen}
+          >
+            <Text style={styles.openScannerText}>Open Scanner</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={[card, styles.resultContainer]}>
+          <Text style={styles.header}>Scanned User Data</Text>
+          <Text style={styles.infoText}>
+            <Text style={styles.infoLabel}>User Name: </Text>
+            {userData.name}
+          </Text>
+
+          <Text style={styles.infoText}>
+            <Text style={styles.infoLabel}>User Team: </Text>
+            {userData.team}
+          </Text>
+          {requestStatus ? (
+            <Text style={styles.statusText}>{requestStatus}</Text>
+          ) : null}
+        </View>
+      </ScrollView>
 
       <Modal
         animationType="slide"
@@ -459,54 +477,50 @@ const Scanner = () => {
           )}
         </View>
       </Modal>
-
-      <View style={styles.resultContainer}>
-        <Text style={[styles.header, { marginTop: 0 }]}>Scanned User Data</Text>
-        <Text style={styles.infoText}>
-          <Text style={{ fontWeight: "bold" }}>User Name: </Text>
-          {userData.name}
-        </Text>
-
-        <Text style={styles.infoText}>
-          <Text style={{ fontWeight: "bold" }}>User Team: </Text>
-          {userData.team}
-        </Text>
-        {requestStatus ? (
-          <Text style={styles.statusText}>{requestStatus}</Text>
-        ) : null}
-      </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
+  screen: {
+    flex: 1,
+    backgroundColor: colors.pageBackground,
+  },
+  screenContent: {
+    padding: 16,
+    paddingBottom: 40,
+  },
   modalContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    backgroundColor: "black",
   },
   infoText: {
-    fontSize: 18,
-    marginVertical: 5,
-    color: "#fff",
+    fontSize: 16,
+    marginVertical: 4,
+    color: colors.text,
+  },
+  infoLabel: {
+    fontWeight: "700",
   },
   closeButton: {
     position: "absolute",
     bottom: 50,
-    backgroundColor: "#ff5c5c",
+    backgroundColor: colors.danger,
     padding: 10,
-    borderRadius: 5,
+    borderRadius: 8,
   },
   closeButtonText: {
     color: "#fff",
     fontSize: 18,
   },
   topText: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "bold",
-    color: "red",
+    color: "white",
     textAlign: "center",
-    backgroundColor: "black",
+    backgroundColor: "rgba(0,0,0,0.6)",
     padding: 10,
   },
   infoContainer: {
@@ -518,9 +532,9 @@ const styles = StyleSheet.create({
   scannedText: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "green",
+    color: "#4CAF50",
     textAlign: "center",
-    backgroundColor: "black",
+    backgroundColor: "rgba(0,0,0,0.6)",
     padding: 10,
   },
   scannedContainer: {
@@ -530,82 +544,57 @@ const styles = StyleSheet.create({
     marginBottom: 100,
   },
   statusText: {
-    marginTop: 20,
-    fontSize: 16,
-    color: "white",
+    marginTop: 12,
+    fontSize: 14,
+    color: colors.textSecondary,
     textAlign: "center",
   },
   container: {
-    padding: 10,
-    borderRadius: 9,
-    backgroundColor: "#233d72",
-    shadowColor: "rgba(0, 0, 0, 0.25)",
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowRadius: 4,
-    elevation: 4,
-    shadowOpacity: 1,
-    width: 340,
-    maxHeight: 360,
-    marginTop: 40,
-  },
-  containerScroll: {
-    maxHeight: 280,
-  },
-  containerScrollContent: {
-    paddingBottom: 12,
+    padding: 16,
+    marginBottom: 16,
   },
   header: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#fff",
+    fontSize: 17,
+    fontWeight: "700",
+    color: colors.text,
     textAlign: "center",
-    marginBottom: 15,
-    marginTop: 10,
+    marginBottom: 12,
   },
   dropdownLabel: {
-    color: "#fff",
-    fontSize: 16,
+    color: colors.textSecondary,
+    fontSize: 14,
     marginBottom: 8,
-    width: "85%",
-    alignSelf: "center",
   },
   dropdown: {
-    minHeight: 50,
-    width: "85%",
-    backgroundColor: "#1F1F1F",
+    minHeight: 46,
+    backgroundColor: colors.pageBackground,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.2)",
+    borderColor: colors.cardBorder,
     paddingHorizontal: 12,
-    alignSelf: "center",
   },
   dropdownFocused: {
-    borderColor: "#E2883C",
+    borderColor: colors.orange,
   },
   dropdownPlaceholder: {
-    color: "rgba(255,255,255,0.7)",
-    fontSize: 16,
+    color: colors.textMuted,
+    fontSize: 15,
   },
   dropdownSelectedText: {
-    color: "#fff",
-    fontSize: 16,
+    color: colors.text,
+    fontSize: 15,
   },
   dropdownContainer: {
-    backgroundColor: "#233d72",
+    backgroundColor: "white",
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.15)",
+    borderColor: colors.cardBorder,
   },
   dropdownItemText: {
-    color: "#fff",
+    color: colors.text,
     fontSize: 15,
   },
   selectedReasonsContainer: {
-    width: "85%",
-    alignSelf: "center",
     flexDirection: "row",
     flexWrap: "wrap",
     marginTop: 10,
@@ -615,64 +604,47 @@ const styles = StyleSheet.create({
     maxWidth: "100%",
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#E2883C",
+    backgroundColor: colors.lightOrange,
     borderRadius: 18,
     paddingLeft: 12,
     paddingRight: 8,
     paddingVertical: 8,
   },
   selectedReasonText: {
-    color: "#fff",
-    fontSize: 14,
+    color: colors.orange,
+    fontSize: 13,
+    fontWeight: "600",
     flexShrink: 1,
     paddingRight: 8,
   },
   selectedReasonRemove: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: "rgba(0,0,0,0.18)",
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: "rgba(232,119,34,0.25)",
     alignItems: "center",
     justifyContent: "center",
   },
   selectedReasonRemoveText: {
-    color: "#fff",
-    fontSize: 12,
+    color: colors.orange,
+    fontSize: 11,
     fontWeight: "bold",
   },
   scannerOpen: {
     marginTop: 16,
     borderRadius: 10,
-    backgroundColor: "#f18221",
-    width: 140,
-    height: 40,
-    marginBottom: 10,
-    alignSelf: "center",
-    justifyContent: "center",
+    backgroundColor: colors.orange,
+    paddingVertical: 12,
     alignItems: "center",
   },
   openScannerText: {
     textAlign: "center",
-    fontSize: 16,
-    fontFamily: "Outfit-Bold",
+    fontSize: 15,
     fontWeight: "700",
     color: "#fff",
   },
   resultContainer: {
-    marginTop: 50,
-    padding: 20,
-    borderRadius: 9,
-    backgroundColor: "#233d72",
-    shadowColor: "rgba(0, 0, 0, 0.25)",
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowRadius: 4,
-    elevation: 4,
-    shadowOpacity: 1,
-    width: 340,
-    maxHeight: 200,
+    padding: 16,
   },
 });
 

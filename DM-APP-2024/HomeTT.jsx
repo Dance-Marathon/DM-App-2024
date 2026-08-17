@@ -1,67 +1,77 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext } from "react";
 import {
   View,
   Text,
-  Platform,
-  Image,
-  Modal,
   StyleSheet,
   TouchableOpacity,
-  Dimensions,
   ScrollView,
-  Button,
-  TextInput,
-  FlatList,
-  Alert,
   Linking,
-  SafeAreaView,
 } from "react-native";
-import UpcomingEventsScreen from "./UpcomingEvents";
-const INITIAL_DATE = new Date();
-import { auth, db } from './Firebase/AuthManager';
-import { doc, getDoc, collection, getDocs, setDoc, updateDoc, arrayUnion } from 'firebase/firestore';
-import { Icon } from 'react-native-elements';
-import { Agenda } from 'react-native-calendars';
-import { storage } from './Firebase/firebase';
-import { getStorage, ref, getDownloadURL } from 'firebase/storage';
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as Progress from "react-native-progress";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { auth, db } from "./Firebase/AuthManager";
+import { doc, getDoc, collection, getDocs } from "firebase/firestore";
+import { getStorage, ref, getDownloadURL } from "firebase/storage";
 
 import { addUserExpoPushToken } from "./Firebase/AuthManager";
 import { getUserData } from "./Firebase/UserManager";
+import { UserContext } from "./api/calls";
+import { useNavigation } from "@react-navigation/native";
+import TopBar from "./TopBar";
+import { colors, card } from "./theme";
 
-const Home = ({route}) => {
+const LAST_SEEN_NOTIFICATION_KEY = "@last_seen_notification";
 
-  const [modalVisible, setModalVisible] = useState(false);
-  const [notificationModalVisible, setNotificationModalVisible] = useState(false);
-  const [role, setRole] = useState('');
-  const [userIDState, setUserIDState] = useState('');
-  const [allNotifications, setAllNotifications] = useState({});
+const currency = (n) =>
+  `$${(n || 0).toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+
+const HomeTT = ({ route }) => {
+  const [role, setRole] = useState("");
+  const [userIDState, setUserIDState] = useState("");
+  const [allNotifications, setAllNotifications] = useState([]);
   const [items, setItems] = useState([]);
-  const [mapModalVisible, setMapModalVisible] = useState(false);
+  const [imageUrls, setImageUrls] = useState({});
+  const [hasUnread, setHasUnread] = useState(false);
 
-  const {expoPushToken} = route.params;
+  const { expoPushToken } = route.params;
+  const { userInfo } = useContext(UserContext);
+  const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
+  const isGuest = !auth.currentUser;
+
+  const openWebsite = (url) => Linking.openURL(url);
 
   const fetchAllNotifications = async () => {
     try {
-      console.log('Starting to fetch notifications...');
       const notificationsRef = collection(db, "Notifications");
       const querySnapshot = await getDocs(notificationsRef);
       const fetchedNotifs = [];
-  
+
       querySnapshot.forEach((docSnapshot) => {
         const docData = docSnapshot.data();
-        const eventsArray = docData.events; // This is an array based on your Firestore structure
-  
+        const eventsArray = docData.events;
+
         if (Array.isArray(eventsArray)) {
-          eventsArray.forEach(event => {
+          eventsArray.forEach((event) => {
             fetchedNotifs.push({
-              ...event, // Spread operator to get all properties of the event
-              id: `${docSnapshot.id}_${event.time}` // Construct a unique id for the keyExtractor later
+              ...event,
+              id: `${docSnapshot.id}_${event.time}`,
             });
           });
         }
       });
-  
-      setAllNotifications(fetchedNotifs.reverse()); // Assuming setAllNotifications is a state setter
+
+      const reversed = fetchedNotifs.reverse();
+      setAllNotifications(reversed);
+
+      const newestId = reversed[0]?.id;
+      if (newestId) {
+        const lastSeenId = await AsyncStorage.getItem(
+          LAST_SEEN_NOTIFICATION_KEY
+        );
+        setHasUnread(newestId !== lastSeenId);
+      }
     } catch (error) {
       console.error("Error fetching notifications:", error);
     }
@@ -72,34 +82,38 @@ const Home = ({route}) => {
       const eventsCollectionRef = collection(db, "Calendar2024");
       const querySnapshot = await getDocs(eventsCollectionRef);
       const fetchedItems = [];
-  
-      querySnapshot.forEach((doc) => {
-        const docData = doc.data();
+
+      querySnapshot.forEach((docSnap) => {
+        const docData = docSnap.data();
         Object.keys(docData).forEach((date) => {
           const events = docData[date].events;
           events.forEach((event) => {
-            let timeString = event.time || '12:00 AM'; // Default to 12:00 AM if no time is provided
-            const [time, period] = timeString.split(' ');
-            let [hours, minutes] = time.split(':').map(Number);
-  
-            if (period === 'PM' && hours !== 12) {
+            let timeString = event.time || "12:00 AM";
+            const [time, period] = timeString.split(" ");
+            let [hours, minutes] = time.split(":").map(Number);
+
+            if (period === "PM" && hours !== 12) {
               hours += 12;
-            } else if (period === 'AM' && hours === 12) {
+            } else if (period === "AM" && hours === 12) {
               hours = 0;
             }
-  
-            const [year, month, day] = date.split('-').map(Number);
-  
-            // Create a valid Date object
+
+            const [year, month, day] = date.split("-").map(Number);
+
             if (year && month && day && !isNaN(hours) && !isNaN(minutes)) {
               const eventDate = new Date(year, month - 1, day, hours, minutes);
               if (!isNaN(eventDate)) {
                 fetchedItems.push({
-                  formattedDate: new Intl.DateTimeFormat('en-US', { month: 'long', day: 'numeric', year: 'numeric' }).format(eventDate),
+                  formattedDate: new Intl.DateTimeFormat("en-US", {
+                    month: "long",
+                    day: "numeric",
+                    year: "numeric",
+                  }).format(eventDate),
                   date,
-                  time: event.time || '', // Preserve original time or empty string if not provided
+                  time: event.time || "",
                   title: event.title,
                   description: event.description,
+                  location: event.location,
                   datetime: eventDate,
                   picture: event.picture,
                 });
@@ -109,22 +123,10 @@ const Home = ({route}) => {
         });
       });
 
-    //   const currentDate = INITIAL_DATE.getDate;
-
-    //   // should not show past dates if not deleted on firebase
-    //   for (i in fetchedItems) {
-    //     if (i.date < currentDate) {
-    //         fetchedItems.pop(i);
-    //         }
-    //   }
-  
-      // Sort events by datetime
       fetchedItems.sort((a, b) => a.datetime - b.datetime);
-  
-      // Set the next three events
       setItems(fetchedItems.slice(0, 3));
 
-      fetchedItems.forEach(item => {
+      fetchedItems.slice(0, 3).forEach((item) => {
         if (item.picture) {
           fetchImageUrl(item.picture);
         }
@@ -134,22 +136,37 @@ const Home = ({route}) => {
       setItems([]);
     }
   };
-  
+
+  const fetchImageUrl = async (imageName) => {
+    try {
+      const storage = getStorage();
+      const storageRef = ref(storage, imageName);
+      const url = await getDownloadURL(storageRef);
+      setImageUrls((prevUrls) => ({
+        ...prevUrls,
+        [imageName]: url,
+      }));
+    } catch (error) {
+      console.error("Error getting image URL: ", error);
+    }
+  };
+
   useEffect(() => {
-    getUserData().then((data) => {
-      setUserIDState(data.donorID);
-      setRole(data.role);
-    })
-    .catch((err) => {
-      console.error(err);
-      setError(err);
-    });
+    getUserData()
+      .then((data) => {
+        if (data) {
+          setUserIDState(data.donorID);
+          setRole(data.role);
+        }
+      })
+      .catch((err) => {
+        console.error(err);
+      });
   }, []);
 
   useEffect(() => {
     const getUserRole = async () => {
       if (auth.currentUser) {
-        await displayDocumentData();
         const currentUID = auth.currentUser.uid;
         const docRef = doc(db, "Users", currentUID);
         const docSnap = await getDoc(docRef);
@@ -157,356 +174,315 @@ const Home = ({route}) => {
           const data = docSnap.data();
           if (!data.notificationToken) {
             await addUserExpoPushToken(auth.currentUser.uid, expoPushToken);
-        } else {
-          console.log("Token exists");
-        }}
-      } else {
-        console.log('auth.currentUser is null, waiting for authentication.');
+          }
+        }
       }
     };
     getUserRole();
   }, [auth.currentUser]);
 
-    useEffect(() => {
-      fetchAllNotifications();
-    }, []);
+  useEffect(() => {
+    fetchAllNotifications();
+  }, []);
 
-    const renderNotif = ({ item }) => {
-      return (
-        <View style={styles.notificationContainer}>
-          <Text style={styles.notificationTitle}>{item.title} - {item.date} at {item.time}</Text>
-          <Text style={styles.notificationMessage}>{item.message}</Text>
-        </View>
-      );
-    };
+  useEffect(() => {
+    fetchDates();
+  }, []);
 
-    const openWebsite = (url) => {
-      Linking.openURL(url);
+  const handleBellPress = async () => {
+    const newestId = allNotifications[0]?.id;
+    if (newestId) {
+      await AsyncStorage.setItem(LAST_SEEN_NOTIFICATION_KEY, newestId);
     }
+    setHasUnread(false);
+    navigation.navigate("AllNotifications", {
+      notifications: allNotifications,
+    });
+  };
 
-    useEffect(() => {
-      fetchDates();
-    }, []);
-
-    const [imageUrls, setImageUrls] = useState({});
-
-    const fetchImageUrl = async (imageName) => {
-      try {
-        const storage = getStorage();
-        const storageRef = ref(storage, imageName);
-        const url = await getDownloadURL(storageRef);
-        setImageUrls(prevUrls => ({
-          ...prevUrls,
-          [imageName]: url,
-        }));
-      } catch (error) {
-        console.error("Error getting image URL: ", error);
-      }
-    };
+  const raised = userInfo?.sumDonations || 0;
+  const goal = userInfo?.fundraisingGoal || 0;
+  const progress = goal > 0 ? Math.min(raised / goal, 1) : 0;
+  const donors = userInfo?.numDonations || 0;
+  const toGoal = Math.max(goal - raised, 0);
 
   return (
-    <View
-      style={{
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-        backgroundColor: "#233563",
-      }}>
-      <TouchableOpacity
-      style={styles.bellIconContainer}
-      onPress={() => setNotificationModalVisible(true)} >
-        <Icon
-          name="bell"
-          type="font-awesome"
-          color="white"
-          size={24}
-        />
-      </TouchableOpacity>
-      <TouchableOpacity
-        style={styles.applicationButton} onPress={() => openWebsite('https://linktr.ee/dmatuf')} >
-        <Text style={styles.applicationButtonText} >Resources</Text>
-      </TouchableOpacity>
-      <Text style={styles.applicationTitle}>Upcoming Events</Text>
-        <ScrollView style={{width:'93%', maxHeight: '60%'}}>
-        {Array.isArray(items) && items.length > 0 ? (
-          items.map((item, index) => (
-            <View key={index} style={styles.itemContainer}>
-              {item.picture && imageUrls[item.picture] ? (
-                <Image source={{ uri: imageUrls[item.picture] }} style={styles.miniImage} />
-              ) : (
-                null
-              )}
-              {item.picture && imageUrls[item.picture] ? (
-                <Text style={styles.itemTitle}>{item.title}</Text>
-              ) : (
-                <Text style={styles.itemTitleNoPicture}>{item.title}</Text>
-              )}
-              {item.time ? (
-                <Text style={styles.itemTime}>{item.formattedDate} at {item.time}</Text>
-              ) : (
-                <Text style={styles.itemTime}>{item.formattedDate}</Text>
-              )}
-              {item.description ? (
-                <Text style={styles.description}>{item.description}</Text>
-              ) : (
-                null
-              )}
-            </View>
-          ))
-        ) : (
-          <Text>No upcoming events</Text>
-        )}
-        </ScrollView>
+    <View style={styles.screen}>
+      <TopBar
+        rightIcon="bell"
+        showBadge={hasUnread}
+        onRightPress={handleBellPress}
+      />
 
-        <Text style={styles.mapText}>Transform Today Maps</Text>
-        <View style={styles.mapView}>
-          <TouchableOpacity style={styles.mapButton} onPress={() => setMapModalVisible(true)}>
-            <Text style={styles.buttonText}>CLICK TO VIEW MAPS</Text>
-          </TouchableOpacity>
-        </View>
-
-        <Modal
-          visible={mapModalVisible}
-          animationType="slide"
-          transparent={true}
-          onRequestClose={() => {
-            setMapModalVisible(!mapModalVisible);
-          }}
-        >
-          <View style={styles.centeredView}>
-            <View style={styles.modalView}>
-              <TouchableOpacity onPress={() => setMapModalVisible(!mapModalVisible)}>
-                <Image
-                  source={require("./images/tt_campus_engagement.png")}
-                  style={{ width: 300, height: 180, resizeMode: "contain" }}
-                />
-                <Image
-                  source={require("./images/tt_north_lawn.png")}
-                  style={{ width: 300, height: 220, resizeMode: "contain" }}
-                />
-                <Image
-                  source={require("./images/tt_breezeway.png")}
-                  style={{ width: 305, height: 220, resizeMode: "contain" }}
-                />
+      <ScrollView
+        contentContainerStyle={[
+          styles.body,
+          { paddingBottom: 40 + insets.bottom },
+        ]}
+      >
+        {isGuest ? (
+          <View style={styles.heroCard}>
+            <Text style={styles.heroName}>Welcome to DM at UF</Text>
+            <Text style={styles.heroRole}>
+              Sign in to track your fundraising and spirit points
+            </Text>
+            <View style={styles.guestButtonRow}>
+              <TouchableOpacity
+                style={styles.guestButton}
+                onPress={() => navigation.navigate("Account", { screen: "Login" })}
+              >
+                <Text style={styles.guestButtonText}>Sign In</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.guestButton, styles.guestButtonOutline]}
+                onPress={() =>
+                  navigation.navigate("Account", {
+                    screen: "Login",
+                    params: { signUpMode: true },
+                  })
+                }
+              >
+                <Text style={styles.guestButtonOutlineText}>Sign Up</Text>
               </TouchableOpacity>
             </View>
           </View>
-        </Modal>
+        ) : (
+          <View style={styles.heroCard}>
+            <Text style={styles.heroName} numberOfLines={1}>
+              {userInfo?.displayName || "Welcome"}
+            </Text>
+            {!!role && <Text style={styles.heroRole}>{role}</Text>}
 
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={notificationModalVisible}
-        onRequestClose={() => {
-          Alert.alert("Modal has been closed.");
-          setNotificationModalVisible(!notificationModalVisible);
-        }} >
-        <View style={styles.centeredView}>
-          <View style={styles.modalView}>
-            <Text>Past Notifications</Text>
-            <FlatList
-              data={allNotifications}
-              renderItem={renderNotif} // Your renderItem function to display the notification
-              keyExtractor={item => item.id} // Unique key for each notification
+            <Text style={styles.heroRaised}>{currency(raised)}</Text>
+
+            <Progress.Bar
+              progress={progress}
+              width={null}
+              height={8}
+              borderWidth={0}
+              unfilledColor="rgba(255,255,255,0.25)"
+              color={colors.orange}
+              style={styles.progressBar}
             />
-            <Button
-              style={[styles.button, styles.buttonClose]}
-              onPress={() => setNotificationModalVisible(!notificationModalVisible)}
-              title="Hide Notifications"
-            />
+
+            <Text style={styles.heroSubtext}>
+              {donors} donors · {currency(toGoal)} to goal
+            </Text>
           </View>
+        )}
+
+        <Text style={styles.sectionTitle}>UPCOMING EVENTS</Text>
+        <View style={[card, styles.eventsCard]}>
+          {items.length > 0 ? (
+            items.map((item, index) => (
+              <View
+                key={index}
+                style={[
+                  styles.eventRow,
+                  index < items.length - 1 && styles.eventRowDivider,
+                ]}
+              >
+                <View style={styles.dateBlock}>
+                  <Text style={styles.dateDay}>
+                    {item.datetime.getDate()}
+                  </Text>
+                  <Text style={styles.dateMonth}>
+                    {item.datetime
+                      .toLocaleString("en-US", { month: "short" })
+                      .toUpperCase()}
+                  </Text>
+                </View>
+                <View style={styles.eventInfo}>
+                  <Text style={styles.eventTitle} numberOfLines={1}>
+                    {item.title}
+                  </Text>
+                  <Text style={styles.eventMeta} numberOfLines={1}>
+                    {item.time ? `${item.time}` : ""}
+                    {item.location ? ` · ${item.location}` : ""}
+                  </Text>
+                </View>
+              </View>
+            ))
+          ) : (
+            <Text style={styles.noEvents}>No upcoming events</Text>
+          )}
         </View>
-      </Modal>
+
+        {!isGuest && (
+          <>
+            <Text style={styles.sectionTitle}>RESOURCES</Text>
+            <View style={styles.resourcesCard}>
+              <Text style={styles.resourcesTitle}>Need something?</Text>
+              <Text style={styles.resourcesDescription}>
+                Find guides, documents, and helpful links for Dance Marathon at
+                UF.
+              </Text>
+              <TouchableOpacity
+                style={styles.resourcesButton}
+                onPress={() => openWebsite("https://linktr.ee/dmatuf")}
+              >
+                <Text style={styles.resourcesButtonText}>View resources</Text>
+              </TouchableOpacity>
+            </View>
+          </>
+        )}
+      </ScrollView>
     </View>
   );
 };
 
-export default Home;
-
-const eventItemWidth = Dimensions.get("window").width * 0.9;
+export default HomeTT;
 
 const styles = StyleSheet.create({
-  eventItem: {
-    width: eventItemWidth,
-    backgroundColor: "white",
-    padding: 20,
-    borderRadius: 10,
-    alignSelf: "center",
-  },
-  mapView: {
-    marginBottom: 20,
-    alignSelf: "center",
-  },
-  centeredView: {
+  screen: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    marginTop: 22,
+    backgroundColor: colors.pageBackground,
   },
-  modalView: {
-    margin: 20,
-    backgroundColor: "white",
-    borderRadius: 20,
+  body: {
+    padding: 16,
+    paddingBottom: 40,
+  },
+  heroCard: {
+    backgroundColor: colors.navy,
+    borderRadius: 12,
     padding: 20,
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  header: {
-    fontSize: 24,
-    fontWeight: "bold",
-    marginBottom: 20,
-    marginTop: 20,
-    color: "white",
-    textAlign: "center",
-  },
-  mapText: {
-    fontSize: 24,
-    fontWeight: "bold",
-    marginBottom: 15,
-    marginTop: 20,
-    color: "white",
-    textAlign: "center",
-  },
-  buttonText: {
-    fontSize: 14,
-    fontWeight: "bold",
-    marginBottom: 4,
-    marginTop: 4,
-    color: "black",
-    textAlign: "center"
-  },
-  mapButton: {
-    backgroundColor: "#E2883C",
-    padding: 10,
-    height: 45,
-    width: '100%',
-    borderRadius: 5,
-    marginBottom: 10,
-  },
-  button: {
-    backgroundColor: '#233D72',
-    margin: 2,
-    justifyContent: 'flex-start',
-    paddingLeft: 15,
-    borderRadius: 5,
-    borderWidth: 0,
-    borderBottomWidth: 2,
-    borderColor: '#2B457A',
-    },
-  inputTop: {
-    height: 40,
-    borderColor: "black",
-    borderWidth: 1,
-    marginBottom: 15,
-    paddingHorizontal: 10,
-    borderRadius: 5,
-    backgroundColor: "#D9D9D9",
-  },
-  topText: {
-    color: 'white',
-    fontSize: 12,
-    textAlign: 'center',
-    margin: 10,
-  },
-  notificationContainer: {
-    backgroundColor: 'white',
-    padding: 20,
-    marginRight: 10,
-    marginTop: 17,
-    borderRadius: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  showNotificationButton: {
-    backgroundColor: '#E2883C',
-    padding: 15,
-    borderRadius: 5,
-    marginTop: 15,
-    width: 200,
     marginBottom: 20,
   },
-  bellIconContainer: {
-    position: 'absolute',
-    top: 50,
-    right: 20,
-    zIndex: 1, // Ensure it's above other elements
+  heroName: {
+    color: "white",
+    fontSize: 18,
+    fontWeight: "700",
   },
-  applicationImage: {
-    width: 350,
-    height: 350,
+  heroRole: {
+    color: "rgba(255,255,255,0.7)",
+    fontSize: 13,
+    marginTop: 2,
+  },
+  heroRaised: {
+    color: "white",
+    fontSize: 34,
+    fontWeight: "800",
+    marginTop: 14,
+  },
+  progressBar: {
+    width: "100%",
+    marginTop: 12,
+  },
+  heroSubtext: {
+    color: "rgba(255,255,255,0.7)",
+    fontSize: 13,
+    marginTop: 8,
+  },
+  guestButtonRow: {
+    flexDirection: "row",
+    marginTop: 16,
+  },
+  guestButton: {
+    flex: 1,
+    backgroundColor: colors.orange,
+    paddingVertical: 12,
+    borderRadius: 10,
+    alignItems: "center",
+  },
+  guestButtonOutline: {
+    backgroundColor: "transparent",
+    borderWidth: 1.5,
     borderColor: "white",
-    borderWidth: 5,
+    marginLeft: 10,
   },
-  applicationTitle: {
-    fontSize: 30,
-    fontWeight: "bold",
-    marginBottom: 10,
-    marginTop: 20,
-    width: "92%",
+  guestButtonText: {
     color: "white",
-    textAlign: "center",
+    fontWeight: "700",
+    fontSize: 15,
   },
-  applicationText: {
-    fontSize: 18,
-    fontWeight: "bold",
+  guestButtonOutlineText: {
+    color: "white",
+    fontWeight: "700",
+    fontSize: 15,
+  },
+  sectionTitle: {
+    color: colors.textSecondary,
+    fontSize: 12,
+    fontWeight: "700",
+    letterSpacing: 1,
+    marginBottom: 8,
+  },
+  eventsCard: {
+    padding: 12,
     marginBottom: 20,
-    marginTop: 10,
-    width: "92%",
-    color: "white",
+  },
+  eventRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 10,
+  },
+  eventRowDivider: {
+    borderBottomWidth: 1,
+    borderBottomColor: colors.cardBorder,
+  },
+  dateBlock: {
+    width: 48,
+    height: 48,
+    borderRadius: 10,
+    backgroundColor: colors.lightBlue,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 12,
+  },
+  dateDay: {
+    color: colors.navy,
+    fontSize: 16,
+    fontWeight: "800",
+  },
+  dateMonth: {
+    color: colors.textMuted,
+    fontSize: 10,
+    fontWeight: "700",
+  },
+  eventInfo: {
+    flex: 1,
+  },
+  eventTitle: {
+    color: colors.text,
+    fontSize: 15,
+    fontWeight: "600",
+  },
+  eventMeta: {
+    color: colors.textSecondary,
+    fontSize: 12,
+    marginTop: 2,
+  },
+  noEvents: {
+    color: colors.textSecondary,
+    fontSize: 14,
+    paddingVertical: 12,
     textAlign: "center",
   },
-  applicationButton: {
-    backgroundColor: "#E2883C",
-    padding: 10,
-    height: 45,
-    width: '45%',
-    borderRadius: 5,
-    marginBottom: 10,
-    marginTop: 85,
-  },
-  applicationButtonText: {
-    color: 'white',
-    textAlign: 'center',
-    fontWeight: 'bold',
-    fontSize:18,
-  },
-  itemContainer: {
-    backgroundColor: 'white',
+  resourcesCard: {
+    backgroundColor: colors.lightBlue,
+    borderRadius: 12,
     padding: 20,
-    marginTop: 10,
-    marginBottom: 10,
-    borderRadius: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
   },
-  itemTime: {
-    fontSize: 16,
-    fontWeight: 'bold',
+  resourcesTitle: {
+    color: colors.text,
+    fontSize: 15,
+    fontWeight: "700",
   },
-  itemTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginTop: 20,
+  resourcesDescription: {
+    color: colors.textSecondary,
+    fontSize: 13,
+    marginTop: 4,
+    marginBottom: 14,
   },
-  itemTitleNoPicture: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginTop: 0,
+  resourcesButton: {
+    backgroundColor: colors.orange,
+    paddingVertical: 12,
+    borderRadius: 10,
+    alignItems: "center",
   },
-  miniImage: {
-    width: 150,
-    borderRadius: 5,
-    height: 150,
+  resourcesButtonText: {
+    color: "white",
+    fontWeight: "700",
+    fontSize: 14,
   },
 });

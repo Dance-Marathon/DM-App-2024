@@ -39,8 +39,10 @@ const handleLogin = async (email, password) => {
   try {
     await signInWithEmailAndPassword(auth, email, password);
     console.log("Logged in successfully!");
+    return "success";
   } catch (error) {
     console.error("Error logging in:", error.message);
+    return error.message || "error";
   }
 };
 
@@ -201,29 +203,28 @@ const handleSignUp = async (
     if (!email || !password || !role || !donorDriveLink) {
       throw new Error("All fields are required");
     }
-    await createUserWithEmailAndPassword(auth, email, password)
-      .then((userCredential) => {
-        const user = userCredential.user;
-        console.log("User signed up successfully!");
-        return setDoc(doc(db, "Users", user.uid), {
-          email: email,
-          password: password,
-          role: role,
-          isAdmin: false,
-          captainTeam: captainTeam || "",
-          uid: user.uid,
-          donorLink: donorDriveLink,
-          donorID: extractParticipantID(donorDriveLink),
-          notificationToken: expopushtoken,
-        });
-      })
-      .catch((error) => {
-        const errorCode = error.code;
-        const errorMessage = error.message;
-        console.log(errorCode, errorMessage);
-      });
+    const userCredential = await createUserWithEmailAndPassword(
+      auth,
+      email,
+      password
+    );
+    const user = userCredential.user;
+    console.log("User signed up successfully!");
+    await setDoc(doc(db, "Users", user.uid), {
+      email: email,
+      password: password,
+      role: role,
+      isAdmin: false,
+      captainTeam: captainTeam || "",
+      uid: user.uid,
+      donorLink: donorDriveLink,
+      donorID: extractParticipantID(donorDriveLink),
+      notificationToken: expopushtoken,
+    });
+    return "success";
   } catch (error) {
     console.error("Error creating user:", error.message);
+    return error.message || "error";
   }
 };
 

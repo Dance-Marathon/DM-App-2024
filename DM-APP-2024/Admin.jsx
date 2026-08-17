@@ -33,6 +33,8 @@ import { faChildCombatant } from "@fortawesome/free-solid-svg-icons";
 import { useNavigation } from "@react-navigation/native";
 
 import { addUserExpoPushToken } from "./Firebase/AuthManager";
+import TopBar from "./TopBar";
+import { colors, card } from "./theme";
 
 const fetchData = async () => {
   try {
@@ -281,7 +283,6 @@ const Admin = ({ route }) => {
   useEffect(() => {
     const getUserRole = async () => {
       if (auth.currentUser) {
-        await displayDocumentData();
         const currentUID = auth.currentUser.uid;
         const docRef = doc(db, "Users", currentUID);
         const docSnap = await getDoc(docRef);
@@ -387,19 +388,15 @@ const Admin = ({ route }) => {
   };
 
   return (
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+    <View style={styles.screen}>
+      <TopBar />
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <ScrollView
-        contentContainerStyle={{
-          flexGrow: 1,
-          justifyContent: "center",
-          alignItems: "center",
-          backgroundColor: "#1F1F1F",
-          paddingVertical: 24,
-        }}
+        contentContainerStyle={styles.screenContent}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.notificationsBox}>
+        <View style={[card, styles.notificationsBox]}>
           <View style={styles.header}>
             <View style={styles.smallCircle} />
             <Text style={styles.headerText}>NOTIFICATIONS</Text>
@@ -408,13 +405,13 @@ const Admin = ({ route }) => {
                 style={{
                   position: "absolute",
                   top: 0,
-                  right: 20,
+                  right: 0,
                 }}
                 onPress={() => navigation.navigate("MissionDM Admin")}
               >
                 <FontAwesomeIcon
                   icon={faChildCombatant}
-                  color="white"
+                  color={colors.navy}
                   size={20}
                 />
               </TouchableOpacity>
@@ -428,7 +425,7 @@ const Admin = ({ route }) => {
               placeholder="Enter title here..."
               autoCapitalize="none"
               value={title}
-              placeholderTextColor="white"
+              placeholderTextColor={colors.textMuted}
             />
             <Text style={styles.sectionTitle}>Message</Text>
             <TextInput
@@ -439,12 +436,10 @@ const Admin = ({ route }) => {
               value={message}
               multiline={true}
               // numberOfLines={4}
-              placeholderTextColor="white"
+              placeholderTextColor={colors.textMuted}
               maxLength={160}
             />
-            <Text
-              style={{ color: "white", textAlign: "right", marginRight: 15 }}
-            >
+            <Text style={styles.charCount}>
               {message.length}/160
             </Text>
           </View>
@@ -464,7 +459,7 @@ const Admin = ({ route }) => {
           </TouchableOpacity>
         </View>
 
-        <View style={styles.permsBox}>
+        <View style={[card, styles.permsBox]}>
           <View style={styles.header}>
             <View style={styles.smallCircle} />
             <Text style={styles.headerText}>SCANNER PERMISSIONS</Text>
@@ -559,7 +554,7 @@ const Admin = ({ route }) => {
                     value={newRole}
                     onChangeText={setNewRole}
                     placeholder="New role..."
-                    placeholderTextColor="rgba(255,255,255,0.4)"
+                    placeholderTextColor={colors.textMuted}
                   />
                   <TouchableOpacity
                     style={styles.modalAddBtn}
@@ -599,14 +594,14 @@ const Admin = ({ route }) => {
                   value={newTeamRole}
                   onChangeText={setNewTeamRole}
                   placeholder="Role (e.g., Assistant Director)"
-                  placeholderTextColor="rgba(255,255,255,0.4)"
+                  placeholderTextColor={colors.textMuted}
                 />
                 <TextInput
                   style={[styles.modalInput, { marginTop: 8 }]}
                   value={newTeam}
                   onChangeText={setNewTeam}
                   placeholder="Team (e.g., Recruitment)"
-                  placeholderTextColor="rgba(255,255,255,0.4)"
+                  placeholderTextColor={colors.textMuted}
                 />
                 <TouchableOpacity
                   style={[styles.accessButton, { alignSelf: "flex-end", marginTop: 8 }]}
@@ -628,7 +623,8 @@ const Admin = ({ route }) => {
           </View>
         </Modal>
       </ScrollView>
-    </TouchableWithoutFeedback>
+      </TouchableWithoutFeedback>
+    </View>
   );
 };
 export default Admin;
@@ -636,115 +632,44 @@ export default Admin;
 const eventItemWidth = Dimensions.get("window").width * 0.9;
 
 const styles = StyleSheet.create({
+  screen: {
+    flex: 1,
+    backgroundColor: colors.pageBackground,
+  },
+  screenContent: {
+    alignItems: "center",
+    paddingVertical: 24,
+  },
   input: {
     minHeight: 40,
-    borderColor: "white",
+    borderColor: colors.cardBorder,
     borderWidth: 1,
     marginBottom: 5,
     paddingHorizontal: 10,
-    borderRadius: 5,
-    backgroundColor: "#1F1F1F",
+    borderRadius: 8,
+    backgroundColor: colors.pageBackground,
     width: "95%",
     left: 10,
-    color: "white",
+    color: colors.text,
   },
-  button: {
-    backgroundColor: "#233D72",
-    margin: 2,
-    justifyContent: "flex-start",
-    paddingLeft: 15,
-    borderRadius: 5,
-    borderWidth: 0,
-    borderBottomWidth: 2,
-    borderColor: "#2B457A",
-    width: "100%",
-  },
-  eventItem: {
-    width: eventItemWidth,
-    backgroundColor: "white",
-    padding: 20,
-    borderRadius: 10,
-    alignSelf: "center",
-  },
-  centeredView: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    marginTop: 22,
-  },
-  modalView: {
-    margin: 20,
-    backgroundColor: "white",
-    borderRadius: 20,
-    padding: 35,
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  button: {
-    backgroundColor: "#233D72",
-    margin: 2,
-    justifyContent: "flex-start",
-    paddingLeft: 15,
-    borderRadius: 5,
-    borderWidth: 0,
-    borderBottomWidth: 2,
-    borderColor: "#2B457A",
-  },
-  inputTop: {
-    height: 40,
-    borderColor: "black",
-    borderWidth: 1,
-    marginBottom: 15,
-    paddingHorizontal: 10,
-    borderRadius: 5,
-    backgroundColor: "#D9D9D9",
+  charCount: {
+    color: colors.textMuted,
+    textAlign: "right",
+    marginRight: 15,
   },
   topText: {
-    color: "white",
+    color: colors.textSecondary,
     fontSize: 12,
     textAlign: "center",
     margin: 10,
-  },
-  notificationContainer: {
-    backgroundColor: "white",
-    padding: 20,
-    marginRight: 10,
-    marginTop: 17,
-    borderRadius: 5,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  showNotificationButton: {
-    backgroundColor: "#E2883C",
-    padding: 15,
-    borderRadius: 5,
-    marginTop: 15,
-    width: 200,
-    marginBottom: 20,
-  },
-  listItem: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginVertical: 5,
-    color: "white",
   },
   teamSection: {
     marginVertical: 10,
   },
   subHeader: {
-    fontSize: 20,
+    fontSize: 16,
     fontWeight: "bold",
-    color: "white",
+    color: colors.text,
     marginTop: 5,
   },
   currentPermissions: {
@@ -754,53 +679,40 @@ const styles = StyleSheet.create({
   },
   textItem: {
     fontSize: 14,
-    color: "white",
+    color: colors.textSecondary,
   },
   notificationsBox: {
-    borderRadius: 9,
-    backgroundColor: "#233d72",
     width: 340,
-    shadowOpacity: 1,
-    elevation: 4,
-    shadowRadius: 4,
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowColor: "rgba(0, 0, 0, 0.25)",
+    padding: 16,
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     marginBottom: 15,
-    left: 10,
-    top: 10,
   },
   headerText: {
-    color: "white",
+    color: colors.text,
     fontWeight: "bold",
-    fontSize: 16,
+    fontSize: 15,
     flex: 1,
-    left: 5,
+    marginLeft: 8,
   },
   smallCircle: {
-    width: 15,
-    height: 15,
+    width: 12,
+    height: 12,
     borderRadius: 50,
-    backgroundColor: "#EB9F68",
+    backgroundColor: colors.orange,
   },
   sectionTitle: {
-    color: "white",
-    fontSize: 14,
+    color: colors.textSecondary,
+    fontSize: 13,
     fontWeight: "bold",
     left: 10,
-    // marginTop: 10,
-    // marginBottom: 5,
   },
   sendButton: {
     borderRadius: 10,
-    backgroundColor: "#f18221",
+    backgroundColor: colors.orange,
     width: 80,
     height: 40,
     justifyContent: "center",
@@ -808,29 +720,18 @@ const styles = StyleSheet.create({
   },
   sendMessage: {
     textAlign: "center",
-    fontSize: 16,
-    fontFamily: "Outfit-Bold",
+    fontSize: 15,
     fontWeight: "700",
     color: "#fff",
-    position: "absolute",
   },
   permsBox: {
-    top: 25,
-    borderRadius: 9,
-    backgroundColor: "#233d72",
     width: 340,
-    shadowOpacity: 1,
-    elevation: 4,
-    shadowRadius: 4,
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowColor: "rgba(0, 0, 0, 0.25)",
+    marginTop: 16,
+    padding: 16,
   },
   accessButton: {
     borderRadius: 10,
-    backgroundColor: "#f18221",
+    backgroundColor: colors.orange,
     width: 160,
     height: 40,
     justifyContent: "center",
@@ -838,11 +739,9 @@ const styles = StyleSheet.create({
   },
   accessMessage: {
     textAlign: "center",
-    fontSize: 16,
-    fontFamily: "Outfit-Bold",
+    fontSize: 15,
     fontWeight: "700",
     color: "#fff",
-    position: "absolute",
   },
   modalOverlay: {
     flex: 1,
@@ -853,13 +752,8 @@ const styles = StyleSheet.create({
   modalContent: {
     width: 340,
     maxHeight: "78%",
-    backgroundColor: "#233d72",
-    borderRadius: 9,
-    shadowOpacity: 1,
-    elevation: 4,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 4 },
-    shadowColor: "rgba(0, 0, 0, 0.25)",
+    backgroundColor: "white",
+    borderRadius: 16,
   },
   modalHeader: {
     flexDirection: "row",
@@ -872,13 +766,13 @@ const styles = StyleSheet.create({
     width: 26,
     height: 26,
     borderRadius: 13,
-    backgroundColor: "rgba(255,255,255,0.15)",
+    backgroundColor: colors.lightBlue,
     alignItems: "center",
     justifyContent: "center",
     marginLeft: "auto",
   },
   modalCloseBtnText: {
-    color: "white",
+    color: colors.navy,
     fontSize: 12,
     fontWeight: "bold",
   },
@@ -901,17 +795,17 @@ const styles = StyleSheet.create({
   modalInput: {
     flex: 1,
     height: 40,
-    borderColor: "white",
+    borderColor: colors.cardBorder,
     borderWidth: 1,
-    borderRadius: 5,
+    borderRadius: 8,
     paddingHorizontal: 10,
-    backgroundColor: "#1F1F1F",
-    color: "white",
+    backgroundColor: colors.pageBackground,
+    color: colors.text,
     fontSize: 14,
   },
   modalAddBtn: {
     borderRadius: 10,
-    backgroundColor: "#f18221",
+    backgroundColor: colors.orange,
     height: 40,
     paddingHorizontal: 14,
     justifyContent: "center",
@@ -925,11 +819,11 @@ const styles = StyleSheet.create({
   },
   modalDivider: {
     height: 1,
-    backgroundColor: "rgba(255,255,255,0.2)",
+    backgroundColor: colors.cardBorder,
     marginVertical: 12,
   },
   removeBtn: {
-    backgroundColor: "rgba(200,50,50,0.8)",
+    backgroundColor: colors.danger,
     borderRadius: 6,
     paddingVertical: 4,
     paddingHorizontal: 9,
@@ -938,9 +832,5 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 12,
     fontWeight: "bold",
-  },
-  modalText: {
-    fontSize: 18,
-    marginBottom: 15,
   },
 });

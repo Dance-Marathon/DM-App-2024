@@ -7,17 +7,18 @@ import {
   TouchableWithoutFeedback,
   Keyboard,
   StyleSheet,
-  Image,
   KeyboardAvoidingView,
   Platform,
   Modal,
-  Button,
   ScrollView,
 } from "react-native";
 import { handleLogin, handleSignUp } from "./Firebase/AuthManager.js";
 import { useNavigation } from "@react-navigation/native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Dropdown } from "react-native-element-dropdown";
 import { Icon } from "react-native-elements";
+import { SELF_SERVICE_ROLES, CAPTAIN_TEAMS } from "./constants";
+import { colors, card } from "./theme";
 
 const Login = ({ route }) => {
   const expoPushToken = route.params?.expoPushToken || "";
@@ -32,6 +33,7 @@ const Login = ({ route }) => {
   const [loginFailed, setLoginFailed] = useState(false);
   const [signUpField, setSignUpField] = useState(false);
   const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
   const [isFocus, setIsFocus] = useState(false);
   const [isCaptainTeamFocus, setIsCaptainTeamFocus] = useState(false);
   const [passwordVisible, setPasswordVisible] = useState(false);
@@ -58,6 +60,7 @@ const Login = ({ route }) => {
 
     if (loginResult === "success") {
       setLoginFailed(false);
+      navigation.navigate("Home");
     } else {
       setLoginFailed(true);
     }
@@ -75,195 +78,174 @@ const Login = ({ route }) => {
 
     if (signUpResult === "success") {
       setSignUpField(false);
+      navigation.navigate("Home");
     } else {
       setSignUpField(true);
     }
   };
 
-  const roles = [
-    { label: "Miracle Maker", value: "Miracle Maker" },
-    { label: "ELP", value: "ELP" },
-    { label: "Ambassador", value: "Ambassador" },
-    { label: "Captain", value: "Captain" },
-    { label: "Assistant Director", value: "Assistant Director" },
-    { label: "Overall", value: "Overall" },
-    { label: "Manager", value: "Manager" },
-  ];
+  const roles = SELF_SERVICE_ROLES;
 
-  const captainTeams = [
-    { label: "N/A", value: "N/A" },
-    { label: "Digital Marketing", value: "Digital Marketing" },
-    { label: "Event Management", value: "Event Management" },
-    { label: "Family Relations", value: "Family Relations" },
-    { label: "Finance", value: "Finance" },
-    { label: "Hospitality", value: "Hospitality" },
-    { label: "Leadership Development", value: "Leadership Development" },
-    { label: "Marathon Relations", value: "Marathon Relations" },
-    { label: "Member Development", value: "Member Development" },
-    { label: "Merchandise", value: "Merchandise" },
-    { label: "Morale", value: "Morale" },
-    { label: "Multimedia", value: "Multimedia" },
-    { label: "Public Relations", value: "Public Relations" },
-    { label: "Recruitment", value: "Recruitment" },
-    { label: "Sponsorships", value: "Sponsorships" },
-  ];
+  const captainTeams = CAPTAIN_TEAMS;
 
   return (
     <TouchableWithoutFeedback onPress={dismissKeyboard}>
       <KeyboardAvoidingView
-        style={styles.container}
+        style={styles.screen}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 20}
       >
         <ScrollView
-          contentContainerStyle={{ flexGrow: 1, justifyContent: "center", alignItems: "center" }}
+          contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
         >
-        <View style={styles.container}>
-          {create && (
-            <Image
-              style={styles.logoBig}
-              source={require("./images/dmlogo_white.png")}
-            />
-          )}
+          <View style={styles.heroBand}>
+            {navigation.canGoBack() && (
+              <TouchableOpacity
+                style={[styles.backButton, { top: insets.top + 12 }]}
+                onPress={() => navigation.goBack()}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <Icon name="arrow-left" type="font-awesome-5" color="white" size={18} />
+              </TouchableOpacity>
+            )}
+            <Text style={styles.logoLineDM}>DM</Text>
+            <Text style={styles.logoLineUF}>UF</Text>
+          </View>
 
-          {!create && (
-            <Image
-              style={styles.logoSmall}
-              source={require("./images/dmlogo_white.png")}
-            />
-          )}
+          <View style={styles.body}>
+            {loginFailed && (
+              <Text style={styles.errorMessage}>Incorrect email or password</Text>
+            )}
 
-          {loginFailed && (
-            <Text style={styles.errorMessage}>Incorrect email or password</Text>
-          )}
+            {signUpField && (
+              <Text style={styles.errorMessage}>Error Signing Up</Text>
+            )}
 
-          {signUpField && (
-            <Text style={styles.errorMessage}>Error Signing Up</Text>
-          )}
-
-          <Modal
-            animationType="slide"
-            transparent={true}
-            visible={ddModalVisable}
-            onRequestClose={closeDDModal}
-          >
-            <View style={styles.centeredView}>
-              <View style={styles.modalView}>
-                <TouchableOpacity style={styles.closeButton} onPress={closeDDModal}>
-                  <Text style={styles.closeText}>×</Text>
-                </TouchableOpacity>
-                <Text style={styles.modalHeader}>
-                  How to Find Your DonorDrive Link
-                </Text>
-                <Text style={styles.modalText}>
-                  1. Navigate to floridadm.org
-                </Text>
-                <Text style={styles.modalText}>2. Click 'Donate'</Text>
-                <Text style={styles.modalText}>
-                  3. Enter your name in the search
-                </Text>
-                <Text style={styles.modalText}>
-                  4. Under the resulting fundraisers, click on your name
-                </Text>
-                <Text style={styles.modalText}>
-                  5. Copy the URL of the page you are currently on
-                </Text>
-                <Text style={styles.modalText}>
-                  6. Paste that link in the app
-                </Text>
+            <Modal
+              animationType="slide"
+              transparent={true}
+              visible={ddModalVisable}
+              onRequestClose={closeDDModal}
+            >
+              <View style={styles.centeredView}>
+                <View style={styles.modalView}>
+                  <TouchableOpacity style={styles.closeButton} onPress={closeDDModal}>
+                    <Text style={styles.closeText}>×</Text>
+                  </TouchableOpacity>
+                  <Text style={styles.modalHeader}>
+                    How to Find Your DonorDrive Link
+                  </Text>
+                  <Text style={styles.modalText}>
+                    1. Navigate to floridadm.org
+                  </Text>
+                  <Text style={styles.modalText}>2. Click 'Donate'</Text>
+                  <Text style={styles.modalText}>
+                    3. Enter your name in the search
+                  </Text>
+                  <Text style={styles.modalText}>
+                    4. Under the resulting fundraisers, click on your name
+                  </Text>
+                  <Text style={styles.modalText}>
+                    5. Copy the URL of the page you are currently on
+                  </Text>
+                  <Text style={styles.modalText}>
+                    6. Paste that link in the app
+                  </Text>
+                </View>
               </View>
-            </View>
-          </Modal>
+            </Modal>
 
-          <View style={styles.loginbox}>
-            <View style={styles.inputContainer}>
-              <TextInput
-                style={styles.inputTop}
-                value={email}
-                onChangeText={(text) => setEmail(text)}
-                placeholder="Email Address"
-                keyboardType="email-address"
-                autoCapitalize="none"
-              />
-
-              <View style={styles.passwordContainer}>
+            <View style={[card, styles.loginbox]}>
+              <View style={styles.inputContainer}>
                 <TextInput
-                  style={styles.inputMiddle}
-                  value={password}
-                  onChangeText={(text) => setPassword(text)}
-                  placeholder="Password"
-                  secureTextEntry={!passwordVisible}
+                  style={styles.inputTop}
+                  value={email}
+                  onChangeText={(text) => setEmail(text)}
+                  placeholder="Email Address"
+                  placeholderTextColor={colors.textMuted}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
                 />
-                <TouchableOpacity
-                  onPress={() => setPasswordVisible(!passwordVisible)}
-                  style={styles.iconContainer}
-                >
-                  <Icon
-                    name={passwordVisible ? "visibility-off" : "visibility"}
-                    type="material"
-                    size={24}
-                    color="grey"
+
+                <View style={styles.passwordContainer}>
+                  <TextInput
+                    style={styles.inputMiddle}
+                    value={password}
+                    onChangeText={(text) => setPassword(text)}
+                    placeholder="Password"
+                    placeholderTextColor={colors.textMuted}
+                    secureTextEntry={!passwordVisible}
                   />
-                </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => setPasswordVisible(!passwordVisible)}
+                    style={styles.iconContainer}
+                  >
+                    <Icon
+                      name={passwordVisible ? "visibility-off" : "visibility"}
+                      type="material"
+                      size={22}
+                      color={colors.textMuted}
+                    />
+                  </TouchableOpacity>
+                </View>
+
+                {!create && (
+                  <TextInput
+                    style={styles.inputBottom}
+                    value={donorDriveLink}
+                    onChangeText={setDonorDriveLink}
+                    placeholder="Enter Your Donor Drive Link"
+                    placeholderTextColor={colors.textMuted}
+                  />
+                )}
+
+                {!create && (
+                  <Dropdown
+                    style={styles.dropdown}
+                    placeholderStyle={styles.placeholderStyle}
+                    selectedTextStyle={styles.selectedTextStyle}
+                    inputSearchStyle={styles.inputSearchStyle}
+                    iconStyle={styles.iconStyle}
+                    data={roles}
+                    search
+                    maxHeight={300}
+                    labelField="label"
+                    valueField="value"
+                    placeholder={!isFocus ? "Select Your Role" : "..."}
+                    searchPlaceholder="Search..."
+                    value={role}
+                    onChange={(item) => {
+                      setRole(item.value);
+                      setIsFocus(false);
+                    }}
+                  />
+                )}
+
+                {!create && (
+                  <Dropdown
+                    style={styles.dropdown}
+                    placeholderStyle={styles.placeholderStyle}
+                    selectedTextStyle={styles.selectedTextStyle}
+                    inputSearchStyle={styles.inputSearchStyle}
+                    iconStyle={styles.iconStyle}
+                    data={captainTeams}
+                    search
+                    maxHeight={300}
+                    labelField="label"
+                    valueField="value"
+                    placeholder={!isCaptainTeamFocus ? "Select Your Captain Team" : "..."}
+                    searchPlaceholder="Search..."
+                    value={captainTeam}
+                    onChange={(item) => {
+                      setCaptainTeam(item.value);
+                      setIsCaptainTeamFocus(false);
+                    }}
+                  />
+                )}
               </View>
 
               {!create && (
-                <TextInput
-                  style={styles.inputBottom}
-                  value={donorDriveLink}
-                  onChangeText={setDonorDriveLink}
-                  placeholder="Enter Your Donor Drive Link"
-                />
-              )}
-
-              {!create && (
-                <Dropdown
-                  style={styles.dropdown}
-                  placeholderStyle={styles.placeholderStyle}
-                  selectedTextStyle={styles.selectedTextStyle}
-                  inputSearchStyle={styles.inputSearchStyle}
-                  iconStyle={styles.iconStyle}
-                  data={roles}
-                  search
-                  maxHeight={300}
-                  labelField="label"
-                  valueField="value"
-                  placeholder={!isFocus ? "Select Your Role" : "..."}
-                  searchPlaceholder="Search..."
-                  value={role}
-                  onChange={(item) => {
-                    setRole(item.value);
-                    setIsFocus(false);
-                  }}
-                />
-              )}
-
-              {!create && (
-                <Dropdown
-                  style={styles.dropdown}
-                  placeholderStyle={styles.placeholderStyle}
-                  selectedTextStyle={styles.selectedTextStyle}
-                  inputSearchStyle={styles.inputSearchStyle}
-                  iconStyle={styles.iconStyle}
-                  data={captainTeams}
-                  search
-                  maxHeight={300}
-                  labelField="label"
-                  valueField="value"
-                  placeholder={!isCaptainTeamFocus ? "Select Your Captain Team" : "..."}
-                  searchPlaceholder="Search..."
-                  value={captainTeam}
-                  onChange={(item) => {
-                    setCaptainTeam(item.value);
-                    setIsCaptainTeamFocus(false);
-                  }}
-                />
-              )}
-            </View>
-
-            {!create && (
-              <>
                 <TouchableOpacity
                   style={styles.createAccountButton}
                   onPress={async () => {
@@ -272,52 +254,49 @@ const Login = ({ route }) => {
                 >
                   <Text style={styles.buttonText}>Sign Up</Text>
                 </TouchableOpacity>
-              </>
-            )}
+              )}
 
-            {create && (
-              <>
+              {create && (
                 <TouchableOpacity
                   style={styles.loginButton}
                   onPress={handleLoginPress}
                 >
                   <Text style={styles.buttonText}>Log In</Text>
                 </TouchableOpacity>
-              </>
-            )}
+              )}
 
-            <View style={styles.divider} />
+              <View style={styles.divider} />
 
-            <TouchableOpacity onPress={handleForgotPassword}>
-              <Text style={styles.forgotPassword}>Forgot password?</Text>
-            </TouchableOpacity>
+              <TouchableOpacity onPress={handleForgotPassword}>
+                <Text style={styles.forgotPassword}>Forgot password?</Text>
+              </TouchableOpacity>
 
-            {create && (
-              <View style={styles.signUpContainer}>
-                <Text style={styles.signUpText}>New User?</Text>
-                <TouchableOpacity onPress={() => setCreate(false)}>
-                  <Text style={styles.signUpLink}> Sign Up!</Text>
-                </TouchableOpacity>
-              </View>
-            )}
-            {!create && (
-              <View style={styles.bottomSection}>
-                <TouchableOpacity onPress={openDDModal}>
-                  <Text style={styles.DDlink}>
-                    Where do I find my DonorDrive Link?
-                  </Text>
-                </TouchableOpacity>
-
-                <View style={styles.loginRow}>
-                  <Text style={styles.signUp}>Already a user?</Text>
-                    <TouchableOpacity onPress={() => setCreate(true)}>
-                  <Text style={styles.signUpLink}> Log In!</Text>
-                    </TouchableOpacity>
+              {create && (
+                <View style={styles.signUpContainer}>
+                  <Text style={styles.signUpText}>New User?</Text>
+                  <TouchableOpacity onPress={() => setCreate(false)}>
+                    <Text style={styles.signUpLink}> Sign Up!</Text>
+                  </TouchableOpacity>
                 </View>
-              </View>
-            )}
+              )}
+              {!create && (
+                <View style={styles.bottomSection}>
+                  <TouchableOpacity onPress={openDDModal}>
+                    <Text style={styles.DDlink}>
+                      Where do I find my DonorDrive Link?
+                    </Text>
+                  </TouchableOpacity>
+
+                  <View style={styles.loginRow}>
+                    <Text style={styles.signUp}>Already a user?</Text>
+                    <TouchableOpacity onPress={() => setCreate(true)}>
+                      <Text style={styles.signUpLink}> Log In!</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              )}
+            </View>
           </View>
-        </View>
         </ScrollView>
       </KeyboardAvoidingView>
     </TouchableWithoutFeedback>
@@ -325,143 +304,170 @@ const Login = ({ route }) => {
 };
 
 const styles = StyleSheet.create({
-  container: {
+  screen: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#233563",
-    width: "100%",
+    backgroundColor: colors.pageBackground,
   },
-  logoContainer: {
-    marginBottom: 30,
+  scrollContent: {
+    flexGrow: 1,
+  },
+  heroBand: {
+    backgroundColor: colors.navy,
+    paddingVertical: 48,
+    alignItems: "center",
+    justifyContent: "center",
+    position: "relative",
+  },
+  backButton: {
+    position: "absolute",
+    left: 16,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "rgba(255,255,255,0.15)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  logoLineDM: {
+    color: "white",
+    fontWeight: "800",
+    fontSize: 26,
+    lineHeight: 28,
+    letterSpacing: 0.5,
+    textAlign: "center",
+  },
+  logoLineUF: {
+    color: "white",
+    fontWeight: "800",
+    fontSize: 30,
+    lineHeight: 32,
+    letterSpacing: 0.5,
+    textAlign: "center",
+  },
+  body: {
+    flex: 1,
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingTop: 24,
+    paddingBottom: 40,
   },
   loginbox: {
-    width: "80%",
-    backgroundColor: "#F2EFEE",
-    borderRadius: 10,
+    width: "100%",
     padding: 20,
   },
   inputContainer: {
     marginBottom: 20,
   },
   inputTop: {
-    height: 40,
-    color: '#adadad',
-    borderColor: "black",
+    height: 44,
+    color: colors.text,
+    borderColor: colors.cardBorder,
     borderWidth: 1,
     marginBottom: 15,
-    paddingHorizontal: 10,
-    borderRadius: 5,
-    backgroundColor: "#D9D9D9",
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    backgroundColor: colors.pageBackground,
   },
   passwordContainer: {
     flexDirection: "row",
     alignItems: "center",
-    width: "span",
     position: "relative",
   },
   inputMiddle: {
-    height: 40,
-    color: '#adadad',
-    borderColor: "black",
+    height: 44,
+    color: colors.text,
+    borderColor: colors.cardBorder,
     borderWidth: 1,
-    paddingHorizontal: 10,
-    borderRadius: 5,
-    backgroundColor: "#D9D9D9",
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    backgroundColor: colors.pageBackground,
     width: "100%",
   },
   iconContainer: {
     position: "absolute",
-    right: "5%",
+    right: 12,
   },
   inputBottom: {
-    height: 40,
-    color: '#adadad',
-    borderColor: "black",
+    height: 44,
+    color: colors.text,
+    borderColor: colors.cardBorder,
     borderWidth: 1,
-    paddingHorizontal: 10,
-    borderRadius: 5,
-    backgroundColor: "#D9D9D9",
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    backgroundColor: colors.pageBackground,
     marginTop: 15,
   },
   bottomSection: {
-     marginTop: 12,
-     alignItems: 'center',
+    marginTop: 12,
+    alignItems: "center",
   },
   loginButton: {
-    backgroundColor: "#E2883C",
-    padding: 15,
-    borderRadius: 5,
+    backgroundColor: colors.orange,
+    padding: 14,
+    borderRadius: 10,
     alignSelf: "stretch",
     marginBottom: 10,
   },
   createAccountButton: {
-    backgroundColor: "#E2883C",
-    padding: 15,
-    borderRadius: 5,
+    backgroundColor: colors.orange,
+    padding: 14,
+    borderRadius: 10,
     alignSelf: "stretch",
     marginBottom: 10,
   },
   buttonText: {
     color: "white",
     textAlign: "center",
-    fontWeight: "bold",
+    fontWeight: "700",
+    fontSize: 15,
   },
   divider: {
-    borderBottomColor: "black",
+    borderBottomColor: colors.cardBorder,
     borderBottomWidth: 1,
     alignSelf: "stretch",
     marginVertical: 12,
   },
   forgotPassword: {
-    color: "#61A0DA",
+    color: colors.navy,
     textAlign: "center",
+    fontWeight: "600",
   },
   DDlink: {
-    color: "#61A0DA",
+    color: colors.navy,
     textAlign: "center",
     marginBottom: 1,
+    fontWeight: "600",
   },
   signUp: {
-    color: "black",
+    color: colors.textSecondary,
     textAlign: "center",
     marginTop: 1,
   },
-  logoBig: {
-    width: 350,
-    height: 225,
-    marginBottom: 50,
-  },
-  logoSmall: {
-    width: 350,
-    height: 225,
-    marginBottom: 50,
-    marginTop: 50,
-  },
   errorMessage: {
-    color: "white",
+    color: colors.danger,
     textAlign: "center",
     marginTop: 15,
     marginBottom: 15,
+    fontWeight: "600",
   },
   dropdown: {
     marginTop: 15,
-    height: 40,
-    borderColor: "black",
+    height: 44,
+    borderColor: colors.cardBorder,
     borderWidth: 1,
-    paddingHorizontal: 10,
-    borderRadius: 5,
-    backgroundColor: "#D9D9D9",
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    backgroundColor: colors.pageBackground,
   },
   icon: {
     marginRight: 5,
   },
   placeholderStyle: {
-    color: '#adadad',
+    color: colors.textMuted,
     fontSize: 14,
   },
   selectedTextStyle: {
-    color: '#adadad',
+    color: colors.text,
     fontSize: 14,
   },
   iconStyle: {
@@ -474,29 +480,22 @@ const styles = StyleSheet.create({
   },
   modalView: {
     margin: 20,
-    backgroundColor: "#233563",
+    backgroundColor: "white",
     borderRadius: 20,
     padding: 35,
     alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
+    width: "85%",
   },
   closeButton: {
-    position: 'absolute',
+    position: "absolute",
     top: 10,
     right: 15,
     zIndex: 1,
   },
   closeText: {
-    color: 'white',
+    color: colors.text,
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   centeredView: {
     flex: 1,
@@ -505,14 +504,14 @@ const styles = StyleSheet.create({
     marginTop: 22,
   },
   modalHeader: {
-    color: "#D9D9D9",
+    color: colors.text,
     fontSize: 16,
     fontWeight: "bold",
     textAlign: "center",
     marginBottom: 20,
   },
   modalText: {
-    color: "#D9D9D9",
+    color: colors.textSecondary,
     fontSize: 14,
     textAlign: "left",
     alignSelf: "stretch",
@@ -525,17 +524,18 @@ const styles = StyleSheet.create({
     marginTop: 5,
   },
   signUpText: {
-    color: "black",
+    color: colors.textSecondary,
     textAlign: "center",
   },
   signUpLink: {
-    color: "#61A0DA",
+    color: colors.navy,
     textAlign: "center",
+    fontWeight: "700",
   },
   loginRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     marginTop: 13,
   },
 });
