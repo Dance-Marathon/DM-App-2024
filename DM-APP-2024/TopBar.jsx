@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { View, TouchableOpacity, StyleSheet, Image } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { DrawerActions } from "@react-navigation/native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -27,8 +27,11 @@ const TopBar = ({ rightIcon, onRightPress, showBadge }) => {
         </TouchableOpacity>
 
         <View style={styles.logoContainer}>
-          <Text style={styles.logoLineDM}>DM</Text>
-          <Text style={styles.logoLineUF}>UF</Text>
+          <Image
+            source={require("./images/TopBarLogoWhite.png")}
+            style={styles.logoImage}
+            resizeMode="contain"
+          />
         </View>
 
         <View style={styles.rightSlot}>
@@ -95,21 +98,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  logoLineDM: {
-    color: "white",
-    fontWeight: "800",
-    fontSize: 12,
-    lineHeight: 13,
-    letterSpacing: 0.3,
-    textAlign: "center",
-  },
-  logoLineUF: {
-    color: "white",
-    fontWeight: "800",
-    fontSize: 14,
-    lineHeight: 15,
-    letterSpacing: 0.3,
-    textAlign: "center",
+  logoImage: {
+    height: 24,
+    aspectRatio: 2821 / 357,
   },
   rightSlot: {
     width: 24,

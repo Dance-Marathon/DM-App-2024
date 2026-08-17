@@ -32,10 +32,10 @@ const GenerateQRCode = () => {
     []
   );
   const SPREADSHEET_ID = "1VTr6Jq_UbrJ1HEUTxCo0TlLvoLXc5PaPagufrzbAAxY";
-  const range = `Sheet1!A2:B100`;
+  const range = `Sheet1!A2:E100`; // A/B = organization team + points, D/E = captain team + points
   const individualRange = `Sheet2!A2:B600`;
   const apiKey = sheetsAPIKey;
-  const [scannerVisible, setScannerVisible] = useState(false);
+  const [canGiveSpiritPoints, setCanGiveSpiritPoints] = useState(false);
   const [scannerPermissions, setScannerPermissions] = useState({
     allowedRoles: [],
     teamBasedPermissions: {},
@@ -45,6 +45,8 @@ const GenerateQRCode = () => {
   const insets = useSafeAreaInsets();
   const { width: windowWidth } = useWindowDimensions();
   const qrSize = Math.min(280, windowWidth * 0.65);
+  const actionButtonGap = 10;
+  const actionRowWidth = windowWidth - 32; // matches sheetContent's 16px side padding
 
   const { role, userInfo, captainTeam } = useContext(UserContext);
 
@@ -55,9 +57,11 @@ const GenerateQRCode = () => {
         )?.[1] || 0
       : 0;
 
+  const hasCaptainTeam = Boolean(captainTeam) && captainTeam !== "N/A";
+
   const captainTeamScore =
     fullTeamLeaderboard && captainTeam && captainTeam !== "N/A"
-      ? fullTeamLeaderboard.find((team) => team[0] === captainTeam)?.[1] || 0
+      ? fullTeamLeaderboard.find((team) => team[3] === captainTeam)?.[4] || 0
       : 0;
 
   const individualScore =
@@ -73,9 +77,10 @@ const GenerateQRCode = () => {
         `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${range}?key=${apiKey}`
       );
 
-      setFullTeamLeaderboard(response.data.values);
+      const rows = response.data.values || [];
+      setFullTeamLeaderboard(rows);
 
-      const sortedData = response.data.values
+      const sortedData = rows
         .filter((row) => row[1])
         .map((row) => [row[0], parseInt(row[1], 10)])
         .sort((a, b) => b[1] - a[1])
@@ -92,9 +97,10 @@ const GenerateQRCode = () => {
         `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${individualRange}?key=${apiKey}`
       );
 
-      setFullIndividualLeaderboard(response.data.values);
+      const rows = response.data.values || [];
+      setFullIndividualLeaderboard(rows);
 
-      const sortedData = response.data.values
+      const sortedData = rows
         .filter((row) => row[1])
         .map((row) => [row[0], parseInt(row[1], 10)])
         .sort((a, b) => b[1] - a[1])
@@ -127,10 +133,10 @@ const GenerateQRCode = () => {
             permissions.allowedRoles.includes(role) ||
             (permissions.teamBasedPermissions[role] &&
               permissions.teamBasedPermissions[role].includes(
-                userInfo.teamName
+                captainTeam
               ));
 
-          setScannerVisible(isAllowed);
+          setCanGiveSpiritPoints(isAllowed);
         } else {
           console.log("No permissions found for Scanner.");
         }
@@ -140,34 +146,26 @@ const GenerateQRCode = () => {
     };
 
     fetchScannerPermissions();
-  }, [userInfo]);
+  }, [userInfo, role, captainTeam]);
 
   const isUserInfoEmpty = Object.keys(userInfo || {}).length === 0;
 
   const qrData = isUserInfoEmpty
     ? ""
-    : `name: ${userInfo.displayName}, team: ${userInfo.teamName}`;
+    : `name: ${userInfo.displayName}, team: ${userInfo.teamName}, captainTeam: ${captainTeam || "N/A"}`;
+
+  const actionButtonWidth = canGiveSpiritPoints
+    ? (actionRowWidth - actionButtonGap) / 2
+    : actionRowWidth * 0.7;
 
   const maxOrgScore = leaderboard.length > 0 ? leaderboard[0][1] : 0;
   const rankBadgeColors = [colors.gold, colors.silver, colors.bronze];
 
   return (
     <View style={styles.screen}>
-      <TopBar
-        rightIcon="qr"
-        onRightPress={() => setQrVisible(true)}
-      />
+      <TopBar />
 
       <View style={styles.heroBand}>
-        {scannerVisible && (
-          <TouchableOpacity
-            style={styles.scannerButton}
-            onPress={() => navigation.navigate("Scanner")}
-          >
-            <Icon name="camera" type="font-awesome-5" color="white" size={18} />
-          </TouchableOpacity>
-        )}
-
         <View style={styles.statsRow}>
           <View style={styles.statCard}>
             <Text style={styles.statLabel}>Personal</Text>
@@ -176,13 +174,15 @@ const GenerateQRCode = () => {
               {userInfo?.displayName || ""}
             </Text>
           </View>
-          <View style={styles.statCard}>
-            <Text style={styles.statLabel}>Captain Team</Text>
-            <Text style={styles.statValue}>{captainTeamScore}</Text>
-            <Text style={styles.statSubtitle} numberOfLines={1}>
-              {captainTeam && captainTeam !== "N/A" ? captainTeam : "N/A"}
-            </Text>
-          </View>
+          {hasCaptainTeam && (
+            <View style={styles.statCard}>
+              <Text style={styles.statLabel}>Captain Team</Text>
+              <Text style={styles.statValue}>{captainTeamScore}</Text>
+              <Text style={styles.statSubtitle} numberOfLines={1}>
+                {captainTeam}
+              </Text>
+            </View>
+          )}
           <View style={styles.statCard}>
             <Text style={styles.statLabel}>Organization</Text>
             <Text style={styles.statValue}>{userTeamScore}</Text>
@@ -203,11 +203,55 @@ const GenerateQRCode = () => {
           {isUserInfoEmpty && (
             <View style={[card, styles.noticeCard]}>
               <Text style={styles.noticeText}>
-                Please update your DonorDrive link in the Fundraiser tab to
+                Please update your DonorDrive link in the DonorDrive tab to
                 earn points.
               </Text>
             </View>
           )}
+
+          <View
+            style={[
+              styles.actionRow,
+              !canGiveSpiritPoints && styles.actionRowCentered,
+            ]}
+          >
+            <TouchableOpacity
+              style={[
+                styles.actionButton,
+                styles.receiveButton,
+                { width: actionButtonWidth },
+              ]}
+              onPress={() => setQrVisible(true)}
+            >
+              <Icon name="qrcode" type="font-awesome" color="white" size={18} />
+              <Text
+                style={styles.actionButtonText}
+                numberOfLines={1}
+                ellipsizeMode="tail"
+              >
+                Receive Spirit Points
+              </Text>
+            </TouchableOpacity>
+            {canGiveSpiritPoints && (
+              <TouchableOpacity
+                style={[
+                  styles.actionButton,
+                  styles.giveButton,
+                  { width: actionButtonWidth },
+                ]}
+                onPress={() => navigation.navigate("Scanner")}
+              >
+                <Icon name="camera" type="font-awesome-5" color="white" size={18} />
+                <Text
+                  style={styles.actionButtonText}
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+                >
+                  Give Spirit Points
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
 
           <Text style={styles.sectionTitle}>ORGANIZATION LEADERBOARD</Text>
           <View style={[card, styles.leaderboardCard]}>
@@ -303,10 +347,6 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
     paddingTop: 8,
   },
-  scannerButton: {
-    alignSelf: "flex-end",
-    marginBottom: 8,
-  },
   statsRow: {
     flexDirection: "row",
     gap: 10,
@@ -360,6 +400,35 @@ const styles = StyleSheet.create({
   noticeText: {
     color: colors.textSecondary,
     fontSize: 14,
+    textAlign: "center",
+  },
+  actionRow: {
+    flexDirection: "row",
+    gap: 10,
+    marginBottom: 20,
+  },
+  actionRowCentered: {
+    justifyContent: "center",
+  },
+  actionButton: {
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 4,
+    paddingVertical: 10,
+    paddingHorizontal: 4,
+    borderRadius: 10,
+  },
+  receiveButton: {
+    backgroundColor: colors.navy,
+  },
+  giveButton: {
+    backgroundColor: colors.orange,
+  },
+  actionButtonText: {
+    color: "white",
+    fontSize: 12,
+    fontWeight: "700",
     textAlign: "center",
   },
   sectionTitle: {

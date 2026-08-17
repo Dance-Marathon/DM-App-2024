@@ -17,7 +17,7 @@ import { useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Dropdown } from "react-native-element-dropdown";
 import { Icon } from "react-native-elements";
-import { ROLES, CAPTAIN_TEAMS } from "./constants";
+import { SELF_SERVICE_ROLES, CAPTAIN_TEAMS } from "./constants";
 import { colors, card } from "./theme";
 
 const Login = ({ route }) => {
@@ -84,7 +84,7 @@ const Login = ({ route }) => {
     }
   };
 
-  const roles = ROLES;
+  const roles = SELF_SERVICE_ROLES;
 
   const captainTeams = CAPTAIN_TEAMS;
 

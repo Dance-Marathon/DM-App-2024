@@ -164,39 +164,50 @@ const App = () => {
     }
   }, [appDisabled]);
 
-  const displayDocumentData = async () => {
-    try {
-      const currentUID = auth.currentUser.uid;
-      const docRef = doc(db, "Users", currentUID);
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        setUserIDState(data.donorID);
-        setRole(data.role);
-        setEnrolled(data.inMissionDM);
-        setIsAdmin(data.isAdmin === true);
-      } else {
-        console.log("Document does not exist");
-      }
-    } catch (error) {
-      console.error("Error fetching document data:", error);
-    }
-  };
-
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
       setLoading(false);
-
-      if (user) {
-        await displayDocumentData();
-      }
     });
 
     return () => {
       unsubscribe();
     };
   }, []);
+
+  // Live-updates role/isAdmin/etc. from the user's Firestore doc, so a role
+  // change made elsewhere (e.g. the account/settings screen) is reflected
+  // here immediately instead of only after a restart or re-login.
+  useEffect(() => {
+    if (!user) {
+      setRole("");
+      setUserIDState("");
+      setEnrolled(false);
+      setIsAdmin(false);
+      return;
+    }
+
+    const docRef = doc(db, "Users", user.uid);
+    const unsubscribe = onSnapshot(
+      docRef,
+      (docSnap) => {
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          setUserIDState(data.donorID);
+          setRole(data.role);
+          setEnrolled(data.inMissionDM);
+          setIsAdmin(data.isAdmin === true);
+        } else {
+          console.log("Document does not exist");
+        }
+      },
+      (error) => {
+        console.error("Error listening to user document:", error);
+      }
+    );
+
+    return () => unsubscribe();
+  }, [user]);
 
   useEffect(() => {
     getUserInfo(userIDState)

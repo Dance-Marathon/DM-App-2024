@@ -183,13 +183,17 @@ const Scanner = () => {
     time,
     giver,
     value,
+    captainTeam,
   ) => {
     const SPREADSHEET_ID = "1VTr6Jq_UbrJ1HEUTxCo0TlLvoLXc5PaPagufrzbAAxY";
 
     try {
       const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/Sheet3:append?valueInputOption=RAW`;
 
-      const rowData = [recipient, team, reason, date, time, giver, value];
+      // captainTeam is always appended as the 8th (last) column, never
+      // inserted mid-row — keeps "Value" and everything before it at their
+      // existing fixed positions for anything else reading Sheet3.
+      const rowData = [recipient, team, reason, date, time, giver, value, captainTeam];
 
       const postData = {
         values: [rowData],
@@ -270,6 +274,7 @@ const Scanner = () => {
             time,
             giver,
             selectedOption.points,
+            extractedData.captainTeam,
           );
         }
       }
@@ -349,8 +354,15 @@ const Scanner = () => {
       const parts = data.split(", ");
       const namePart = parts[0].split("name: ")[1];
       const teamPart = parts[1].split("team: ")[1];
+      // Older QR codes won't have this segment at all; missing, blank, or
+      // "N/A" all normalize to "N/A" so the org write is never blocked.
+      const captainTeamPart = parts[2]?.split("captainTeam: ")[1];
       if (namePart && teamPart) {
-        return { name: namePart, team: teamPart };
+        return {
+          name: namePart,
+          team: teamPart,
+          captainTeam: captainTeamPart || "N/A",
+        };
       }
       return null;
     } catch (error) {

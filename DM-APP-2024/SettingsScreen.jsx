@@ -27,7 +27,7 @@ import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import TopBar from "./TopBar";
 import { colors, card } from "./theme";
-import { ROLES, CAPTAIN_TEAMS } from "./constants";
+import { SELF_SERVICE_ROLES, CAPTAIN_TEAMS } from "./constants";
 
 const SettingsScreen = () => {
   const [response, setResponse] = useState(false);
@@ -240,7 +240,7 @@ const SettingsScreen = () => {
                   inputSearchStyle={styles.inputSearchStyle}
                   iconStyle={styles.iconStyle}
                   containerStyle={styles.dropdownContainer}
-                  data={ROLES}
+                  data={SELF_SERVICE_ROLES}
                   search
                   maxHeight={300}
                   labelField="label"

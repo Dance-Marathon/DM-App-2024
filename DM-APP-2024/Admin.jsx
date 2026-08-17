@@ -554,7 +554,7 @@ const Admin = ({ route }) => {
                     value={newRole}
                     onChangeText={setNewRole}
                     placeholder="New role..."
-                    placeholderTextColor="rgba(255,255,255,0.4)"
+                    placeholderTextColor={colors.textMuted}
                   />
                   <TouchableOpacity
                     style={styles.modalAddBtn}
@@ -594,14 +594,14 @@ const Admin = ({ route }) => {
                   value={newTeamRole}
                   onChangeText={setNewTeamRole}
                   placeholder="Role (e.g., Assistant Director)"
-                  placeholderTextColor="rgba(255,255,255,0.4)"
+                  placeholderTextColor={colors.textMuted}
                 />
                 <TextInput
                   style={[styles.modalInput, { marginTop: 8 }]}
                   value={newTeam}
                   onChangeText={setNewTeam}
                   placeholder="Team (e.g., Recruitment)"
-                  placeholderTextColor="rgba(255,255,255,0.4)"
+                  placeholderTextColor={colors.textMuted}
                 />
                 <TouchableOpacity
                   style={[styles.accessButton, { alignSelf: "flex-end", marginTop: 8 }]}

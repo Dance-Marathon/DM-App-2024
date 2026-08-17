@@ -22,7 +22,7 @@ const faqData = [
   {
     question: "How can I see my DonorDrive info in the app?",
     answer:
-      "Open the Fundraiser tab from the drawer menu to locate your personal Dance Marathon fundraiser, DonorDrive page, DonorDrive URL link, and more.",
+      "Open the DonorDrive tab from the drawer menu to locate your personal Dance Marathon fundraiser, DonorDrive page, DonorDrive URL link, and more.",
   },
   {
     question: "How do I register to be a Miracle Maker?",

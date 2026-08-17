@@ -1,5 +1,5 @@
 import React, { useContext } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, Linking } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, Linking, Image } from "react-native";
 import { DrawerContentScrollView } from "@react-navigation/drawer";
 import { Icon } from "react-native-elements";
 import Svg, { Path } from "react-native-svg";
@@ -40,8 +40,11 @@ const DrawerContent = (props) => {
   return (
     <DrawerContentScrollView {...props} contentContainerStyle={styles.container}>
       <View style={styles.logoContainer}>
-        <Text style={styles.logoLineTop}>DM</Text>
-        <Text style={styles.logoLineBottom}>UF</Text>
+        <Image
+          source={require("./images/DrawerLogo.png")}
+          style={styles.logoImage}
+          resizeMode="contain"
+        />
       </View>
 
       <View style={styles.topSection}>
@@ -50,7 +53,7 @@ const DrawerContent = (props) => {
           <DrawerRow iconName="star" label="Spirit Points" onPress={() => go("Spirit")} />
         )}
         {!isGuest && (
-          <DrawerRow iconName="money" label="Fundraiser" onPress={() => go("Fundraiser")} />
+          <DrawerRow iconName="money" label="DonorDrive" onPress={() => go("Fundraiser")} />
         )}
         {!isGuest && missionDmEnabled && (
           <DrawerRow
@@ -107,19 +110,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     marginBottom: 16,
   },
-  logoLineTop: {
-    color: colors.navy,
-    fontWeight: "800",
-    fontSize: 18,
-    lineHeight: 19,
-    letterSpacing: 0.3,
-  },
-  logoLineBottom: {
-    color: colors.orange,
-    fontWeight: "800",
-    fontSize: 20,
-    lineHeight: 21,
-    letterSpacing: 0.3,
+  logoImage: {
+    width: 64,
+    height: 64,
   },
   topSection: {
     paddingHorizontal: 8,

@@ -5,12 +5,30 @@ export const ROLES = [
   { label: "ELP", value: "ELP" },
   { label: "Executive Director", value: "Executive Director" },
   { label: "Finance Manager", value: "Finance Manager" },
+  { label: "Fundraising Assistant Director", value: "Fundraising Assistant Director" },
   { label: "Marketing Manager", value: "Marketing Manager" },
   { label: "Membership Manager", value: "Membership Manager" },
   { label: "Miracle Maker", value: "Miracle Maker" },
   { label: "Operations Manager", value: "Operations Manager" },
   { label: "Overall", value: "Overall" },
 ];
+
+// Roles that are only ever assignable by an admin editing the Firestore
+// document directly (not selectable by users on sign-up/account-update).
+const ADMIN_ONLY_ROLES = [
+  "Overall",
+  "Executive Director",
+  "Fundraising Assistant Director",
+  "Marketing Manager",
+  "Finance Manager",
+  "Membership Manager",
+  "Operations Manager",
+];
+
+// Roles shown in the self-service sign-up / account-update dropdowns.
+export const SELF_SERVICE_ROLES = ROLES.filter(
+  (r) => !ADMIN_ONLY_ROLES.includes(r.value)
+);
 
 export const CAPTAIN_TEAMS = [
   { label: "N/A", value: "N/A" },
@@ -27,7 +45,7 @@ export const CAPTAIN_TEAMS = [
   { label: "Multimedia", value: "Multimedia" },
   { label: "Public Relations", value: "Public Relations" },
   { label: "Recruitment", value: "Recruitment" },
-  { label: "Sponsorships", value: "Sponsorships" },
+  { label: "Partnerships", value: "Partnerships" },
 ];
 
 export const ALL_CAPTAIN_TEAM_NAMES = CAPTAIN_TEAMS.filter(
@@ -36,7 +54,7 @@ export const ALL_CAPTAIN_TEAM_NAMES = CAPTAIN_TEAMS.filter(
 
 // Roles that see a Team tab on the Fundraiser screen but only ever look at
 // their own single captain team (no multi-team dropdown).
-export const TEAM_TAB_SINGLE_ROLES = ["Overall", "Assistant Director"];
+export const TEAM_TAB_SINGLE_ROLES = ["Overall", "Fundraising Assistant Director"];
 
 // Roles that see a Team tab with a dropdown across multiple captain teams,
 // and which captain teams each of those roles covers.
@@ -47,7 +65,7 @@ export const MANAGER_TEAM_GROUPS = {
     "Finance",
     "Marathon Relations",
     "Merchandise",
-    "Sponsorships",
+    "Partnerships",
   ],
   "Membership Manager": [
     "Leadership Development",
@@ -66,7 +84,6 @@ export const SOCIAL_LINKS = [
   { key: "instagram", icon: "instagram", label: "Instagram", url: "https://www.instagram.com/floridadm/" },
   { key: "facebook", icon: "facebook", label: "Facebook", url: "https://www.facebook.com/FloridaDM/" },
   { key: "youtube", icon: "youtube-play", label: "YouTube", url: "https://www.youtube.com/user/DMatUF" },
-  { key: "twitter", icon: "twitter", label: "X / Twitter", url: "https://twitter.com/FloridaDM" },
   { key: "website", icon: "globe", label: "DM at UF Website", url: "https://floridadm.org" },
-  { key: "email", icon: "envelope", label: "Email DM at UF", url: "mailto:floridadm@floridadm.org" },
+  { key: "email", icon: "envelope", label: "Email Technology Team", url: "mailto:technology@floridadm.org" },
 ];
