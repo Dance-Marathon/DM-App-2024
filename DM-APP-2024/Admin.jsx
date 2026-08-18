@@ -238,14 +238,23 @@ const Admin = ({ route }) => {
   };
 
   const addTeamPermission = () => {
-    if (newTeamRole && newTeam) {
-      setTeamBasedPermissions((prev) => ({
-        ...prev,
-        [newTeamRole]: [...(prev[newTeamRole] || []), newTeam],
-      }));
-      setNewTeamRole("");
-      setNewTeam("");
+    const role = newTeamRole.trim();
+    const team = newTeam.trim();
+
+    if (!role || !team) {
+      Alert.alert(
+        "Missing info",
+        "Enter both a role and a team before adding.",
+      );
+      return;
     }
+
+    setTeamBasedPermissions((prev) => ({
+      ...prev,
+      [role]: [...(prev[role] || []), team],
+    }));
+    setNewTeamRole("");
+    setNewTeam("");
   };
 
   const removeTeamPermission = (role, team) => {

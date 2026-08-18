@@ -85,5 +85,6 @@ export const SOCIAL_LINKS = [
   { key: "facebook", icon: "facebook", label: "Facebook", url: "https://www.facebook.com/FloridaDM/" },
   { key: "youtube", icon: "youtube-play", label: "YouTube", url: "https://www.youtube.com/user/DMatUF" },
   { key: "website", icon: "globe", label: "DM at UF Website", url: "https://floridadm.org" },
-  { key: "email", icon: "envelope", label: "Email Technology Team", url: "mailto:technology@floridadm.org" },
 ];
+
+export const TECH_SUPPORT_EMAIL_URL = "mailto:technology@floridadm.org";

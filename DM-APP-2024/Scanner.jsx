@@ -18,30 +18,47 @@ import { getUserInfo } from "./api/index";
 import { colors, card } from "./theme";
 
 const DEFAULT_SCANNER_OPTIONS = [
-  { label: "Checked-In", value: "Checked-In", points: 1, sortOrder: 1 },
   {
-    label: "Wore DM Shirt to Check-In",
-    value: "Wore DM Shirt to Check-In",
+    label: "Attend a Hospitality Night",
+    value: "Attend a Hospitality Night",
     points: 1,
+    sortOrder: 1,
+  },
+  {
+    label: "Register a Miracle Maker",
+    value: "Register a Miracle Maker",
+    points: 5,
     sortOrder: 2,
   },
   {
-    label: "Brought A Friend to Check-In",
-    value: "Brought A Friend to Check-In",
-    points: 1,
+    label: "Attend an organization's fundraiser",
+    value: "Attend an organization's fundraiser",
+    points: 3,
     sortOrder: 3,
   },
   {
-    label: "Attended All-Member / Captain Meeting",
-    value: "Attended All-Member / Captain Meeting",
-    points: 1,
+    label: "Support a team fundraiser",
+    value: "Support a team fundraiser",
+    points: 3,
     sortOrder: 4,
   },
   {
-    label: "Attended Spirit Night",
-    value: "Attended Spirit Night",
-    points: 2,
+    label: "Wear your DM merch at check-ins",
+    value: "Wear your DM merch at check-ins",
+    points: 1,
     sortOrder: 5,
+  },
+  {
+    label: "Attend check-ins",
+    value: "Attend check-ins",
+    points: 1,
+    sortOrder: 6,
+  },
+  {
+    label: "Buy DM merch",
+    value: "Buy DM merch",
+    points: 3,
+    sortOrder: 7,
   },
 ];
 

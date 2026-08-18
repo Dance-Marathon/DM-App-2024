@@ -15,11 +15,6 @@ const faqData = [
       "Spirit Points are used to keep track of an organization's or individual's participation in events throughout the year. There is a friendly competition between teams to be the most engaged yearlong. The winner is announced at the Closing Ceremonies of The Main Event.\n\nSpirit Points can be earned by engaging in various Dance Marathon activities and attending various events.",
   },
   {
-    question: "When/where is Dance Marathon Tabling?",
-    answer:
-      "Tabling takes place in Turlington Plaza every Wednesday from 10am-2pm.\n\nNote: DM merchandise can be purchased every other week.",
-  },
-  {
     question: "How can I see my DonorDrive info in the app?",
     answer:
       "Open the DonorDrive tab from the drawer menu to locate your personal Dance Marathon fundraiser, DonorDrive page, DonorDrive URL link, and more.",
@@ -27,12 +22,7 @@ const faqData = [
   {
     question: "How do I register to be a Miracle Maker?",
     answer: "Click here to register to become a Miracle Maker!",
-    link: "https://events.dancemarathon.com/index.cfm?fuseaction=register.start&eventID=6292",
-  },
-  {
-    question: "How do I register to fundraise?",
-    answer: "Click here to register to fundraise!",
-    link: "https://events.dancemarathon.com/index.cfm?fuseaction=donorDrive.event&eventID=6292",
+    link: "https://events.dancemarathon.com/dmatuf27?REFERRER=meta_ig",
   },
 ];
 

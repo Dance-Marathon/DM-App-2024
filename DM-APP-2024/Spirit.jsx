@@ -159,6 +159,8 @@ const GenerateQRCode = () => {
     : actionRowWidth * 0.7;
 
   const maxOrgScore = leaderboard.length > 0 ? leaderboard[0][1] : 0;
+  const maxIndividualScore =
+    individualLeaderboard.length > 0 ? individualLeaderboard[0][1] : 0;
   const rankBadgeColors = [colors.gold, colors.silver, colors.bronze];
 
   return (
@@ -302,6 +304,64 @@ const GenerateQRCode = () => {
               );
             })}
             {leaderboard.length === 0 && (
+              <Text style={styles.noticeText}>Leaderboard unavailable</Text>
+            )}
+          </View>
+
+          <Text style={[styles.sectionTitle, { marginTop: 20 }]}>
+            INDIVIDUAL LEADERBOARD
+          </Text>
+          <View style={[card, styles.leaderboardCard]}>
+            {individualLeaderboard.map((person, index) => {
+              const isYou =
+                userInfo?.displayName && person[0] === userInfo.displayName;
+              const progress =
+                maxIndividualScore > 0 ? person[1] / maxIndividualScore : 0;
+              return (
+                <View
+                  key={index}
+                  style={[
+                    styles.leaderboardRow,
+                    index < individualLeaderboard.length - 1 &&
+                      styles.leaderboardRowDivider,
+                  ]}
+                >
+                  <View
+                    style={[
+                      styles.rankBadge,
+                      index < 3 && { backgroundColor: rankBadgeColors[index] },
+                    ]}
+                  >
+                    <Text style={styles.rankBadgeText}>{index + 1}</Text>
+                  </View>
+                  <View style={styles.leaderboardInfo}>
+                    <View style={styles.leaderboardNameRow}>
+                      <Text style={styles.leaderboardName} numberOfLines={1}>
+                        {person[0]}
+                      </Text>
+                      {isYou && (
+                        <View style={styles.youPill}>
+                          <Text style={styles.youPillText}>you</Text>
+                        </View>
+                      )}
+                    </View>
+                    <View style={styles.progressTrack}>
+                      <View
+                        style={[
+                          styles.progressFill,
+                          {
+                            width: `${Math.max(progress * 100, 4)}%`,
+                            backgroundColor: isYou ? colors.orange : colors.navy,
+                          },
+                        ]}
+                      />
+                    </View>
+                  </View>
+                  <Text style={styles.leaderboardPoints}>{person[1]}</Text>
+                </View>
+              );
+            })}
+            {individualLeaderboard.length === 0 && (
               <Text style={styles.noticeText}>Leaderboard unavailable</Text>
             )}
           </View>

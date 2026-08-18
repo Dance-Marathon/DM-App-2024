@@ -16,13 +16,23 @@ export {
   IRosterList,
 } from "./interfaces";
 
+// DonorDrive's site sits behind bot/WAF protection that can reject bare
+// requests with no browser-like signals. Sending realistic headers makes
+// these look like a normal browser request instead of a raw HTTP client.
+const DONORDRIVE_HEADERS = {
+  "User-Agent":
+    "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1",
+  Accept: "application/json, text/plain, */*",
+  Referer: "https://events.dancemarathon.com/",
+};
+
 export const getUserInfo = async (id) => {
   return new Promise((resolve, reject) => {
     // const url = apiPaths.profileUrl(Number(id));
     const url = apiPaths.profileUrl(id);
     let userInfoJson = {};
 
-    fetch(url)
+    fetch(url, { headers: DONORDRIVE_HEADERS })
       .then(async (res) => {
         try {
           const payload = await res.json();
@@ -62,7 +72,7 @@ export const getUserDonations = async (id, limit = 100, page = 1) => {
     const url = apiPaths.userDonationUrl(id, limit, page);
     const userDonationsJson = {};
 
-    fetch(url)
+    fetch(url, { headers: DONORDRIVE_HEADERS })
       .then(async (res) => {
         try {
           userDonationsJson.countDonations =
@@ -88,7 +98,7 @@ export const getUserMilestones = async (id, limit = 100, page = 1) => {
     const url = apiPaths.userMilestonesUrl(id, limit, page);
     const userMilestonesJson = {};
 
-    fetch(url)
+    fetch(url, { headers: DONORDRIVE_HEADERS })
       .then(async (res) => {
         try {
           userMilestonesJson.countMilestones =
@@ -114,7 +124,7 @@ export const getUserIncentives = async (id, limit = 100, page = 1) => {
     const url = apiPaths.userIncentivesUrl(id, limit, page);
     const userIncentivesJson = {};
 
-    fetch(url)
+    fetch(url, { headers: DONORDRIVE_HEADERS })
       .then(async (res) => {
         try {
           userIncentivesJson.countIncentives =
@@ -140,7 +150,7 @@ export const getUserBadges = async (id, limit = 100, page = 1) => {
     const url = apiPaths.userBadgesUrl(id, limit, page);
     const userBadgesJson = {};
 
-    fetch(url)
+    fetch(url, { headers: DONORDRIVE_HEADERS })
       .then(async (res) => {
         try {
           userBadgesJson.countBadges =
@@ -166,7 +176,7 @@ export const getTeamInfo = async (id, fetchRoster = true) => {
     const url = apiPaths.teamProfileUrl(id);
     let teamInfoJson = {};
 
-    fetch(url)
+    fetch(url, { headers: DONORDRIVE_HEADERS })
       .then(async (res) => {
         try {
           teamInfoJson = await res.json();
@@ -203,7 +213,7 @@ export const getTeamDonations = async (id, limit = 100, page = 1) => {
     const teamDonationsJson = {};
     const url = apiPaths.teamDonationsUrl(id, limit, page);
 
-    fetch(url)
+    fetch(url, { headers: DONORDRIVE_HEADERS })
       .then(async (res) => {
         try {
           teamDonationsJson.countDonations =
@@ -231,7 +241,7 @@ export const getTeamRoster = async (id, page) => {
     const offsetCalc = page && page !== 1 ? (page - 1) * 100 : null;
     const url = apiPaths.teamRosterUrl(id, offsetCalc);
 
-    fetch(url)
+    fetch(url, { headers: DONORDRIVE_HEADERS })
       .then(async (res) => {
         try {
           teamRosterJson.countMembers =
@@ -270,7 +280,7 @@ export const getUserActivity = async (id, limit = 100, page = 1) => {
     const url = apiPaths.userActivityUrl(id, limit, page);
     const userActivityJson = {};
 
-    fetch(url)
+    fetch(url, { headers: DONORDRIVE_HEADERS })
       .then(async (res) => {
         try {
           userActivityJson.countActivity =

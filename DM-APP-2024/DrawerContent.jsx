@@ -6,7 +6,7 @@ import Svg, { Path } from "react-native-svg";
 import { auth } from "./Firebase/AuthManager";
 import { UserContext } from "./api/calls";
 import { colors } from "./theme";
-import { SOCIAL_LINKS } from "./constants";
+import { SOCIAL_LINKS, TECH_SUPPORT_EMAIL_URL } from "./constants";
 
 const MissionDMIcon = ({ color, size = 20 }) => (
   <Svg width={size} height={size * (28 / 24)} viewBox="0 0 24 28" fill="none">
@@ -71,6 +71,11 @@ const DrawerContent = (props) => {
         <DrawerRow iconName="user" label="Account" onPress={() => go("Account")} />
         <DrawerRow iconName="book" label="Resources" onPress={() => go("Resources")} />
         <DrawerRow iconName="camera" label="Shootproof" onPress={() => go("Shootproof")} />
+        <DrawerRow
+          iconName="envelope"
+          label="Email Tech Support"
+          onPress={() => openLink(TECH_SUPPORT_EMAIL_URL)}
+        />
         {!isGuest && isAdmin && (
           <DrawerRow iconName="user-secret" label="Admin" onPress={() => go("Admin")} />
         )}
