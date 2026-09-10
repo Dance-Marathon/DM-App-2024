@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import FontAwesome from "react-native-vector-icons/FontAwesome";
 import {
   View,
   Text,
@@ -8,45 +7,46 @@ import {
   StyleSheet,
   TouchableOpacity,
   TouchableWithoutFeedback,
+  ScrollView,
   Linking,
-  Dimensions,
 } from "react-native";
-const INITIAL_DATE = new Date();
+import { Icon } from "react-native-elements";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { auth, db } from "./Firebase/AuthManager";
 import { doc, getDoc, collection, getDocs } from "firebase/firestore";
 import { getStorage, ref, getDownloadURL } from "firebase/storage";
-
-import { addUserExpoPushToken } from "./Firebase/AuthManager";
-
 import axios from "axios";
 import { sheetsAPIKey } from "./api/apiKeys";
 
+import { addUserExpoPushToken } from "./Firebase/AuthManager";
 import { useNavigation } from "@react-navigation/native";
-import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
-import { faX } from "@fortawesome/free-solid-svg-icons";
-import LogoStyles from "./LogoStyles";
+import TopBar from "./TopBar";
+import { colors, card } from "./theme";
 
 import odomeMap from "./images/ODomeMap2026.jpg";
 
-const Home = ({ route }) => {
-  const [modalVisible, setModalVisible] = useState(false);
-  const [MapModalVisible, setMapModalVisible] = useState(false);
-  const [allNotifications, setAllNotifications] = useState({});
+const SPREADSHEET_ID = "15kkihl7I0p4A_jyT-a-ozXQA9kvi_as-ry_6J0PfPis";
+const EVENTS_RANGE = "MainEvent!A2:F100";
+
+const formatEventDate = (d) =>
+  new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(d);
+
+const sortByDate = (list) => [...list].sort((a, b) => a.datetime - b.datetime);
+
+const HomeME = ({ route }) => {
+  const [mapModalVisible, setMapModalVisible] = useState(false);
+  const [allNotifications, setAllNotifications] = useState([]);
   const [items, setItems] = useState([]);
   const [allItems, setAllItems] = useState([]);
-  const [selectedNotification, setSelectedNotification] = useState("");
+  const [imageUrls, setImageUrls] = useState({});
 
   const navigation = useNavigation();
-
-  const SPREADSHEET_ID = "15kkihl7I0p4A_jyT-a-ozXQA9kvi_as-ry_6J0PfPis";
-  const range = "MainEvent!A2:F100";
-  const apiKey = sheetsAPIKey;
+  const insets = useSafeAreaInsets();
 
   const { expoPushToken } = route.params;
 
   const fetchAllNotifications = async () => {
     try {
-      console.log("Starting to fetch notifications...");
       const notificationsRef = collection(db, "Notifications");
       const querySnapshot = await getDocs(notificationsRef);
       const fetchedNotifs = [];
@@ -74,23 +74,21 @@ const Home = ({ route }) => {
   const fetchDates = async () => {
     try {
       const response = await axios.get(
-        `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${range}?key=${apiKey}`,
+        `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${EVENTS_RANGE}?key=${sheetsAPIKey}`
       );
 
       const rows = response.data.values;
 
       if (!rows || rows.length === 0) {
-        console.log("No data found.");
         setItems([]);
+        setAllItems([]);
         return;
       }
 
-      const fetchedItems = rows.slice(0).map((row, index) => {
+      const fetchedItems = rows.map((row) => {
         const [title, date, time, location, description, pictureName] = row;
 
-        if (!date || !time) {
-          return null;
-        }
+        if (!date || !time) return null;
 
         const [year, month, day] = date.split("-").map(Number);
 
@@ -122,81 +120,39 @@ const Home = ({ route }) => {
         }
 
         const eventDate = new Date(year, month - 1, day, hours, minutes);
-        if (isNaN(eventDate.getTime())) {
-          return null;
-        }
+        if (isNaN(eventDate.getTime())) return null;
 
         return {
-          formattedDate: new Intl.DateTimeFormat("en-US", {
-            month: "long",
-            day: "numeric",
-            year: "numeric",
-          }).format(eventDate),
+          formattedDate: formatEventDate(eventDate),
           date,
-          time: time,
-          title: title,
-          description: description,
-          location: location,
+          time,
+          title,
+          description,
+          location,
           datetime: eventDate,
           picture: pictureName,
         };
       });
 
-      const currentDate = new Date(INITIAL_DATE).getTime();
-
-      const validItems = fetchedItems.filter((item) => item !== null);
-
-      const filteredItems = validItems.filter(
-        (item) => item.datetime.getTime() >= currentDate,
+      const currentDate = new Date().getTime();
+      const filteredItems = sortByDate(
+        fetchedItems
+          .filter((item) => item !== null)
+          .filter((item) => item.datetime.getTime() >= currentDate)
       );
 
-      filteredItems.sort((a, b) => a.datetime - b.datetime);
-
       filteredItems.forEach((item) => {
-        if (item.picture) {
-          fetchImageUrl(item.picture);
-        }
+        if (item.picture) fetchImageUrl(item.picture);
       });
 
-      setItems(filteredItems.slice(0, 4));
+      setItems(filteredItems.slice(0, 3));
       setAllItems(filteredItems);
     } catch (error) {
       console.error("Error fetching events:", error);
       setItems([]);
+      setAllItems([]);
     }
   };
-
-  useEffect(() => {
-    const getUserRole = async () => {
-      if (auth.currentUser) {
-        await displayDocumentData();
-        const currentUID = auth.currentUser.uid;
-        const docRef = doc(db, "Users", currentUID);
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-          const data = docSnap.data();
-          if (!data.notificationToken) {
-            await addUserExpoPushToken(auth.currentUser.uid, expoPushToken);
-          } else {
-            console.log("Token exists");
-          }
-        }
-      } else {
-        console.log("auth.currentUser is null, waiting for authentication.");
-      }
-    };
-    getUserRole();
-  }, [auth.currentUser]);
-
-  useEffect(() => {
-    fetchAllNotifications();
-  }, []);
-
-  useEffect(() => {
-    fetchDates();
-  }, []);
-
-  const [imageUrls, setImageUrls] = useState({});
 
   const fetchImageUrl = async (imageName) => {
     try {
@@ -212,363 +168,271 @@ const Home = ({ route }) => {
     }
   };
 
-  const handleNotificationClick = (notification) => {
-    setSelectedNotification(notification);
-    setNotificationModalVisible(true);
+  useEffect(() => {
+    const getUserRole = async () => {
+      if (auth.currentUser) {
+        const currentUID = auth.currentUser.uid;
+        const docRef = doc(db, "Users", currentUID);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          if (!data.notificationToken) {
+            await addUserExpoPushToken(auth.currentUser.uid, expoPushToken);
+          }
+        }
+      }
+    };
+    getUserRole();
+  }, [auth.currentUser]);
+
+  useEffect(() => {
+    fetchAllNotifications();
+  }, []);
+
+  useEffect(() => {
+    fetchDates();
+  }, []);
+
+  const openEvent = (item) => {
+    navigation.navigate("EventDetails", {
+      event: {
+        title: item.title,
+        formattedDate: item.formattedDate,
+        time: item.time,
+        location: item.location,
+        description: item.description,
+        imageUrl: imageUrls[item.picture],
+      },
+    });
   };
 
   return (
-    <View
-      style={{
-        flex: 1,
-        alignItems: "center",
-        backgroundColor: "#1F1F1F",
-      }}
-    >
-      <Image
-        style={LogoStyles.logo}
-        resizeMode="contain"
-        source={require("./images/logo.png")}
-      />
-      <View
-        style={{
-          diplay: "flex",
-          flexDirection: "row",
-          marginTop: 20,
-          gap: 10,
-          width: "85%",
-        }}
-      >
-        <TouchableOpacity
-          style={[styles.METile, { backgroundColor: "#E2213E" }]}
-          onPress={() => setMapModalVisible(true)}
-        >
-          <FontAwesome name="map-o" size={32} color="white" />
-          <Text style={{ color: "white", fontSize: 10 }}>O'Dome Map</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.METile, { backgroundColor: "#7825c7" }]}
-          onPress={() =>
-            Linking.openURL(
-              "https://events.dancemarathon.com/participant/songrequests",
-            )
-          }
-        >
-          <FontAwesome name="music" size={32} color="white" />
-          <Text style={{ color: "white", fontSize: 10 }}>Music Request</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.METile, { backgroundColor: "#EAB90A" }]}
-          onPress={() =>
-            Linking.openURL(
-              "https://drive.google.com/drive/folders/1Pd-JIqk49PMpz2cn6V-P1WlRrs9cmQ4S",
-            )
-          }
-        >
-          <FontAwesome name="dollar" size={32} color="white" />
-          <Text style={{ color: "white", fontSize: 10 }}>Resources</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.METile, { backgroundColor: "#1642A2" }]}
-          onPress={() =>
-            navigation.navigate("AllNotifications", {
-              notifications: allNotifications,
-            })
-          }
-        >
-          <FontAwesome name="bell-o" size={32} color="white" />
-          <Text style={{ color: "white", fontSize: 10 }}>Notifications</Text>
-        </TouchableOpacity>
-      </View>
-      <Modal
-        animationType="fade"
-        transparent={true}
-        visible={MapModalVisible}
-        onRequestClose={() => setMapModalVisible(false)}
-      >
-        <TouchableWithoutFeedback onPress={() => setMapModalVisible(false)}>
-          <View
-            style={{
-              flex: 1,
-              backgroundColor: "rgba(0, 0, 0, 0.9)",
-              justifyContent: "center",
-              alignItems: "center",
-            }}
-          >
-            <Image
-              source={odomeMap}
-              style={{ width: "90%", height: "90%", resizeMode: "contain" }}
-            />
-          </View>
-        </TouchableWithoutFeedback>
-      </Modal>
+    <View style={styles.screen}>
+      <TopBar />
 
-      {/* <View style={styles.notificationsBox}>
-        <View style={styles.header}>
-          <FontAwesome name="bell-o" size={18} color="orange" />
-          <Text style={styles.headerText}>NOTIFICATIONS</Text>
+      <ScrollView
+        contentContainerStyle={[
+          styles.body,
+          { paddingBottom: 40 + insets.bottom },
+        ]}
+      >
+        <View style={styles.tileRow}>
           <TouchableOpacity
+            style={styles.tile}
+            onPress={() => setMapModalVisible(true)}
+          >
+            <Icon name="map" type="font-awesome" size={26} color="white" />
+            <Text style={styles.tileText}>O'Dome Map</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.tile}
+            onPress={() =>
+              Linking.openURL(
+                "https://events.dancemarathon.com/participant/songrequests"
+              )
+            }
+          >
+            <Icon name="music" type="font-awesome" size={26} color="white" />
+            <Text style={styles.tileText}>Music Request</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.tile}
+            onPress={() =>
+              Linking.openURL(
+                "https://drive.google.com/drive/folders/1Pd-JIqk49PMpz2cn6V-P1WlRrs9cmQ4S"
+              )
+            }
+          >
+            <Icon name="dollar" type="font-awesome" size={26} color="white" />
+            <Text style={styles.tileText}>Resources</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.tile}
             onPress={() =>
               navigation.navigate("AllNotifications", {
                 notifications: allNotifications,
               })
             }
           >
-            <Text style={styles.showAll}>Show All</Text>
+            <Icon name="bell" type="font-awesome" size={26} color="white" />
+            <Text style={styles.tileText}>Notifications</Text>
           </TouchableOpacity>
         </View>
-      </View> */}
-      <View style={styles.eventsBox}>
-        <View style={styles.header}>
-          <FontAwesome name="calendar" size={18} color="orange" />
-          <Text style={styles.headerText}>UPCOMING EVENTS</Text>
-          {allItems.length > 4 && (
-            <TouchableOpacity
-              onPress={() =>
-                navigation.navigate("AllEvents", {
-                  items: allItems,
-                  imageUrls: imageUrls,
-                })
-              }
-            >
-              <Text style={styles.showAll}>Show All</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-        <View style={styles.eventsList}>
-          {Array.isArray(items) && items.length > 0 ? (
-            items.map((item, index) => (
-              <TouchableOpacity
-                onPress={() =>
-                  navigation.navigate("EventDetails", {
-                    event: {
-                      ...item,
-                      formattedDate: item.datetime.toDateString(),
-                      imageUrl: imageUrls[item.picture],
-                    },
-                  })
-                }
-              >
-                <View key={index} style={styles.eventContainer}>
-                  {item.picture ? (
-                    <View style={styles.imageContainer}>
-                      <Image
-                        source={{ uri: imageUrls[item.picture] }}
-                        style={styles.eventImage}
-                      />
-                    </View>
+
+        <Modal
+          animationType="fade"
+          transparent={true}
+          visible={mapModalVisible}
+          onRequestClose={() => setMapModalVisible(false)}
+        >
+          <TouchableWithoutFeedback onPress={() => setMapModalVisible(false)}>
+            <View style={styles.mapModalOverlay}>
+              <Image
+                source={odomeMap}
+                style={styles.mapModalImage}
+                resizeMode="contain"
+              />
+            </View>
+          </TouchableWithoutFeedback>
+        </Modal>
+
+        <Text style={styles.sectionTitle}>UPCOMING EVENTS</Text>
+        <View style={[card, styles.eventsBox]}>
+          {items.length > 0 ? (
+            items.map((item, index) => {
+              const imageSource =
+                item.picture && imageUrls[item.picture]
+                  ? { uri: imageUrls[item.picture] }
+                  : null;
+
+              return (
+                <TouchableOpacity
+                  key={index}
+                  style={styles.eventCard}
+                  onPress={() => openEvent(item)}
+                  activeOpacity={0.85}
+                >
+                  {imageSource ? (
+                    <Image
+                      source={imageSource}
+                      style={styles.eventCardImage}
+                      resizeMode="cover"
+                    />
                   ) : (
-                    <View></View>
+                    <View style={styles.eventCardPlaceholder} />
                   )}
-                  <View style={styles.eventDetails}>
-                    <Text style={styles.eventTitle}>{item.title}</Text>
-                    <Text style={styles.learnMore}>Learn More</Text>
+                  <View style={styles.eventCardBanner}>
+                    <Text style={styles.eventTitle} numberOfLines={1}>
+                      {item.title}
+                    </Text>
+                    <Text style={styles.eventMeta} numberOfLines={1}>
+                      {item.formattedDate ? `${item.formattedDate}` : ""}
+                      {item.time ? ` · ${item.time}` : ""}
+                      {item.location ? ` · ${item.location}` : ""}
+                    </Text>
                   </View>
-                </View>
-              </TouchableOpacity>
-            ))
+                </TouchableOpacity>
+              );
+            })
           ) : (
             <Text style={styles.noEvents}>No upcoming events</Text>
           )}
+
+          {allItems.length > items.length && (
+            <TouchableOpacity
+              style={styles.seeMoreButton}
+              onPress={() =>
+                navigation.navigate("AllEvents", { items: allItems, imageUrls })
+              }
+            >
+              <Text style={styles.seeMoreText}>See more events</Text>
+            </TouchableOpacity>
+          )}
         </View>
-      </View>
+      </ScrollView>
     </View>
   );
 };
 
-export default Home;
-
-const { width } = Dimensions.get("window");
-const tileWidth = width * 0.85 * 0.25 - 7.5;
+export default HomeME;
 
 const styles = StyleSheet.create({
-  METile: {
-    width: tileWidth,
-    height: tileWidth,
-    borderRadius: 9,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 5,
+  screen: {
+    flex: 1,
+    backgroundColor: colors.pageBackground,
   },
-  dmlogo: {
-    marginTop: 280,
-    width: "90%",
-    height: 75,
+  body: {
+    padding: 16,
+    paddingBottom: 40,
   },
-  notificationsBox: {
-    marginTop: 100,
-    borderRadius: 9,
-    backgroundColor: "#233d72",
-    height: 180,
-    shadowOpacity: 1,
-    elevation: 4,
-    shadowRadius: 4,
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowColor: "rgba(0, 0, 0, 0.25)",
-  },
-  eventsBox: {
-    marginTop: 20,
-    borderRadius: 9,
-    backgroundColor: "#233d72",
-    width: "85%",
-    height: 480,
-    shadowOpacity: 1,
-    elevation: 4,
-    shadowRadius: 4,
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowColor: "rgba(0, 0, 0, 0.25)",
-  },
-  smallCircle: {
-    width: 15,
-    height: 15,
-    borderRadius: 50,
-    backgroundColor: "#EB9F68",
-  },
-  header: {
+  tileRow: {
     flexDirection: "row",
-    alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 10,
-    left: 10,
-    top: 10,
-  },
-  headerText: {
-    color: "white",
-    fontWeight: "bold",
-    fontSize: 16,
-    flex: 1,
-    left: 5,
-  },
-  showAll: {
-    color: "white",
-    fontSize: 14,
-    right: 20,
-    textDecorationLine: "underline",
-  },
-  notifications: {
-    marginTop: 0,
-  },
-  notificationText: {
-    color: "white",
-    fontSize: 14,
-    paddingVertical: 16,
-    textAlign: "left",
-    left: 15,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
-    marginHorizontal: 0,
-  },
-  modalContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-  },
-  modalContent: {
-    backgroundColor: "#233D72",
-    padding: 20,
-    borderRadius: 10,
-    alignItems: "center",
-    width: "80%",
-  },
-  modalText: {
-    fontSize: 16,
     marginBottom: 20,
   },
-  modalClose: {
-    position: "absolute",
-    right: -130,
-    top: 0,
+  tile: {
+    flex: 1,
+    backgroundColor: colors.navy,
+    borderRadius: 12,
+    paddingVertical: 16,
+    marginHorizontal: 4,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
   },
-  eventsList: {
-    paddingTop: 10,
+  tileText: {
+    color: "white",
+    fontSize: 10,
+    fontWeight: "700",
+    textAlign: "center",
+  },
+  mapModalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.9)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  mapModalImage: {
+    width: "90%",
+    height: "90%",
+  },
+  sectionTitle: {
+    color: colors.textSecondary,
+    fontSize: 12,
+    fontWeight: "700",
+    letterSpacing: 1,
+    marginBottom: 8,
+  },
+  eventsBox: {
+    padding: 12,
+    marginBottom: 20,
   },
   eventCard: {
-    flexDirection: "row",
-    backgroundColor: "#1E2A47",
-    borderRadius: 10,
+    borderRadius: 12,
     overflow: "hidden",
-    marginBottom: 15,
+    marginBottom: 12,
+    backgroundColor: colors.cardBackground,
+    borderWidth: 0.5,
+    borderColor: colors.cardBorder,
   },
-  eventImage: {
+  eventCardImage: {
     width: "100%",
-    height: 60,
-    resizeMode: "cover",
+    aspectRatio: 3.5 / 1,
+    backgroundColor: colors.lightBlue,
+  },
+  eventCardPlaceholder: {
+    width: "100%",
+    aspectRatio: 3.5 / 1,
+    backgroundColor: colors.orange,
+  },
+  eventCardBanner: {
+    backgroundColor: colors.navy,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
   },
   eventTitle: {
     color: "white",
-    fontWeight: "bold",
     fontSize: 14,
-    flex: 1,
-    left: 10,
+    fontWeight: "700",
   },
-  learnMore: {
-    color: "white",
-    fontSize: 14,
-    textDecorationLine: "underline",
-    alignSelf: "flex-end",
-    right: 10,
+  eventMeta: {
+    color: "rgba(255,255,255,0.75)",
+    fontSize: 11,
+    marginTop: 2,
   },
   noEvents: {
-    color: "white",
+    color: colors.textSecondary,
     fontSize: 14,
-    left: 10,
-    top: 5,
+    paddingVertical: 12,
+    textAlign: "center",
   },
-  eventContainer: {
-    backgroundColor: "#EB9F68",
+  seeMoreButton: {
     alignItems: "center",
-    height: 100,
-    width: "94%",
-    borderRadius: 10,
-    overflow: "hidden",
-    marginBottom: 10,
-    shadowColor: "rgba(0, 0, 0, 0.25)",
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowRadius: 4,
-    elevation: 4,
-    shadowOpacity: 1,
+    paddingVertical: 10,
   },
-  eventsList: {
-    top: 10,
-    left: 10,
-  },
-  imageContainer: {
-    flex: 7,
-    width: "100%",
-  },
-  eventDetails: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 12,
-  },
-  modalTitle: {
-    color: "white",
-    fontSize: 18,
-    fontWeight: "bold",
-    marginTop: 30,
-    marginBottom: 10,
-  },
-  modalDateTime: {
-    color: "white",
-    fontSize: 16,
-    marginBottom: 10,
-  },
-  modalMessage: {
-    color: "white",
+  seeMoreText: {
+    color: colors.navy,
+    fontWeight: "700",
     fontSize: 14,
-    marginBottom: 10,
   },
 });

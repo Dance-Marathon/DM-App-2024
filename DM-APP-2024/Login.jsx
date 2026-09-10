@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import {
   View,
   Text,
+  Image,
   TextInput,
   TouchableOpacity,
   TouchableWithoutFeedback,
@@ -109,8 +110,11 @@ const Login = ({ route }) => {
                 <Icon name="arrow-left" type="font-awesome-5" color="white" size={18} />
               </TouchableOpacity>
             )}
-            <Text style={styles.logoLineDM}>DM</Text>
-            <Text style={styles.logoLineUF}>UF</Text>
+            <Image
+              source={require("./images/TopBarLogoWhite.png")}
+              style={styles.headerLogo}
+              resizeMode="contain"
+            />
           </View>
 
           <View style={styles.body}>
@@ -328,21 +332,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  logoLineDM: {
-    color: "white",
-    fontWeight: "800",
-    fontSize: 26,
-    lineHeight: 28,
-    letterSpacing: 0.5,
-    textAlign: "center",
-  },
-  logoLineUF: {
-    color: "white",
-    fontWeight: "800",
-    fontSize: 30,
-    lineHeight: 32,
-    letterSpacing: 0.5,
-    textAlign: "center",
+  headerLogo: {
+    height: 30,
+    aspectRatio: 2821 / 357,
+    marginTop: 10,
   },
   body: {
     flex: 1,

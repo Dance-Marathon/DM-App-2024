@@ -18,7 +18,9 @@ import * as Device from "expo-device";
 import * as Notifications from "expo-notifications";
 import Constants from "expo-constants";
 import { Image } from "react-native";
+import { useFonts } from "expo-font";
 
+import Home from "./Home";
 import HomeME from "./HomeME";
 import TTHome from "./HomeTT";
 import Spirit from "./Spirit";
@@ -102,6 +104,16 @@ const stackHeaderOptions = {
 };
 
 const App = () => {
+  // react-native-elements' <Icon> renders these via react-native-vector-icons,
+  // which needs its font files registered at the JS level to work in Expo Go
+  // (no native linking available there) — without this, icons render as tofu boxes.
+  const [iconFontsLoaded] = useFonts({
+    FontAwesome: require("react-native-vector-icons/Fonts/FontAwesome.ttf"),
+    "Material Icons": require("react-native-vector-icons/Fonts/MaterialIcons.ttf"),
+    "FontAwesome5Free-Regular": require("react-native-vector-icons/Fonts/FontAwesome5_Regular.ttf"),
+    "FontAwesome5Free-Solid": require("react-native-vector-icons/Fonts/FontAwesome5_Solid.ttf"),
+    "FontAwesome5Brands-Regular": require("react-native-vector-icons/Fonts/FontAwesome5_Brands.ttf"),
+  });
   const [expoPushToken, setExpoPushToken] = useState("");
   const [notification, setNotification] = useState(false);
   const notificationListener = useRef();
@@ -117,6 +129,7 @@ const App = () => {
   const [appDisabled, setAppDisabled] = useState(false);
   const [image, setImage] = useState(null);
   const [mainEvent, setMainEvent] = useState(false);
+  const [transformToday, setTransformToday] = useState(false);
   const [missionDmEnabled, setMissionDmEnabled] = useState(false);
   const [permissionsLoaded, setPermissionsLoaded] = useState(false);
 
@@ -135,11 +148,13 @@ const App = () => {
         } else {
           setMainEvent(false);
         }
+        setTransformToday(!!docSnapshot.data().transformtoday);
         setMissionDmEnabled(!!docSnapshot.data().missionDmEnabled);
       } else {
         console.error("Document does not exist!");
         setAppDisabled(false);
         setMainEvent(false);
+        setTransformToday(false);
         setMissionDmEnabled(false);
       }
 
@@ -272,8 +287,8 @@ const App = () => {
   const HomeStackScreen = (props) => (
     <HomeStack.Navigator>
       <HomeStack.Screen
-        name={mainEvent ? "HomeME" : "Home"}
-        component={mainEvent ? HomeME : TTHome}
+        name="HomeScreen"
+        component={mainEvent ? HomeME : transformToday ? TTHome : Home}
         options={{ headerShown: false }}
         initialParams={{ expoPushToken }}
       />
@@ -399,6 +414,10 @@ const App = () => {
       />
     </ResourcesStack.Navigator>
   );
+
+  if (!iconFontsLoaded) {
+    return null;
+  }
 
   if (appDisabled) {
     return (
