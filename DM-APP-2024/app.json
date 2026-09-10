@@ -46,7 +46,7 @@
         {
           "ios": {
             "useFrameworks": "static",
-            "deploymentTarget": "15.1",
+            "deploymentTarget": "17.0",
             "forceStaticLinking": ["RNFBApp"]
           }
         }

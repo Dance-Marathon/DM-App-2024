@@ -2,6 +2,7 @@ import React, { useEffect, useState, useContext } from "react";
 import {
   View,
   Text,
+  Image,
   StyleSheet,
   TouchableOpacity,
   ScrollView,
@@ -13,6 +14,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { auth, db } from "./Firebase/AuthManager";
 import { doc, getDoc, collection, getDocs } from "firebase/firestore";
 import { getStorage, ref, getDownloadURL } from "firebase/storage";
+import axios from "axios";
+import { sheetsAPIKey } from "./api/apiKeys";
 
 import { addUserExpoPushToken } from "./Firebase/AuthManager";
 import { getUserData } from "./Firebase/UserManager";
@@ -23,6 +26,14 @@ import { colors, card } from "./theme";
 
 const LAST_SEEN_NOTIFICATION_KEY = "@last_seen_notification";
 
+const SPREADSHEET_ID = "15kkihl7I0p4A_jyT-a-ozXQA9kvi_as-ry_6J0PfPis";
+const EVENTS_RANGE = "TransformToday!A4:F100";
+
+const formatEventDate = (d) =>
+  new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(d);
+
+const sortByDate = (list) => [...list].sort((a, b) => a.datetime - b.datetime);
+
 const currency = (n) =>
   `$${(n || 0).toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
 
@@ -31,6 +42,7 @@ const HomeTT = ({ route }) => {
   const [userIDState, setUserIDState] = useState("");
   const [allNotifications, setAllNotifications] = useState([]);
   const [items, setItems] = useState([]);
+  const [allItems, setAllItems] = useState([]);
   const [imageUrls, setImageUrls] = useState({});
   const [hasUnread, setHasUnread] = useState(false);
 
@@ -79,61 +91,84 @@ const HomeTT = ({ route }) => {
 
   const fetchDates = async () => {
     try {
-      const eventsCollectionRef = collection(db, "Calendar2024");
-      const querySnapshot = await getDocs(eventsCollectionRef);
-      const fetchedItems = [];
+      const response = await axios.get(
+        `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${EVENTS_RANGE}?key=${sheetsAPIKey}`
+      );
 
-      querySnapshot.forEach((docSnap) => {
-        const docData = docSnap.data();
-        Object.keys(docData).forEach((date) => {
-          const events = docData[date].events;
-          events.forEach((event) => {
-            let timeString = event.time || "12:00 AM";
-            const [time, period] = timeString.split(" ");
-            let [hours, minutes] = time.split(":").map(Number);
+      const rows = response.data.values;
 
-            if (period === "PM" && hours !== 12) {
-              hours += 12;
-            } else if (period === "AM" && hours === 12) {
-              hours = 0;
-            }
+      if (!rows || rows.length === 0) {
+        setItems([]);
+        setAllItems([]);
+        return;
+      }
 
-            const [year, month, day] = date.split("-").map(Number);
+      const fetchedItems = rows.map((row) => {
+        const [title, date, time, location, description, pictureName] = row;
 
-            if (year && month && day && !isNaN(hours) && !isNaN(minutes)) {
-              const eventDate = new Date(year, month - 1, day, hours, minutes);
-              if (!isNaN(eventDate)) {
-                fetchedItems.push({
-                  formattedDate: new Intl.DateTimeFormat("en-US", {
-                    month: "long",
-                    day: "numeric",
-                    year: "numeric",
-                  }).format(eventDate),
-                  date,
-                  time: event.time || "",
-                  title: event.title,
-                  description: event.description,
-                  location: event.location,
-                  datetime: eventDate,
-                  picture: event.picture,
-                });
-              }
-            }
-          });
-        });
-      });
+        if (!date || !time) return null;
 
-      fetchedItems.sort((a, b) => a.datetime - b.datetime);
-      setItems(fetchedItems.slice(0, 3));
+        const [year, month, day] = date.split("-").map(Number);
 
-      fetchedItems.slice(0, 3).forEach((item) => {
-        if (item.picture) {
-          fetchImageUrl(item.picture);
+        let hours = 0,
+          minutes = 0;
+        const timeMatch = time.match(/^(\d+):(\d+)\s?(AM|PM)$/i);
+        if (timeMatch) {
+          hours = parseInt(timeMatch[1], 10);
+          minutes = parseInt(timeMatch[2], 10);
+          const period = timeMatch[3].toUpperCase();
+
+          if (period === "PM" && hours !== 12) {
+            hours += 12;
+          } else if (period === "AM" && hours === 12) {
+            hours = 0;
+          }
+        } else {
+          return null;
         }
+
+        if (
+          isNaN(year) ||
+          isNaN(month) ||
+          isNaN(day) ||
+          isNaN(hours) ||
+          isNaN(minutes)
+        ) {
+          return null;
+        }
+
+        const eventDate = new Date(year, month - 1, day, hours, minutes);
+        if (isNaN(eventDate.getTime())) return null;
+
+        return {
+          formattedDate: formatEventDate(eventDate),
+          date,
+          time,
+          title,
+          description,
+          location,
+          datetime: eventDate,
+          picture: pictureName,
+        };
       });
+
+      const currentDate = new Date().getTime();
+      const filteredItems = sortByDate(
+        fetchedItems
+          .filter((item) => item !== null)
+          .filter((item) => item.datetime.getTime() >= currentDate)
+      );
+
+      filteredItems.forEach((item) => {
+        if (item.picture) fetchImageUrl(item.picture);
+      });
+
+      setItems(filteredItems.slice(0, 3));
+      setAllItems(filteredItems);
     } catch (error) {
       console.error("Error fetching events:", error);
       setItems([]);
+      setAllItems([]);
     }
   };
 
@@ -197,6 +232,19 @@ const HomeTT = ({ route }) => {
     setHasUnread(false);
     navigation.navigate("AllNotifications", {
       notifications: allNotifications,
+    });
+  };
+
+  const openEvent = (item) => {
+    navigation.navigate("EventDetails", {
+      event: {
+        title: item.title,
+        formattedDate: item.formattedDate,
+        time: item.time,
+        location: item.location,
+        description: item.description,
+        imageUrl: imageUrls[item.picture],
+      },
     });
   };
 
@@ -272,39 +320,56 @@ const HomeTT = ({ route }) => {
         )}
 
         <Text style={styles.sectionTitle}>UPCOMING EVENTS</Text>
-        <View style={[card, styles.eventsCard]}>
+        <View style={[card, styles.eventsBox]}>
           {items.length > 0 ? (
-            items.map((item, index) => (
-              <View
-                key={index}
-                style={[
-                  styles.eventRow,
-                  index < items.length - 1 && styles.eventRowDivider,
-                ]}
-              >
-                <View style={styles.dateBlock}>
-                  <Text style={styles.dateDay}>
-                    {item.datetime.getDate()}
-                  </Text>
-                  <Text style={styles.dateMonth}>
-                    {item.datetime
-                      .toLocaleString("en-US", { month: "short" })
-                      .toUpperCase()}
-                  </Text>
-                </View>
-                <View style={styles.eventInfo}>
-                  <Text style={styles.eventTitle} numberOfLines={1}>
-                    {item.title}
-                  </Text>
-                  <Text style={styles.eventMeta} numberOfLines={1}>
-                    {item.time ? `${item.time}` : ""}
-                    {item.location ? ` · ${item.location}` : ""}
-                  </Text>
-                </View>
-              </View>
-            ))
+            items.map((item, index) => {
+              const imageSource =
+                item.picture && imageUrls[item.picture]
+                  ? { uri: imageUrls[item.picture] }
+                  : null;
+
+              return (
+                <TouchableOpacity
+                  key={index}
+                  style={styles.eventCard}
+                  onPress={() => openEvent(item)}
+                  activeOpacity={0.85}
+                >
+                  {imageSource ? (
+                    <Image
+                      source={imageSource}
+                      style={styles.eventCardImage}
+                      resizeMode="cover"
+                    />
+                  ) : (
+                    <View style={styles.eventCardPlaceholder} />
+                  )}
+                  <View style={styles.eventCardBanner}>
+                    <Text style={styles.eventTitle} numberOfLines={1}>
+                      {item.title}
+                    </Text>
+                    <Text style={styles.eventMeta} numberOfLines={1}>
+                      {item.formattedDate ? `${item.formattedDate}` : ""}
+                      {item.time ? ` · ${item.time}` : ""}
+                      {item.location ? ` · ${item.location}` : ""}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              );
+            })
           ) : (
             <Text style={styles.noEvents}>No upcoming events</Text>
+          )}
+
+          {allItems.length > items.length && (
+            <TouchableOpacity
+              style={styles.seeMoreButton}
+              onPress={() =>
+                navigation.navigate("AllEvents", { items: allItems, imageUrls })
+              }
+            >
+              <Text style={styles.seeMoreText}>See more events</Text>
+            </TouchableOpacity>
           )}
         </View>
 
@@ -407,49 +472,41 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     marginBottom: 8,
   },
-  eventsCard: {
+  eventsBox: {
     padding: 12,
     marginBottom: 20,
   },
-  eventRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 10,
+  eventCard: {
+    borderRadius: 12,
+    overflow: "hidden",
+    marginBottom: 12,
+    backgroundColor: colors.cardBackground,
+    borderWidth: 0.5,
+    borderColor: colors.cardBorder,
   },
-  eventRowDivider: {
-    borderBottomWidth: 1,
-    borderBottomColor: colors.cardBorder,
-  },
-  dateBlock: {
-    width: 48,
-    height: 48,
-    borderRadius: 10,
+  eventCardImage: {
+    width: "100%",
+    aspectRatio: 3.5 / 1,
     backgroundColor: colors.lightBlue,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 12,
   },
-  dateDay: {
-    color: colors.navy,
-    fontSize: 16,
-    fontWeight: "800",
+  eventCardPlaceholder: {
+    width: "100%",
+    aspectRatio: 3.5 / 1,
+    backgroundColor: colors.orange,
   },
-  dateMonth: {
-    color: colors.textMuted,
-    fontSize: 10,
-    fontWeight: "700",
-  },
-  eventInfo: {
-    flex: 1,
+  eventCardBanner: {
+    backgroundColor: colors.navy,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
   },
   eventTitle: {
-    color: colors.text,
-    fontSize: 15,
-    fontWeight: "600",
+    color: "white",
+    fontSize: 14,
+    fontWeight: "700",
   },
   eventMeta: {
-    color: colors.textSecondary,
-    fontSize: 12,
+    color: "rgba(255,255,255,0.75)",
+    fontSize: 11,
     marginTop: 2,
   },
   noEvents: {
@@ -457,6 +514,15 @@ const styles = StyleSheet.create({
     fontSize: 14,
     paddingVertical: 12,
     textAlign: "center",
+  },
+  seeMoreButton: {
+    alignItems: "center",
+    paddingVertical: 10,
+  },
+  seeMoreText: {
+    color: colors.navy,
+    fontWeight: "700",
+    fontSize: 14,
   },
   resourcesCard: {
     backgroundColor: colors.lightBlue,

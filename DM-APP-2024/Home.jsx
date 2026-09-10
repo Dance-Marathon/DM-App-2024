@@ -1,49 +1,61 @@
-import React, { useEffect, useState } from "react";
-import FontAwesome from 'react-native-vector-icons/FontAwesome';
+import React, { useEffect, useState, useContext } from "react";
 import {
   View,
   Text,
   Image,
-  Modal,
   StyleSheet,
   TouchableOpacity,
-  TouchableWithoutFeedback,
+  ScrollView,
   Linking,
 } from "react-native";
-const INITIAL_DATE = new Date();
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as Progress from "react-native-progress";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { auth, db } from "./Firebase/AuthManager";
 import { doc, getDoc, collection, getDocs } from "firebase/firestore";
 import { getStorage, ref, getDownloadURL } from "firebase/storage";
-
-import { addUserExpoPushToken } from "./Firebase/AuthManager";
-
 import axios from "axios";
 import { sheetsAPIKey } from "./api/apiKeys";
 
+import { addUserExpoPushToken } from "./Firebase/AuthManager";
+import { getUserData } from "./Firebase/UserManager";
+import { UserContext } from "./api/calls";
 import { useNavigation } from "@react-navigation/native";
-import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
-import { faX } from "@fortawesome/free-solid-svg-icons";
-import LogoStyles from "./LogoStyles";
+import TopBar from "./TopBar";
+import { colors, card } from "./theme";
+
+const LAST_SEEN_NOTIFICATION_KEY = "@last_seen_notification";
+
+const SPREADSHEET_ID = "15kkihl7I0p4A_jyT-a-ozXQA9kvi_as-ry_6J0PfPis";
+const EVENTS_RANGE = "Sheet1!A4:F100";
+
+const formatEventDate = (d) =>
+  new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(d);
+
+const sortByDate = (list) => [...list].sort((a, b) => a.datetime - b.datetime);
+
+const currency = (n) =>
+  `$${(n || 0).toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
 
 const Home = ({ route }) => {
-  const [modalVisible, setModalVisible] = useState(false);
-  const [notificationModalVisible, setNotificationModalVisible] =
-    useState(false);
-  const [allNotifications, setAllNotifications] = useState({});
+  const [role, setRole] = useState("");
+  const [userIDState, setUserIDState] = useState("");
+  const [allNotifications, setAllNotifications] = useState([]);
   const [items, setItems] = useState([]);
-  const [selectedNotification, setSelectedNotification] = useState("");
-
-  const navigation = useNavigation();
-
-  const SPREADSHEET_ID = "15kkihl7I0p4A_jyT-a-ozXQA9kvi_as-ry_6J0PfPis";
-  const range = "Sheet1!A5:F100";
-  const apiKey = sheetsAPIKey;
+  const [allItems, setAllItems] = useState([]);
+  const [imageUrls, setImageUrls] = useState({});
+  const [hasUnread, setHasUnread] = useState(false);
 
   const { expoPushToken } = route.params;
+  const { userInfo } = useContext(UserContext);
+  const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
+  const isGuest = !auth.currentUser;
+
+  const openWebsite = (url) => Linking.openURL(url);
 
   const fetchAllNotifications = async () => {
     try {
-      console.log("Starting to fetch notifications...");
       const notificationsRef = collection(db, "Notifications");
       const querySnapshot = await getDocs(notificationsRef);
       const fetchedNotifs = [];
@@ -62,7 +74,16 @@ const Home = ({ route }) => {
         }
       });
 
-      setAllNotifications(fetchedNotifs.reverse());
+      const reversed = fetchedNotifs.reverse();
+      setAllNotifications(reversed);
+
+      const newestId = reversed[0]?.id;
+      if (newestId) {
+        const lastSeenId = await AsyncStorage.getItem(
+          LAST_SEEN_NOTIFICATION_KEY
+        );
+        setHasUnread(newestId !== lastSeenId);
+      }
     } catch (error) {
       console.error("Error fetching notifications:", error);
     }
@@ -71,23 +92,21 @@ const Home = ({ route }) => {
   const fetchDates = async () => {
     try {
       const response = await axios.get(
-        `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${range}?key=${apiKey}`
+        `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${EVENTS_RANGE}?key=${sheetsAPIKey}`
       );
 
       const rows = response.data.values;
 
       if (!rows || rows.length === 0) {
-        console.log("No data found.");
         setItems([]);
+        setAllItems([]);
         return;
       }
 
-      const fetchedItems = rows.slice(0).map((row, index) => {
+      const fetchedItems = rows.map((row) => {
         const [title, date, time, location, description, pictureName] = row;
 
-        if (!date || !time) {
-          return null;
-        }
+        if (!date || !time) return null;
 
         const [year, month, day] = date.split("-").map(Number);
 
@@ -119,80 +138,39 @@ const Home = ({ route }) => {
         }
 
         const eventDate = new Date(year, month - 1, day, hours, minutes);
-        if (isNaN(eventDate.getTime())) {
-          return null;
-        }
+        if (isNaN(eventDate.getTime())) return null;
 
         return {
-          formattedDate: new Intl.DateTimeFormat("en-US", {
-            month: "long",
-            day: "numeric",
-            year: "numeric",
-          }).format(eventDate),
+          formattedDate: formatEventDate(eventDate),
           date,
-          time: time,
-          title: title,
-          description: description,
-          location: location,
+          time,
+          title,
+          description,
+          location,
           datetime: eventDate,
           picture: pictureName,
         };
       });
 
-      const currentDate = new Date(INITIAL_DATE).getTime();
-
-      const validItems = fetchedItems.filter((item) => item !== null);
-
-      const filteredItems = validItems.filter(
-        (item) => item.datetime.getTime() >= currentDate
+      const currentDate = new Date().getTime();
+      const filteredItems = sortByDate(
+        fetchedItems
+          .filter((item) => item !== null)
+          .filter((item) => item.datetime.getTime() >= currentDate)
       );
 
-      filteredItems.sort((a, b) => a.datetime - b.datetime);
-
       filteredItems.forEach((item) => {
-        if (item.picture) {
-          fetchImageUrl(item.picture);
-        }
+        if (item.picture) fetchImageUrl(item.picture);
       });
 
       setItems(filteredItems.slice(0, 3));
+      setAllItems(filteredItems);
     } catch (error) {
       console.error("Error fetching events:", error);
       setItems([]);
+      setAllItems([]);
     }
   };
-
-  useEffect(() => {
-    const getUserRole = async () => {
-      if (auth.currentUser) {
-        await displayDocumentData();
-        const currentUID = auth.currentUser.uid;
-        const docRef = doc(db, "Users", currentUID);
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-          const data = docSnap.data();
-          if (!data.notificationToken) {
-            await addUserExpoPushToken(auth.currentUser.uid, expoPushToken);
-          } else {
-            console.log("Token exists");
-          }
-        }
-      } else {
-        console.log("auth.currentUser is null, waiting for authentication.");
-      }
-    };
-    getUserRole();
-  }, [auth.currentUser]);
-
-  useEffect(() => {
-    fetchAllNotifications();
-  }, []);
-
-  useEffect(() => {
-    fetchDates();
-  }, []);
-
-  const [imageUrls, setImageUrls] = useState({});
 
   const fetchImageUrl = async (imageName) => {
     try {
@@ -208,137 +186,212 @@ const Home = ({ route }) => {
     }
   };
 
-  const handleNotificationClick = (notification) => {
-    setSelectedNotification(notification);
-    setNotificationModalVisible(true);
+  useEffect(() => {
+    getUserData()
+      .then((data) => {
+        if (data) {
+          setUserIDState(data.donorID);
+          setRole(data.role);
+        }
+      })
+      .catch((err) => {
+        console.error(err);
+      });
+  }, []);
+
+  useEffect(() => {
+    const getUserRole = async () => {
+      if (auth.currentUser) {
+        const currentUID = auth.currentUser.uid;
+        const docRef = doc(db, "Users", currentUID);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          if (!data.notificationToken) {
+            await addUserExpoPushToken(auth.currentUser.uid, expoPushToken);
+          }
+        }
+      }
+    };
+    getUserRole();
+  }, [auth.currentUser]);
+
+  useEffect(() => {
+    fetchAllNotifications();
+  }, []);
+
+  useEffect(() => {
+    fetchDates();
+  }, []);
+
+  const handleBellPress = async () => {
+    const newestId = allNotifications[0]?.id;
+    if (newestId) {
+      await AsyncStorage.setItem(LAST_SEEN_NOTIFICATION_KEY, newestId);
+    }
+    setHasUnread(false);
+    navigation.navigate("AllNotifications", {
+      notifications: allNotifications,
+    });
   };
 
+  const openEvent = (item) => {
+    navigation.navigate("EventDetails", {
+      event: {
+        title: item.title,
+        formattedDate: item.formattedDate,
+        time: item.time,
+        location: item.location,
+        description: item.description,
+        imageUrl: imageUrls[item.picture],
+      },
+    });
+  };
+
+  const raised = userInfo?.sumDonations || 0;
+  const goal = userInfo?.fundraisingGoal || 0;
+  const progress = goal > 0 ? Math.min(raised / goal, 1) : 0;
+  const donors = userInfo?.numDonations || 0;
+  const toGoal = Math.max(goal - raised, 0);
+
   return (
-    <View
-      style={{
-        flex: 1,
-        alignItems: "center",
-        backgroundColor: "#1F1F1F",
-      }}
-    >
-      <Image
-        style={LogoStyles.logo}
-        resizeMode="contain"
-        source={require("./images/logo.png")}
+    <View style={styles.screen}>
+      <TopBar
+        rightIcon="bell"
+        showBadge={hasUnread}
+        onRightPress={handleBellPress}
       />
-      <View style={styles.notificationsBox}>
-        <View style={styles.header}>
-          <FontAwesome name="bell-o" size={18} color="orange" />
-          <Text style={styles.headerText}>NOTIFICATIONS</Text>
-          <TouchableOpacity
-            onPress={() =>
-              navigation.navigate("AllNotifications", {
-                notifications: allNotifications,
-              })
-            }
-          >
-            <Text style={styles.showAll}>Show All</Text>
-          </TouchableOpacity>
-        </View>
-        <View style={styles.notifications}>
-          {Array.isArray(allNotifications) &&
-            allNotifications.slice(0, 3).map((notification, index) => (
+
+      <ScrollView
+        contentContainerStyle={[
+          styles.body,
+          { paddingBottom: 40 + insets.bottom },
+        ]}
+      >
+        {isGuest ? (
+          <View style={styles.heroCard}>
+            <Text style={styles.heroName}>Welcome to DM at UF</Text>
+            <Text style={styles.heroRole}>
+              Sign in to track your fundraising and spirit points
+            </Text>
+            <View style={styles.guestButtonRow}>
               <TouchableOpacity
-                key={index}
-                onPress={() => handleNotificationClick(notification)}
+                style={styles.guestButton}
+                onPress={() => navigation.navigate("Account", { screen: "Login" })}
               >
-                <Text style={styles.notificationText}>
-                  {notification.title}
-                </Text>
-                {index < 2 && <View style={styles.divider} />}
+                <Text style={styles.guestButtonText}>Sign In</Text>
               </TouchableOpacity>
-            ))}
+              <TouchableOpacity
+                style={[styles.guestButton, styles.guestButtonOutline]}
+                onPress={() =>
+                  navigation.navigate("Account", {
+                    screen: "Login",
+                    params: { signUpMode: true },
+                  })
+                }
+              >
+                <Text style={styles.guestButtonOutlineText}>Sign Up</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        ) : (
+          <View style={styles.heroCard}>
+            <Text style={styles.heroName} numberOfLines={1}>
+              {userInfo?.displayName || "Welcome"}
+            </Text>
+            {!!role && <Text style={styles.heroRole}>{role}</Text>}
+
+            <Text style={styles.heroRaised}>{currency(raised)}</Text>
+
+            <Progress.Bar
+              progress={progress}
+              width={null}
+              height={8}
+              borderWidth={0}
+              unfilledColor="rgba(255,255,255,0.25)"
+              color={colors.orange}
+              style={styles.progressBar}
+            />
+
+            <Text style={styles.heroSubtext}>
+              {donors} donors · {currency(toGoal)} to goal
+            </Text>
+          </View>
+        )}
+
+        <Text style={styles.sectionTitle}>UPCOMING EVENTS</Text>
+        <View style={[card, styles.eventsBox]}>
+          {items.length > 0 ? (
+            items.map((item, index) => {
+              const imageSource =
+                item.picture && imageUrls[item.picture]
+                  ? { uri: imageUrls[item.picture] }
+                  : null;
+
+              return (
+                <TouchableOpacity
+                  key={index}
+                  style={styles.eventCard}
+                  onPress={() => openEvent(item)}
+                  activeOpacity={0.85}
+                >
+                  {imageSource ? (
+                    <Image
+                      source={imageSource}
+                      style={styles.eventCardImage}
+                      resizeMode="cover"
+                    />
+                  ) : (
+                    <View style={styles.eventCardPlaceholder} />
+                  )}
+                  <View style={styles.eventCardBanner}>
+                    <Text style={styles.eventTitle} numberOfLines={1}>
+                      {item.title}
+                    </Text>
+                    <Text style={styles.eventMeta} numberOfLines={1}>
+                      {item.formattedDate ? `${item.formattedDate}` : ""}
+                      {item.time ? ` · ${item.time}` : ""}
+                      {item.location ? ` · ${item.location}` : ""}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              );
+            })
+          ) : (
+            <Text style={styles.noEvents}>No upcoming events</Text>
+          )}
+
+          {allItems.length > items.length && (
+            <TouchableOpacity
+              style={styles.seeMoreButton}
+              onPress={() =>
+                navigation.navigate("AllEvents", { items: allItems, imageUrls })
+              }
+            >
+              <Text style={styles.seeMoreText}>See more events</Text>
+            </TouchableOpacity>
+          )}
         </View>
 
-        <Modal
-          animationType="fade"
-          transparent={true}
-          visible={notificationModalVisible}
-          onRequestClose={() => setNotificationModalVisible(false)}
-        >
-          <TouchableWithoutFeedback onPress={() => setNotificationModalVisible(false)}>
-          <View style={styles.modalContainer}>
-            <TouchableWithoutFeedback>
-            <View style={styles.modalContent}>
-              {selectedNotification && (
-                <>
-                  <View
-                    style={[
-                      styles.header,
-                      { marginBottom: -5, marginTop: -15 },
-                    ]}
-                  >
-                    <TouchableOpacity
-                      style={styles.modalClose}
-                      onPress={() => setNotificationModalVisible(false)}
-                    >
-                      <FontAwesomeIcon icon={faX} color="white" size={20} />
-                    </TouchableOpacity>
-                  </View>
-                  <Text style={styles.modalTitle}>
-                    {selectedNotification.title}
-                  </Text>
-                  <Text style={styles.modalDateTime}>
-                    {selectedNotification.date} at {selectedNotification.time}
-                  </Text>
-                  <Text style={styles.modalMessage}>
-                    {selectedNotification.message}
-                  </Text>
-                </>
-              )}
+        {!isGuest && (
+          <>
+            <Text style={styles.sectionTitle}>RESOURCES</Text>
+            <View style={styles.resourcesCard}>
+              <Text style={styles.resourcesTitle}>Need something?</Text>
+              <Text style={styles.resourcesDescription}>
+                Find guides, documents, and helpful links for Dance Marathon at
+                UF.
+              </Text>
+              <TouchableOpacity
+                style={styles.resourcesButton}
+                onPress={() => openWebsite("https://linktr.ee/dmatuf")}
+              >
+                <Text style={styles.resourcesButtonText}>View resources</Text>
+              </TouchableOpacity>
             </View>
-            </TouchableWithoutFeedback>
-          </View>
-          </TouchableWithoutFeedback>
-        </Modal>
-      </View>
-      <View style={styles.eventsBox}>
-        <View style={styles.header}>
-          <FontAwesome name="calendar" size={18} color="orange" />
-          <Text style={styles.headerText}>UPCOMING EVENTS</Text>
-        </View>
-        <View style={styles.eventsList}>
-        {Array.isArray(items) && items.length > 0 ? (
-  items.map((item, index) => (
-    <TouchableOpacity
-      key={index}
-      style={styles.eventContainer}
-      onPress={() =>
-        navigation.navigate("EventDetails", {
-          event: {
-            ...item,
-            formattedDate: item.datetime.toDateString(),
-            imageUrl: imageUrls[item.picture],
-          },
-        })
-      }
-    >
-      {item.picture ? (
-        <View style={styles.imageContainer}>
-          <Image
-            source={{ uri: imageUrls[item.picture] }}
-            style={styles.eventImage}
-          />
-        </View>
-      ) : (
-        <View />
-      )}
-      <View style={styles.eventDetails}>
-        <Text style={styles.eventTitle}>{item.title}</Text>
-        
-      </View>
-    </TouchableOpacity>
-  ))
-) : (
-  <Text style={styles.noEvents}>No upcoming events</Text>
-)}
-        </View>
-      </View>
+          </>
+        )}
+      </ScrollView>
     </View>
   );
 };
@@ -346,186 +399,156 @@ const Home = ({ route }) => {
 export default Home;
 
 const styles = StyleSheet.create({
-  dmlogo: {
-    top: -280,
-    width: "90%",
-    height: 75,
-  },
-  notificationsBox: {
-    marginTop: 20,
-    borderRadius: 9,
-    backgroundColor: "#233d72",
-    width: '85%',
-    height: 180,
-    shadowOpacity: 1,
-    elevation: 4,
-    shadowRadius: 4,
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowColor: "rgba(0, 0, 0, 0.25)",
-  },
-  eventsBox: {
-    marginTop: 30,
-    borderRadius: 9,
-    backgroundColor: "#233d72",
-    width: '85%',
-    height: 370,
-    shadowOpacity: 1,
-    elevation: 4,
-    shadowRadius: 4,
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowColor: "rgba(0, 0, 0, 0.25)",
-  },
-  smallCircle: {
-    width: 15,
-    height: 15,
-    borderRadius: 50,
-    backgroundColor: "#EB9F68",
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 10,
-    left: 10,
-    top: 10,
-  },
-  headerText: {
-    color: "white",
-    fontWeight: "bold",
-    fontSize: 16,
+  screen: {
     flex: 1,
-    left: 5,
+    backgroundColor: colors.pageBackground,
   },
-  showAll: {
-    color: "white",
-    fontSize: 14,
-    right: 20,
-    textDecorationLine: "underline",
+  body: {
+    padding: 16,
+    paddingBottom: 40,
   },
-  notifications: {
-    marginTop: 0,
-  },
-  notificationText: {
-    color: "white",
-    fontSize: 14,
-    paddingVertical: 16,
-    textAlign: "left",
-    left: 15,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
-    marginHorizontal: 0,
-  },
-  modalContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-  },
-  modalContent: {
-    backgroundColor: "#233D72",
+  heroCard: {
+    backgroundColor: colors.navy,
+    borderRadius: 12,
     padding: 20,
-    borderRadius: 10,
-    alignItems: "center",
-    width: "80%",
-  },
-  modalText: {
-    fontSize: 16,
     marginBottom: 20,
   },
-  modalClose: {
-    position: "absolute",
-    right: -140,
-    top: -7,
+  heroName: {
+    color: "white",
+    fontSize: 18,
+    fontWeight: "700",
   },
-  eventsList: {
-    paddingTop: 10,
+  heroRole: {
+    color: "rgba(255,255,255,0.7)",
+    fontSize: 13,
+    marginTop: 2,
+  },
+  heroRaised: {
+    color: "white",
+    fontSize: 34,
+    fontWeight: "800",
+    marginTop: 14,
+  },
+  progressBar: {
+    width: "100%",
+    marginTop: 12,
+  },
+  heroSubtext: {
+    color: "rgba(255,255,255,0.7)",
+    fontSize: 13,
+    marginTop: 8,
+  },
+  guestButtonRow: {
+    flexDirection: "row",
+    marginTop: 16,
+  },
+  guestButton: {
+    flex: 1,
+    backgroundColor: colors.orange,
+    paddingVertical: 12,
+    borderRadius: 10,
+    alignItems: "center",
+  },
+  guestButtonOutline: {
+    backgroundColor: "transparent",
+    borderWidth: 1.5,
+    borderColor: "white",
+    marginLeft: 10,
+  },
+  guestButtonText: {
+    color: "white",
+    fontWeight: "700",
+    fontSize: 15,
+  },
+  guestButtonOutlineText: {
+    color: "white",
+    fontWeight: "700",
+    fontSize: 15,
+  },
+  sectionTitle: {
+    color: colors.textSecondary,
+    fontSize: 12,
+    fontWeight: "700",
+    letterSpacing: 1,
+    marginBottom: 8,
+  },
+  eventsBox: {
+    padding: 12,
+    marginBottom: 20,
   },
   eventCard: {
-    flexDirection: "row",
-    backgroundColor: "#1E2A47",
-    borderRadius: 10,
+    borderRadius: 12,
     overflow: "hidden",
-    marginBottom: 15,
+    marginBottom: 12,
+    backgroundColor: colors.cardBackground,
+    borderWidth: 0.5,
+    borderColor: colors.cardBorder,
   },
-  eventImage: {
+  eventCardImage: {
     width: "100%",
-    height: 60,
-    resizeMode: "cover",
+    aspectRatio: 3.5 / 1,
+    backgroundColor: colors.lightBlue,
+  },
+  eventCardPlaceholder: {
+    width: "100%",
+    aspectRatio: 3.5 / 1,
+    backgroundColor: colors.orange,
+  },
+  eventCardBanner: {
+    backgroundColor: colors.navy,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
   },
   eventTitle: {
     color: "white",
-    fontWeight: "bold",
     fontSize: 14,
-    flex: 1,
-    left: 10,
+    fontWeight: "700",
   },
-  learnMore: {
-    color: "white",
-    fontSize: 14,
-    textDecorationLine: "underline",
-    alignSelf: "flex-end",
-    right: 10,
+  eventMeta: {
+    color: "rgba(255,255,255,0.75)",
+    fontSize: 11,
+    marginTop: 2,
   },
   noEvents: {
-    color: "white",
+    color: colors.textSecondary,
     fontSize: 14,
-    left: 10,
-    top: 5,
+    paddingVertical: 12,
+    textAlign: "center",
   },
-  eventContainer: {
-    backgroundColor: "#EB9F68",
+  seeMoreButton: {
     alignItems: "center",
-    height: 100,
-    width: "94%",
+    paddingVertical: 10,
+  },
+  seeMoreText: {
+    color: colors.navy,
+    fontWeight: "700",
+    fontSize: 14,
+  },
+  resourcesCard: {
+    backgroundColor: colors.lightBlue,
+    borderRadius: 12,
+    padding: 20,
+  },
+  resourcesTitle: {
+    color: colors.text,
+    fontSize: 15,
+    fontWeight: "700",
+  },
+  resourcesDescription: {
+    color: colors.textSecondary,
+    fontSize: 13,
+    marginTop: 4,
+    marginBottom: 14,
+  },
+  resourcesButton: {
+    backgroundColor: colors.orange,
+    paddingVertical: 12,
     borderRadius: 10,
-    overflow: "hidden",
-    marginBottom: 10,
-    shadowColor: "rgba(0, 0, 0, 0.25)",
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowRadius: 4,
-    elevation: 4,
-    shadowOpacity: 1,
-  },
-  eventsList: {
-    top: 10,
-    left: 10,
-  },
-  imageContainer: {
-    flex: 7,
-    width: "100%",
-  },
-  eventDetails: {
-    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 12,
   },
-  modalTitle: {
+  resourcesButtonText: {
     color: "white",
-    fontSize: 18,
-    fontWeight: "bold",
-    marginTop: 30,
-    marginBottom: 10,
-  },
-  modalDateTime: {
-    color: "white",
-    fontSize: 16,
-    marginBottom: 10,
-  },
-  modalMessage: {
-    color: "white",
+    fontWeight: "700",
     fontSize: 14,
-    marginBottom: 10,
   },
 });

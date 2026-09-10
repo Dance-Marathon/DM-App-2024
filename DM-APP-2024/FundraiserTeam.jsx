@@ -22,6 +22,21 @@ const cleanDonationName = (value, fallback = "Anonymous") => {
   return value.replace("Dance Marathon at UF", "").trim() || fallback;
 };
 
+// DonorDrive's bot protection is far more likely to trigger on a burst of
+// simultaneous requests (one per team member, all at once) than on a single
+// isolated request — fetching a few members at a time instead avoids that.
+const mapWithThrottle = async (items, mapper, batchSize = 3, delayMs = 400) => {
+  const results = [];
+  for (let i = 0; i < items.length; i += batchSize) {
+    const batch = items.slice(i, i + batchSize);
+    results.push(...(await Promise.all(batch.map(mapper))));
+    if (i + batchSize < items.length) {
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
+  }
+  return results;
+};
+
 const formatDonationDate = (value) => {
   if (!value) return "";
   const date = new Date(value);
@@ -61,8 +76,9 @@ const FundraiserTeam = ({ role, captainTeam }) => {
         const q = query(usersRef, where("captainTeam", "==", selectedTeam));
         const snapshot = await getDocs(q);
 
-        const memberResults = await Promise.all(
-          snapshot.docs.map(async (docSnap) => {
+        const memberResults = await mapWithThrottle(
+          snapshot.docs,
+          async (docSnap) => {
             const data = docSnap.data();
             if (!data.donorID) {
               return {
@@ -93,7 +109,7 @@ const FundraiserTeam = ({ role, captainTeam }) => {
                 donations: [],
               };
             }
-          })
+          }
         );
 
         if (!cancelled) {

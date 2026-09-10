@@ -26,16 +26,39 @@ const DONORDRIVE_HEADERS = {
   Referer: "https://events.dancemarathon.com/",
 };
 
+// The bot/WAF protection above is probabilistic — the same request can be
+// blocked once and succeed a moment later. Retrying a couple of times before
+// giving up meaningfully cuts down how often that block actually surfaces.
+const fetchDonorDriveJson = async (url, retries = 2, delayMs = 600) => {
+  let lastError;
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const res = await fetch(url, { headers: DONORDRIVE_HEADERS });
+      const text = await res.text();
+      try {
+        return { res, json: JSON.parse(text) };
+      } catch (parseError) {
+        lastError = parseError;
+      }
+    } catch (fetchError) {
+      lastError = fetchError;
+    }
+    if (attempt < retries) {
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
+  }
+  throw lastError;
+};
+
 export const getUserInfo = async (id) => {
   return new Promise((resolve, reject) => {
     // const url = apiPaths.profileUrl(Number(id));
     const url = apiPaths.profileUrl(id);
     let userInfoJson = {};
 
-    fetch(url, { headers: DONORDRIVE_HEADERS })
-      .then(async (res) => {
+    fetchDonorDriveJson(url)
+      .then(async ({ json: payload }) => {
         try {
-          const payload = await res.json();
           userInfoJson =
             payload && typeof payload === "object" && !Array.isArray(payload)
               ? payload
@@ -72,15 +95,15 @@ export const getUserDonations = async (id, limit = 100, page = 1) => {
     const url = apiPaths.userDonationUrl(id, limit, page);
     const userDonationsJson = {};
 
-    fetch(url, { headers: DONORDRIVE_HEADERS })
-      .then(async (res) => {
+    fetchDonorDriveJson(url)
+      .then(async ({ res, json }) => {
         try {
           userDonationsJson.countDonations =
             parseInt(res.headers.get("num-records"), 10) || 0;
           userDonationsJson.countPages = Math.ceil(
             userDonationsJson.countDonations / limit
           );
-          userDonationsJson.donations = await res.json();
+          userDonationsJson.donations = json;
           resolve(userDonationsJson);
         } catch (e) {
           reject(e);
@@ -98,15 +121,15 @@ export const getUserMilestones = async (id, limit = 100, page = 1) => {
     const url = apiPaths.userMilestonesUrl(id, limit, page);
     const userMilestonesJson = {};
 
-    fetch(url, { headers: DONORDRIVE_HEADERS })
-      .then(async (res) => {
+    fetchDonorDriveJson(url)
+      .then(async ({ res, json }) => {
         try {
           userMilestonesJson.countMilestones =
             parseInt(res.headers.get("num-records"), 10) || 0;
           userMilestonesJson.countPages = Math.ceil(
             userMilestonesJson.countMilestones / limit
           );
-          userMilestonesJson.milestones = await res.json();
+          userMilestonesJson.milestones = json;
           resolve(userMilestonesJson);
         } catch (e) {
           reject(e);
@@ -124,15 +147,15 @@ export const getUserIncentives = async (id, limit = 100, page = 1) => {
     const url = apiPaths.userIncentivesUrl(id, limit, page);
     const userIncentivesJson = {};
 
-    fetch(url, { headers: DONORDRIVE_HEADERS })
-      .then(async (res) => {
+    fetchDonorDriveJson(url)
+      .then(async ({ res, json }) => {
         try {
           userIncentivesJson.countIncentives =
             parseInt(res.headers.get("num-records"), 10) || 0;
           userIncentivesJson.countPages = Math.ceil(
             userIncentivesJson.countIncentives / limit
           );
-          userIncentivesJson.incentives = await res.json();
+          userIncentivesJson.incentives = json;
           resolve(userIncentivesJson);
         } catch (e) {
           reject(e);
@@ -150,15 +173,15 @@ export const getUserBadges = async (id, limit = 100, page = 1) => {
     const url = apiPaths.userBadgesUrl(id, limit, page);
     const userBadgesJson = {};
 
-    fetch(url, { headers: DONORDRIVE_HEADERS })
-      .then(async (res) => {
+    fetchDonorDriveJson(url)
+      .then(async ({ res, json }) => {
         try {
           userBadgesJson.countBadges =
             parseInt(res.headers.get("num-records"), 10) || 0;
           userBadgesJson.countPages = Math.ceil(
             userBadgesJson.countBadges / limit
           );
-          userBadgesJson.badges = await res.json();
+          userBadgesJson.badges = json;
           resolve(userBadgesJson);
         } catch (e) {
           reject(e);
@@ -176,10 +199,10 @@ export const getTeamInfo = async (id, fetchRoster = true) => {
     const url = apiPaths.teamProfileUrl(id);
     let teamInfoJson = {};
 
-    fetch(url, { headers: DONORDRIVE_HEADERS })
-      .then(async (res) => {
+    fetchDonorDriveJson(url)
+      .then(async ({ json }) => {
         try {
-          teamInfoJson = await res.json();
+          teamInfoJson = json;
         } catch (e) {
           reject(e);
         }
@@ -213,15 +236,15 @@ export const getTeamDonations = async (id, limit = 100, page = 1) => {
     const teamDonationsJson = {};
     const url = apiPaths.teamDonationsUrl(id, limit, page);
 
-    fetch(url, { headers: DONORDRIVE_HEADERS })
-      .then(async (res) => {
+    fetchDonorDriveJson(url)
+      .then(async ({ res, json }) => {
         try {
           teamDonationsJson.countDonations =
             parseInt(res.headers.get("num-records"), 10) || 0;
           teamDonationsJson.countPages = Math.ceil(
             teamDonationsJson.countDonations / limit
           );
-          teamDonationsJson.donations = await res.json();
+          teamDonationsJson.donations = json;
         } catch (e) {
           reject(e);
         }
@@ -241,19 +264,15 @@ export const getTeamRoster = async (id, page) => {
     const offsetCalc = page && page !== 1 ? (page - 1) * 100 : null;
     const url = apiPaths.teamRosterUrl(id, offsetCalc);
 
-    fetch(url, { headers: DONORDRIVE_HEADERS })
-      .then(async (res) => {
+    fetchDonorDriveJson(url)
+      .then(async ({ res, json }) => {
         try {
           teamRosterJson.countMembers =
             parseInt(res.headers.get("num-records"), 10) || 0;
           teamRosterJson.countPages = Math.ceil(
             teamRosterJson.countMembers / 100
           );
-          try {
-            teamRosterJson.members = await res.json();
-          } catch (e) {
-            teamRosterJson.members = [];
-          }
+          teamRosterJson.members = json;
         } catch (e) {
           reject(e);
         }
@@ -280,15 +299,15 @@ export const getUserActivity = async (id, limit = 100, page = 1) => {
     const url = apiPaths.userActivityUrl(id, limit, page);
     const userActivityJson = {};
 
-    fetch(url, { headers: DONORDRIVE_HEADERS })
-      .then(async (res) => {
+    fetchDonorDriveJson(url)
+      .then(async ({ res, json }) => {
         try {
           userActivityJson.countActivity =
             parseInt(res.headers.get("num-records"), 10) || 0;
           userActivityJson.countPages = Math.ceil(
             userActivityJson.countActivity / limit
           );
-          userActivityJson.activities = await res.json();
+          userActivityJson.activities = json;
           resolve(userActivityJson);
         } catch (e) {
           reject(e);

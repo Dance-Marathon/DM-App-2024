@@ -1,104 +1,98 @@
 import React from "react";
-import { View, Text, Image, StyleSheet } from "react-native";
+import { View, Text, Image, ScrollView, StyleSheet } from "react-native";
+import { colors, card } from "./theme";
 
 const EventDetails = ({ route }) => {
   const { event } = route.params;
+  const imageSource =
+    typeof event.imageUrl === "string" ? { uri: event.imageUrl } : event.imageUrl;
 
   return (
-    <View style={styles.container}>
-      <View style={styles.eventContainer}>
-        {event.imageUrl && (
-          <Image source={{ uri: event.imageUrl }} style={styles.eventImage} />
-        )}
+    <View style={styles.screen}>
+      <ScrollView contentContainerStyle={styles.body}>
+        <View style={[card, styles.eventCard]}>
+          {imageSource ? (
+            <Image source={imageSource} style={styles.eventImage} />
+          ) : (
+            <View style={styles.eventPlaceholder} />
+          )}
 
-        <View style={styles.eventContent}>
-          <Text style={styles.eventTitle}>{event.title}</Text>
-          <View>
+          <View style={styles.eventContent}>
+            <Text style={styles.eventTitle}>{event.title}</Text>
+
             <Text style={styles.dateTime}>
-              <Text style={styles.boldText}>When:</Text> {event.formattedDate}{" "}
-              at {event.time}
+              <Text style={styles.boldText}>When: </Text>
+              {event.formattedDate}
+              {event.time ? ` at ${event.time}` : ""}
             </Text>
 
-            <Text style={styles.location}>
-              <Text style={styles.boldText}>Where:</Text> {event.location}
-            </Text>
+            {!!event.location && (
+              <Text style={styles.location}>
+                <Text style={styles.boldText}>Where: </Text>
+                {event.location}
+              </Text>
+            )}
+
+            {!!event.description && (
+              <Text style={styles.description}>{event.description}</Text>
+            )}
           </View>
-
-          <Text style={styles.description}>{event.description}</Text>
         </View>
-      </View>
+      </ScrollView>
     </View>
   );
 };
 
+export default EventDetails;
+
 const styles = StyleSheet.create({
-  container: {
+  screen: {
     flex: 1,
-    backgroundColor: "#1F1F1F",
-    alignItems: "center",
-    paddingTop: 40,
+    backgroundColor: colors.pageBackground,
   },
-  eventContainer: {
-    backgroundColor: "#233d72",
-    width: "85%",
-    borderRadius: 10,
+  body: {
+    padding: 16,
+    paddingBottom: 40,
+  },
+  eventCard: {
     overflow: "hidden",
-    padding: 20,
-    alignItems: "center",
-    shadowColor: "rgba(0, 0, 0, 0.25)",
-    shadowOffset: { width: 0, height: 4 },
-    shadowRadius: 4,
-    elevation: 4,
-    shadowOpacity: 1,
-    width: 340,
   },
   eventImage: {
     width: "100%",
-    height: 220,
-    resizeMode: "cover",
-    borderRadius: 10,
-    marginBottom: 15,
+    aspectRatio: 2 / 1,
+    backgroundColor: colors.lightBlue,
+  },
+  eventPlaceholder: {
+    width: "100%",
+    aspectRatio: 2 / 1,
+    backgroundColor: colors.orange,
   },
   eventContent: {
-    width: "100%",
+    padding: 20,
   },
   eventTitle: {
-    color: "white",
-    fontSize: 24,
-    fontWeight: "bold",
-    textAlign: "left",
-    marginBottom: 10,
-  },
-  detailsContainer: {
-    marginBottom: 10,
+    color: colors.text,
+    fontSize: 20,
+    fontWeight: "700",
+    marginBottom: 12,
   },
   boldText: {
-    fontWeight: "bold",
-    color: "white",
+    fontWeight: "700",
+    color: colors.text,
   },
   dateTime: {
-    color: "white",
-    fontSize: 16,
-    marginBottom: 5,
-    textAlign: "left",
+    color: colors.textSecondary,
+    fontSize: 15,
+    marginBottom: 6,
   },
   location: {
-    color: "white",
-    fontSize: 16,
-    marginBottom: 10,
-    textAlign: "left",
-  },
-  separator: {
-    height: 1,
-    backgroundColor: "white",
-    marginVertical: 15,
-    width: "100%",
+    color: colors.textSecondary,
+    fontSize: 15,
+    marginBottom: 12,
   },
   description: {
-    color: "white",
-    fontSize: 16,
-    textAlign: "left",
+    color: colors.text,
+    fontSize: 15,
+    lineHeight: 21,
   },
 });
-
-export default EventDetails;

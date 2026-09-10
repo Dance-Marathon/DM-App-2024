@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import {
   View,
   Text,
@@ -6,129 +6,119 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Modal,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
+import { colors, card } from "./theme";
 
 const AllEvents = ({ route }) => {
   const { items, imageUrls } = route.params;
-
-
-  const handleEventClick = (item) => {
-    setSelectedEvent(item);
-    setEventModalVisible(true);
-  };
-
   const navigation = useNavigation();
 
+  const openEvent = (item) => {
+    navigation.navigate("EventDetails", {
+      event: {
+        title: item.title,
+        formattedDate: item.formattedDate,
+        time: item.time,
+        location: item.location,
+        description: item.description,
+        imageUrl: imageUrls?.[item.picture],
+      },
+    });
+  };
+
   return (
-    <View
-      style={{
-        flex: 1,
-        alignItems: "center",
-        backgroundColor: "#1F1F1F",
-      }}
-    >
-      <ScrollView style={{ width: "100%" }}>
-        <View style={{ alignItems: "center" }}>
-          {Array.isArray(items) && items.length > 0 ? (
-            items.map((item, index) => (
+    <View style={styles.screen}>
+      <ScrollView contentContainerStyle={styles.body}>
+        {Array.isArray(items) && items.length > 0 ? (
+          items.map((item, index) => {
+            const imageSource =
+              item.picture && imageUrls?.[item.picture]
+                ? { uri: imageUrls[item.picture] }
+                : null;
+
+            return (
               <TouchableOpacity
                 key={index}
-                onPress={() =>
-                  navigation.navigate("EventDetails", {
-                    event: {
-                      ...item,
-                      formattedDate: item.datetime.toDateString(),
-                      imageUrl: imageUrls[item.picture],
-                    },
-                  })
-                }
-                style={styles.eventContainer}
+                style={[card, styles.eventCard]}
+                onPress={() => openEvent(item)}
+                activeOpacity={0.85}
               >
-                  {item.picture ? (
-                    <View style={styles.imageContainer}>
-                      <Image
-                        source={{ uri: imageUrls[item.picture] }}
-                        style={styles.eventImage}
-                      />
-                    </View>
-                  ) : (
-                    <View></View>
-                  )}
-                  <View style={styles.eventDetails}>
-                    <Text style={styles.eventTitle}>{item.title}</Text>
-
-                    <Text style={styles.learnMore}>Learn More</Text>
-
-                  </View>
+                {imageSource ? (
+                  <Image
+                    source={imageSource}
+                    style={styles.eventCardImage}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <View style={styles.eventCardPlaceholder} />
+                )}
+                <View style={styles.eventCardBanner}>
+                  <Text style={styles.eventTitle} numberOfLines={1}>
+                    {item.title}
+                  </Text>
+                  <Text style={styles.eventMeta} numberOfLines={1}>
+                    {item.formattedDate ? `${item.formattedDate}` : ""}
+                    {item.time ? ` · ${item.time}` : ""}
+                    {item.location ? ` · ${item.location}` : ""}
+                  </Text>
+                </View>
               </TouchableOpacity>
-            ))
-          ) : (
-            <Text style={styles.noEvents}>No upcoming events</Text>
-          )}
-        </View>
+            );
+          })
+        ) : (
+          <Text style={styles.noEvents}>No upcoming events</Text>
+        )}
       </ScrollView>
     </View>
   );
 };
 
+export default AllEvents;
+
 const styles = StyleSheet.create({
-  dateTime: {
-    color: "white",
-    fontSize: 14,
-    marginBottom: 10,
+  screen: {
+    flex: 1,
+    backgroundColor: colors.pageBackground,
   },
-  eventsList: {
-    paddingTop: 10,
+  body: {
+    padding: 16,
+    paddingBottom: 40,
   },
-  imageContainer: {
-    flex: 7,
+  eventCard: {
+    borderRadius: 12,
+    overflow: "hidden",
+    marginBottom: 12,
+  },
+  eventCardImage: {
     width: "100%",
+    aspectRatio: 3.5 / 1,
+    backgroundColor: colors.lightBlue,
+  },
+  eventCardPlaceholder: {
+    width: "100%",
+    aspectRatio: 3.5 / 1,
+    backgroundColor: colors.orange,
+  },
+  eventCardBanner: {
+    backgroundColor: colors.navy,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
   },
   eventTitle: {
     color: "white",
-    fontWeight: "bold",
     fontSize: 14,
-    flex: 1,
-    left: 10,
+    fontWeight: "700",
   },
-  learnMore: {
-    color: "white",
+  eventMeta: {
+    color: "rgba(255,255,255,0.75)",
+    fontSize: 11,
+    marginTop: 2,
+  },
+  noEvents: {
+    color: colors.textSecondary,
     fontSize: 14,
-    textDecorationLine: "underline",
-    alignSelf: "flex-end",
-    right: 10,
-  },
-  eventImage: {
-    width: "100%",
-    height: 60,
-    resizeMode: "cover",
-  },
-  eventDetails: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 12,
-  },
-  eventContainer: {
-    backgroundColor: "#EB9F68",
-    alignItems: "center",
-    height: 100,
-    width: "94%",
-    borderRadius: 10,
-    overflow: "hidden",
-    marginBottom: 10,
-    shadowColor: "rgba(0, 0, 0, 0.25)",
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowRadius: 4,
-    elevation: 4,
-    shadowOpacity: 1,
-    marginTop: 10,
+    paddingVertical: 12,
+    textAlign: "center",
   },
 });
-
-export default AllEvents;
