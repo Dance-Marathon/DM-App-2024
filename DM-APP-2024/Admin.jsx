@@ -32,9 +32,159 @@ import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 import { faChildCombatant } from "@fortawesome/free-solid-svg-icons";
 import { useNavigation } from "@react-navigation/native";
 
+import axios from "axios";
 import { addUserExpoPushToken } from "./Firebase/AuthManager";
+import { getUserInfo } from "./api/index";
+import getAccessToken from "./api/googleAuth";
 import TopBar from "./TopBar";
 import { colors, card } from "./theme";
+
+// DonorDrive's bot protection is far more likely to trigger on a burst of
+// simultaneous requests than on a steady trickle — same reasoning as the
+// team-member throttling in FundraiserTeam.jsx.
+const mapWithThrottle = async (items, mapper, batchSize = 3, delayMs = 400) => {
+  const results = [];
+  for (let i = 0; i < items.length; i += batchSize) {
+    const batch = items.slice(i, i + batchSize);
+    results.push(...(await Promise.all(batch.map(mapper))));
+    if (i + batchSize < items.length) {
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
+  }
+  return results;
+};
+
+// Refreshes every linked user's organization/displayName from DonorDrive,
+// and gives anyone who's never been scanned a spiritPoints field to start
+// from. Safe to run repeatedly — an existing spiritPoints value (meaning
+// someone has real earned points) is never overwritten.
+const refreshOrganizationsForAllUsers = async () => {
+  const snapshot = await getDocs(collection(db, "Users"));
+  const usersWithDonorID = snapshot.docs.filter((docSnap) => docSnap.data().donorID);
+
+  let updated = 0;
+  let skipped = 0;
+
+  await mapWithThrottle(usersWithDonorID, async (docSnap) => {
+    const data = docSnap.data();
+    try {
+      const donorInfo = await getUserInfo(data.donorID);
+      const updates = {};
+
+      if (donorInfo?.teamName) updates.organization = donorInfo.teamName;
+      if (donorInfo?.displayName) updates.displayName = donorInfo.displayName;
+      if (data.spiritPoints === undefined) updates.spiritPoints = 0;
+
+      if (Object.keys(updates).length > 0) {
+        await updateDoc(doc(db, "Users", docSnap.id), updates);
+        updated += 1;
+      } else {
+        skipped += 1;
+      }
+    } catch (error) {
+      console.error(`Error refreshing organization for user ${docSnap.id}:`, error);
+      skipped += 1;
+    }
+  });
+
+  return { updated, skipped, total: usersWithDonorID.length };
+};
+
+const SPIRIT_TRACKER_SPREADSHEET_ID = "1VTr6Jq_UbrJ1HEUTxCo0TlLvoLXc5PaPagufrzbAAxY";
+
+const clearAndWriteSheet = async (token, tabName, rows) => {
+  const headers = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
+
+  await axios.post(
+    `https://sheets.googleapis.com/v4/spreadsheets/${SPIRIT_TRACKER_SPREADSHEET_ID}/values/${tabName}!A1:Z2000:clear`,
+    {},
+    { headers }
+  );
+
+  await axios.put(
+    `https://sheets.googleapis.com/v4/spreadsheets/${SPIRIT_TRACKER_SPREADSHEET_ID}/values/${tabName}!A1?valueInputOption=RAW`,
+    { values: rows },
+    { headers }
+  );
+};
+
+// Builds rows for a "group + member breakdown" tab: one summary row per
+// group (name + total, columns A/B) followed by one row per contributing
+// member (name + points, columns C/D), sorted by total descending.
+const buildGroupBreakdownRows = (groupLabel, groupTotals, membersByGroup) => {
+  const rows = [[groupLabel, `${groupLabel} Total`, "Member", "Member Points"]];
+
+  Object.entries(groupTotals)
+    .filter(([, total]) => total > 0)
+    .sort((a, b) => b[1] - a[1])
+    .forEach(([name, total]) => {
+      rows.push([name, total, "", ""]);
+      (membersByGroup[name] || [])
+        .sort((a, b) => b[1] - a[1])
+        .forEach(([memberName, points]) => {
+          rows.push([name, "", memberName, points]);
+        });
+    });
+
+  return rows;
+};
+
+const exportSpiritPointsToSheets = async () => {
+  const snapshot = await getDocs(collection(db, "Users"));
+
+  const orgTotals = {};
+  const orgMembers = {};
+  const captainTotals = {};
+  const captainMembers = {};
+  const individuals = [];
+
+  snapshot.forEach((docSnap) => {
+    const data = docSnap.data();
+    const points = Number(data.spiritPoints) || 0;
+    const name = data.displayName;
+
+    if (name && points > 0) {
+      individuals.push([name, points]);
+    }
+
+    if (data.organization) {
+      orgTotals[data.organization] = (orgTotals[data.organization] || 0) + points;
+      if (name && points > 0) {
+        orgMembers[data.organization] = orgMembers[data.organization] || [];
+        orgMembers[data.organization].push([name, points]);
+      }
+    }
+
+    if (data.captainTeam && data.captainTeam !== "N/A") {
+      captainTotals[data.captainTeam] = (captainTotals[data.captainTeam] || 0) + points;
+      if (name && points > 0) {
+        captainMembers[data.captainTeam] = captainMembers[data.captainTeam] || [];
+        captainMembers[data.captainTeam].push([name, points]);
+      }
+    }
+  });
+
+  const token = await getAccessToken();
+
+  const individualRows = [
+    ["Rank", "Name", "Points"],
+    ...individuals
+      .sort((a, b) => b[1] - a[1])
+      .map(([name, points], index) => [index + 1, name, points]),
+  ];
+
+  await clearAndWriteSheet(token, "Sheet2", individualRows);
+  await clearAndWriteSheet(
+    token,
+    "Sheet1",
+    buildGroupBreakdownRows("Organization", orgTotals, orgMembers)
+  );
+  await clearAndWriteSheet(
+    token,
+    "Sheet3",
+    buildGroupBreakdownRows("Captain Team", captainTotals, captainMembers)
+  );
+};
 
 const fetchData = async () => {
   try {
@@ -199,6 +349,40 @@ const Admin = ({ route }) => {
   const [newTeam, setNewTeam] = useState("");
   const [modalVisible, setModalVisible] = useState(false);
   const [enrolled, setEnrolled] = useState(false);
+  const [isRefreshingOrgs, setIsRefreshingOrgs] = useState(false);
+  const [isExportingSheets, setIsExportingSheets] = useState(false);
+
+  const handleExportSpiritPoints = async () => {
+    setIsExportingSheets(true);
+    try {
+      await exportSpiritPointsToSheets();
+      Alert.alert(
+        "Export Complete",
+        "Spirit Points Tracker has been updated with the latest standings."
+      );
+    } catch (error) {
+      console.error("Error exporting spirit points to Sheets:", error);
+      Alert.alert("Error", "Failed to export to Sheets. Check console logs.");
+    } finally {
+      setIsExportingSheets(false);
+    }
+  };
+
+  const handleRefreshOrganizations = async () => {
+    setIsRefreshingOrgs(true);
+    try {
+      const { updated, skipped, total } = await refreshOrganizationsForAllUsers();
+      Alert.alert(
+        "Spirit Points Refresh Complete",
+        `Checked ${total} linked users.\nUpdated: ${updated}\nSkipped/unchanged: ${skipped}`
+      );
+    } catch (error) {
+      console.error("Error refreshing organizations:", error);
+      Alert.alert("Error", "Failed to refresh organizations. Check console logs.");
+    } finally {
+      setIsRefreshingOrgs(false);
+    }
+  };
 
   const navigation = useNavigation();
   const { expoPushToken } = route.params;
@@ -468,6 +652,56 @@ const Admin = ({ route }) => {
           </TouchableOpacity>
         </View>
 
+        <View style={[card, styles.spiritPointsBox]}>
+          <View style={styles.header}>
+            <View style={styles.smallCircle} />
+            <Text style={styles.headerText}>SPIRIT POINTS</Text>
+          </View>
+          <Text style={styles.spiritPointsDescription}>
+            Refreshes every linked user's organization and name from
+            DonorDrive, and starts anyone new at 0 points. Safe to run
+            anytime — existing point totals are never reset.
+          </Text>
+          <TouchableOpacity
+            style={[
+              styles.accessButton,
+              {
+                alignSelf: "flex-end",
+                width: 220,
+                opacity: isRefreshingOrgs ? 0.6 : 1,
+              },
+            ]}
+            onPress={handleRefreshOrganizations}
+            disabled={isRefreshingOrgs}
+          >
+            <Text style={styles.accessMessage}>
+              {isRefreshingOrgs ? "Refreshing..." : "Refresh Organizations"}
+            </Text>
+          </TouchableOpacity>
+
+          <Text style={[styles.spiritPointsDescription, { marginTop: 12 }]}>
+            Exports the current standings (individuals, organizations, and
+            captain teams, each with a member breakdown) to the Spirit Point
+            Tracker spreadsheet. Overwrites whatever's currently in it.
+          </Text>
+          <TouchableOpacity
+            style={[
+              styles.accessButton,
+              {
+                alignSelf: "flex-end",
+                width: 220,
+                opacity: isExportingSheets ? 0.6 : 1,
+              },
+            ]}
+            onPress={handleExportSpiritPoints}
+            disabled={isExportingSheets}
+          >
+            <Text style={styles.accessMessage}>
+              {isExportingSheets ? "Exporting..." : "Export to Sheets"}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
         <View style={[card, styles.permsBox]}>
           <View style={styles.header}>
             <View style={styles.smallCircle} />
@@ -732,6 +966,16 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "700",
     color: "#fff",
+  },
+  spiritPointsBox: {
+    width: 340,
+    marginTop: 16,
+    padding: 16,
+  },
+  spiritPointsDescription: {
+    color: colors.textSecondary,
+    fontSize: 13,
+    marginBottom: 12,
   },
   permsBox: {
     width: 340,

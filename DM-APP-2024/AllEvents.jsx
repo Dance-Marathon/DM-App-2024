@@ -44,15 +44,13 @@ const AllEvents = ({ route }) => {
                 onPress={() => openEvent(item)}
                 activeOpacity={0.85}
               >
-                {imageSource ? (
+                <View style={styles.eventCardImageBox}>
                   <Image
-                    source={imageSource}
-                    style={styles.eventCardImage}
+                    source={imageSource || require("./images/DefaultEventBanner.png")}
+                    style={styles.eventCardImageFill}
                     resizeMode="cover"
                   />
-                ) : (
-                  <View style={styles.eventCardPlaceholder} />
-                )}
+                </View>
                 <View style={styles.eventCardBanner}>
                   <Text style={styles.eventTitle} numberOfLines={1}>
                     {item.title}
@@ -90,15 +88,15 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     marginBottom: 12,
   },
-  eventCardImage: {
+  eventCardImageBox: {
     width: "100%",
     aspectRatio: 3.5 / 1,
+    overflow: "hidden",
     backgroundColor: colors.lightBlue,
   },
-  eventCardPlaceholder: {
+  eventCardImageFill: {
     width: "100%",
-    aspectRatio: 3.5 / 1,
-    backgroundColor: colors.orange,
+    height: "100%",
   },
   eventCardBanner: {
     backgroundColor: colors.navy,

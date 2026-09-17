@@ -9,13 +9,29 @@ import {
 } from "react-native";
 import { MultiSelect } from "react-native-element-dropdown";
 import { CameraView, Camera } from "expo-camera";
-import { collection, getDocs, query, where } from "firebase/firestore";
+import {
+  collection,
+  getDocs,
+  query,
+  where,
+  doc,
+  updateDoc,
+  increment,
+  addDoc,
+  serverTimestamp,
+} from "firebase/firestore";
 import axios from "axios";
 import getAccessToken from "./api/googleAuth";
 import { getUserData } from "./Firebase/UserManager";
+import { auth } from "./Firebase/AuthManager";
 import { db } from "./Firebase/firestore";
 import { getUserInfo } from "./api/index";
 import { colors, card } from "./theme";
+
+// The old Google Sheets logging path is being kept as a fallback during the
+// Firestore-based spirit points trial, but disabled so it doesn't actually
+// write on every scan. Flip this back to true to re-enable it if needed.
+const LEGACY_SHEETS_WRITE_ENABLED = false;
 
 const DEFAULT_SCANNER_OPTIONS = [
   {
@@ -262,6 +278,50 @@ const Scanner = () => {
     })();
   }, []);
 
+  // PARALLEL SYSTEM (in testing) — mirrors every scan into Firestore
+  // alongside the existing Google Sheets write, so the two can be compared
+  // before the Sheets/script-based system is retired. A failure here is
+  // logged but never blocks the existing (working) Sheets flow.
+  const awardSpiritPointsInFirestore = async (recipient, selectedOptions) => {
+    if (!recipient.uid) {
+      console.warn(
+        "Skipping Firestore spirit points write: QR code has no uid (stale code from before this feature shipped).",
+      );
+      return;
+    }
+
+    try {
+      const totalPoints = selectedOptions.reduce(
+        (sum, option) => sum + Number(option.points || 0),
+        0,
+      );
+
+      await updateDoc(doc(db, "Users", recipient.uid), {
+        spiritPoints: increment(totalPoints),
+        // Denormalized here so the leaderboard can display a name without
+        // needing a separate (slow, rate-limited) DonorDrive lookup per user.
+        displayName: recipient.name,
+      });
+
+      const awardsRef = collection(db, "SpiritPointAwards");
+      for (const selectedOption of selectedOptions) {
+        await addDoc(awardsRef, {
+          recipientID: recipient.uid,
+          recipientName: recipient.name,
+          team: recipient.team,
+          captainTeam: recipient.captainTeam,
+          reason: selectedOption.label,
+          points: selectedOption.points,
+          giverID: auth.currentUser?.uid || null,
+          giverName: userInfo.displayName || null,
+          createdAt: serverTimestamp(),
+        });
+      }
+    } catch (error) {
+      console.error("Error writing spirit points to Firestore:", error);
+    }
+  };
+
   const handleBarCodeScanned = async ({ type, data }) => {
     if (scanLock.current) return;
     scanLock.current = true;
@@ -269,7 +329,6 @@ const Scanner = () => {
 
     const extractedData = await parseQRCodeData(data);
     if (extractedData || extractedData.name !== "undefined") {
-      const ACCESS_TOKEN = await getAccessToken();
       setUserData(extractedData);
 
       const selectedOptions = scannerOptions.filter((option) =>
@@ -277,23 +336,28 @@ const Scanner = () => {
       );
 
       if (selectedOptions.length > 0) {
-        const date = getCurrentDate();
-        const time = getCurrentTime();
-        const giver = userInfo.displayName;
+        if (LEGACY_SHEETS_WRITE_ENABLED) {
+          const ACCESS_TOKEN = await getAccessToken();
+          const date = getCurrentDate();
+          const time = getCurrentTime();
+          const giver = userInfo.displayName;
 
-        for (const selectedOption of selectedOptions) {
-          await postRowToSheet(
-            ACCESS_TOKEN,
-            extractedData.name,
-            extractedData.team,
-            selectedOption.label,
-            date,
-            time,
-            giver,
-            selectedOption.points,
-            extractedData.captainTeam,
-          );
+          for (const selectedOption of selectedOptions) {
+            await postRowToSheet(
+              ACCESS_TOKEN,
+              extractedData.name,
+              extractedData.team,
+              selectedOption.label,
+              date,
+              time,
+              giver,
+              selectedOption.points,
+              extractedData.captainTeam,
+            );
+          }
         }
+
+        await awardSpiritPointsInFirestore(extractedData, selectedOptions);
       }
     } else {
       setUserData({ name: "Invalid QR code", team: "" });
@@ -374,11 +438,16 @@ const Scanner = () => {
       // Older QR codes won't have this segment at all; missing, blank, or
       // "N/A" all normalize to "N/A" so the org write is never blocked.
       const captainTeamPart = parts[2]?.split("captainTeam: ")[1];
+      // uid was added later too — QR codes regenerate live each time the
+      // Spirit screen renders, so this is only absent for a brief window
+      // right after this change ships, never for long-lived stale codes.
+      const uidPart = parts[3]?.split("uid: ")[1];
       if (namePart && teamPart) {
         return {
           name: namePart,
           team: teamPart,
           captainTeam: captainTeamPart || "N/A",
+          uid: uidPart || null,
         };
       }
       return null;
