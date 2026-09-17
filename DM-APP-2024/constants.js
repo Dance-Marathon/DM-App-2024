@@ -45,7 +45,7 @@ export const CAPTAIN_TEAMS = [
   { label: "Multimedia", value: "Multimedia" },
   { label: "Public Relations", value: "Public Relations" },
   { label: "Recruitment", value: "Recruitment" },
-  { label: "Partnerships", value: "Partnerships" },
+  { label: "Sponsorships", value: "Sponsorships" },
 ];
 
 export const ALL_CAPTAIN_TEAM_NAMES = CAPTAIN_TEAMS.filter(
@@ -65,7 +65,7 @@ export const MANAGER_TEAM_GROUPS = {
     "Finance",
     "Marathon Relations",
     "Merchandise",
-    "Partnerships",
+    "Sponsorships",
   ],
   "Membership Manager": [
     "Leadership Development",
@@ -79,6 +79,19 @@ export const MANAGER_TEAM_GROUPS = {
     "Morale",
   ],
 };
+
+// Roles (beyond anyone who's a captain on a team) allowed to see the
+// captain-team spirit points leaderboard.
+export const CAPTAIN_LEADERBOARD_ROLES = [
+  "Assistant Director",
+  "Fundraising Assistant Director",
+  "Marketing Manager",
+  "Membership Manager",
+  "Operations Manager",
+  "Finance Manager",
+  "Overall",
+  "Executive Director",
+];
 
 export const SOCIAL_LINKS = [
   { key: "instagram", icon: "instagram", label: "Instagram", url: "https://www.instagram.com/floridadm/" },

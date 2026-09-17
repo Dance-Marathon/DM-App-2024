@@ -8,6 +8,7 @@ import {
 import { app } from "./firebase";
 import { getFirestore, setDoc, doc, deleteDoc } from "firebase/firestore";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { getUserInfo } from "../api/index";
 
 const auth = getAuth(app);
 const db = getFirestore(app);
@@ -155,15 +156,28 @@ async function updateDDLink(userId, newLink) {
     const currentUID = auth.currentUser.uid;
     const docRef = doc(db, "Users", currentUID);
 
-    // Update the user's document with the ExpoPushToken
-    await setDoc(
-      docRef,
-      {
-        donorLink: newLink,
-        donorID: extractParticipantID(newLink),
-      },
-      { merge: true }
-    );
+    const updates = {
+      donorLink: newLink,
+      donorID: participantID,
+    };
+
+    // Denormalize the DonorDrive team name onto the user doc here, since
+    // this is the one place a DonorDrive lookup is already happening — the
+    // spirit points leaderboard reads this field directly instead of
+    // calling DonorDrive per-user (slow, and subject to its bot protection).
+    try {
+      const donorInfo = await getUserInfo(participantID);
+      if (donorInfo?.teamName) {
+        updates.organization = donorInfo.teamName;
+      }
+    } catch (donorError) {
+      console.error(
+        "Could not fetch DonorDrive team name for organization field:",
+        donorError
+      );
+    }
+
+    await setDoc(docRef, updates, { merge: true });
 
     console.log(`DonorDrive Link ${newLink} added to user ${userId}`);
   } catch (error) {

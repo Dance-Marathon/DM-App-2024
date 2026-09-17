@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect, useContext, useCallback } from "react";
 import {
   View,
   StyleSheet,
@@ -10,31 +10,93 @@ import {
   useWindowDimensions,
 } from "react-native";
 import QRCode from "react-native-qrcode-svg";
-import axios from "axios";
-import { sheetsAPIKey } from "./api/apiKeys";
 import { Icon } from "react-native-elements";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { doc, getDoc } from "firebase/firestore";
-import { db } from "./Firebase/AuthManager";
+import { doc, getDoc, collection, getDocs } from "firebase/firestore";
+import { auth, db } from "./Firebase/AuthManager";
 import { UserContext } from "./api/calls";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 import { faX } from "@fortawesome/free-solid-svg-icons";
 import TopBar from "./TopBar";
 import { colors, card } from "./theme";
+import { CAPTAIN_LEADERBOARD_ROLES } from "./constants";
+
+const RankBadge = ({ rank }) => {
+  if (rank === 0) {
+    return (
+      <View style={styles.rankBadgeFirst}>
+        <Icon name="trophy" type="font-awesome" color="white" size={14} />
+      </View>
+    );
+  }
+  const ringColor = rank === 1 ? colors.silver : rank === 2 ? colors.bronze : null;
+  return (
+    <View
+      style={[styles.rankBadge, ringColor && { borderWidth: 2, borderColor: ringColor }]}
+    >
+      <Text style={styles.rankBadgeText}>{rank + 1}</Text>
+    </View>
+  );
+};
+
+const LeaderboardSection = ({ title, data, maxScore, isYouName, emptyText }) => (
+  <>
+    <Text style={[styles.sectionTitle, { marginTop: 20 }]}>{title}</Text>
+    <View style={[card, styles.leaderboardCard]}>
+      {data.map((entry, index) => {
+        const isYou = Boolean(isYouName) && entry[0] === isYouName;
+        const progress = maxScore > 0 ? entry[1] / maxScore : 0;
+        return (
+          <View key={index} style={styles.leaderboardRow}>
+            <RankBadge rank={index} />
+            <View style={styles.leaderboardInfo}>
+              <View style={styles.leaderboardNameRow}>
+                <Text style={styles.leaderboardName} numberOfLines={1}>
+                  {entry[0]}
+                </Text>
+                {isYou && (
+                  <View style={styles.youPill}>
+                    <Text style={styles.youPillText}>you</Text>
+                  </View>
+                )}
+              </View>
+              <View style={styles.progressTrack}>
+                <View
+                  style={[
+                    styles.progressFill,
+                    {
+                      width: `${Math.max(progress * 100, 4)}%`,
+                      backgroundColor: isYou ? colors.orange : "white",
+                    },
+                  ]}
+                />
+              </View>
+            </View>
+            <Text style={styles.leaderboardPoints}>{entry[1]}</Text>
+          </View>
+        );
+      })}
+      {data.length === 0 && (
+        <Text style={styles.leaderboardEmptyText}>{emptyText}</Text>
+      )}
+    </View>
+  </>
+);
 
 const GenerateQRCode = () => {
   const [qrVisible, setQrVisible] = useState(false);
   const [leaderboard, setLeaderboard] = useState([]);
   const [individualLeaderboard, setIndividualLeaderboard] = useState([]);
-  const [fullTeamLeaderboard, setFullTeamLeaderboard] = useState([]);
-  const [fullIndividualLeaderboard, setFullIndividualLeaderboard] = useState(
+  const [fullOrgLeaderboard, setFullOrgLeaderboard] = useState([]);
+  const [fullCaptainTeamLeaderboard, setFullCaptainTeamLeaderboard] = useState(
     []
   );
-  const SPREADSHEET_ID = "1VTr6Jq_UbrJ1HEUTxCo0TlLvoLXc5PaPagufrzbAAxY";
-  const range = `Sheet1!A2:E100`; // A/B = organization team + points, D/E = captain team + points
-  const individualRange = `Sheet2!A2:B600`;
-  const apiKey = sheetsAPIKey;
+  const [myStats, setMyStats] = useState({
+    organization: "",
+    spiritPoints: 0,
+    displayName: "",
+  });
   const [canGiveSpiritPoints, setCanGiveSpiritPoints] = useState(false);
   const [scannerPermissions, setScannerPermissions] = useState({
     allowedRoles: [],
@@ -51,73 +113,88 @@ const GenerateQRCode = () => {
   const { role, userInfo, captainTeam } = useContext(UserContext);
 
   const userTeamScore =
-    fullTeamLeaderboard && userInfo
-      ? fullTeamLeaderboard.find(
-          (team) => team[0] === userInfo.teamName
-        )?.[1] || 0
-      : 0;
+    fullOrgLeaderboard.find(([name]) => name === myStats.organization)?.[1] ||
+    0;
 
   const hasCaptainTeam = Boolean(captainTeam) && captainTeam !== "N/A";
 
   const captainTeamScore =
-    fullTeamLeaderboard && captainTeam && captainTeam !== "N/A"
-      ? fullTeamLeaderboard.find((team) => team[3] === captainTeam)?.[4] || 0
-      : 0;
+    fullCaptainTeamLeaderboard.find(([name]) => name === captainTeam)?.[1] ||
+    0;
 
-  const individualScore =
-    fullIndividualLeaderboard && userInfo
-      ? fullIndividualLeaderboard.find(
-          (individual) => individual[0] === userInfo.displayName
-        )?.[1] || 0
-      : 0;
+  const individualScore = myStats.spiritPoints || 0;
+  const myDisplayName = myStats.displayName || userInfo?.displayName || "";
 
-  const fetchLeaderboardData = async () => {
+  const canSeeCaptainLeaderboard =
+    hasCaptainTeam || CAPTAIN_LEADERBOARD_ROLES.includes(role);
+  const captainTeamLeaderboard = fullCaptainTeamLeaderboard.slice(0, 5);
+
+  const fetchLeaderboards = useCallback(async () => {
     try {
-      const response = await axios.get(
-        `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${range}?key=${apiKey}`
-      );
+      const snapshot = await getDocs(collection(db, "Users"));
 
-      const rows = response.data.values || [];
-      setFullTeamLeaderboard(rows);
+      const individualTotals = [];
+      const orgTotals = {};
+      const captainTeamTotals = {};
+      let myData = null;
 
-      const sortedData = rows
-        .filter((row) => row[1])
-        .map((row) => [row[0], parseInt(row[1], 10)])
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 5);
-      setLeaderboard(sortedData);
+      snapshot.forEach((docSnap) => {
+        const data = docSnap.data();
+        const points = Number(data.spiritPoints) || 0;
+
+        if (docSnap.id === auth.currentUser?.uid) {
+          myData = data;
+        }
+
+        if (data.displayName) {
+          individualTotals.push([data.displayName, points]);
+        }
+
+        if (data.organization) {
+          orgTotals[data.organization] =
+            (orgTotals[data.organization] || 0) + points;
+        }
+
+        if (data.captainTeam && data.captainTeam !== "N/A") {
+          captainTeamTotals[data.captainTeam] =
+            (captainTeamTotals[data.captainTeam] || 0) + points;
+        }
+      });
+
+      setMyStats({
+        organization: myData?.organization || "",
+        spiritPoints: Number(myData?.spiritPoints) || 0,
+        displayName: myData?.displayName || "",
+      });
+
+      const sortedIndividuals = individualTotals
+        .filter(([, points]) => points > 0)
+        .sort((a, b) => b[1] - a[1]);
+      setIndividualLeaderboard(sortedIndividuals.slice(0, 5));
+
+      const sortedOrgs = Object.entries(orgTotals)
+        .filter(([, points]) => points > 0)
+        .sort((a, b) => b[1] - a[1]);
+      setFullOrgLeaderboard(sortedOrgs);
+      setLeaderboard(sortedOrgs.slice(0, 5));
+
+      const sortedCaptainTeams = Object.entries(captainTeamTotals)
+        .filter(([, points]) => points > 0)
+        .sort((a, b) => b[1] - a[1]);
+      setFullCaptainTeamLeaderboard(sortedCaptainTeams);
     } catch (error) {
-      console.error("Error fetching leaderboard data", error);
-    }
-  };
-
-  const fetchIndividualData = async () => {
-    try {
-      const response = await axios.get(
-        `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${individualRange}?key=${apiKey}`
+      console.error(
+        "Error fetching spirit point leaderboards from Firestore:",
+        error
       );
-
-      const rows = response.data.values || [];
-      setFullIndividualLeaderboard(rows);
-
-      const sortedData = rows
-        .filter((row) => row[1])
-        .map((row) => [row[0], parseInt(row[1], 10)])
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 3);
-      setIndividualLeaderboard(sortedData);
-    } catch (error) {
-      console.error("Error fetching individual leaderboard data", error);
     }
-  };
-
-  useEffect(() => {
-    fetchLeaderboardData();
   }, []);
 
-  useEffect(() => {
-    fetchIndividualData();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      fetchLeaderboards();
+    }, [fetchLeaderboards])
+  );
 
   useEffect(() => {
     const fetchScannerPermissions = async () => {
@@ -152,7 +229,7 @@ const GenerateQRCode = () => {
 
   const qrData = isUserInfoEmpty
     ? ""
-    : `name: ${userInfo.displayName}, team: ${userInfo.teamName}, captainTeam: ${captainTeam || "N/A"}`;
+    : `name: ${userInfo.displayName}, team: ${userInfo.teamName}, captainTeam: ${captainTeam || "N/A"}, uid: ${auth.currentUser?.uid || ""}`;
 
   const actionButtonWidth = canGiveSpiritPoints
     ? (actionRowWidth - actionButtonGap) / 2
@@ -161,7 +238,8 @@ const GenerateQRCode = () => {
   const maxOrgScore = leaderboard.length > 0 ? leaderboard[0][1] : 0;
   const maxIndividualScore =
     individualLeaderboard.length > 0 ? individualLeaderboard[0][1] : 0;
-  const rankBadgeColors = [colors.gold, colors.silver, colors.bronze];
+  const maxCaptainTeamScore =
+    captainTeamLeaderboard.length > 0 ? captainTeamLeaderboard[0][1] : 0;
 
   return (
     <View style={styles.screen}>
@@ -173,7 +251,7 @@ const GenerateQRCode = () => {
             <Text style={styles.statLabel}>Personal</Text>
             <Text style={styles.statValuePersonal}>{individualScore}</Text>
             <Text style={styles.statSubtitle} numberOfLines={1}>
-              {userInfo?.displayName || ""}
+              {myDisplayName}
             </Text>
           </View>
           {hasCaptainTeam && (
@@ -189,7 +267,7 @@ const GenerateQRCode = () => {
             <Text style={styles.statLabel}>Organization</Text>
             <Text style={styles.statValue}>{userTeamScore}</Text>
             <Text style={styles.statSubtitle} numberOfLines={1}>
-              {userInfo?.teamName || ""}
+              {myStats.organization}
             </Text>
           </View>
         </View>
@@ -255,116 +333,31 @@ const GenerateQRCode = () => {
             )}
           </View>
 
-          <Text style={styles.sectionTitle}>ORGANIZATION LEADERBOARD</Text>
-          <View style={[card, styles.leaderboardCard]}>
-            {leaderboard.map((team, index) => {
-              const isYou = userInfo?.teamName && team[0] === userInfo.teamName;
-              const progress = maxOrgScore > 0 ? team[1] / maxOrgScore : 0;
-              return (
-                <View
-                  key={index}
-                  style={[
-                    styles.leaderboardRow,
-                    index < leaderboard.length - 1 && styles.leaderboardRowDivider,
-                  ]}
-                >
-                  <View
-                    style={[
-                      styles.rankBadge,
-                      index < 3 && { backgroundColor: rankBadgeColors[index] },
-                    ]}
-                  >
-                    <Text style={styles.rankBadgeText}>{index + 1}</Text>
-                  </View>
-                  <View style={styles.leaderboardInfo}>
-                    <View style={styles.leaderboardNameRow}>
-                      <Text style={styles.leaderboardName} numberOfLines={1}>
-                        {team[0]}
-                      </Text>
-                      {isYou && (
-                        <View style={styles.youPill}>
-                          <Text style={styles.youPillText}>you</Text>
-                        </View>
-                      )}
-                    </View>
-                    <View style={styles.progressTrack}>
-                      <View
-                        style={[
-                          styles.progressFill,
-                          {
-                            width: `${Math.max(progress * 100, 4)}%`,
-                            backgroundColor: isYou ? colors.orange : colors.navy,
-                          },
-                        ]}
-                      />
-                    </View>
-                  </View>
-                  <Text style={styles.leaderboardPoints}>{team[1]}</Text>
-                </View>
-              );
-            })}
-            {leaderboard.length === 0 && (
-              <Text style={styles.noticeText}>Leaderboard unavailable</Text>
-            )}
-          </View>
+          <LeaderboardSection
+            title="ORGANIZATION LEADERBOARD"
+            data={leaderboard}
+            maxScore={maxOrgScore}
+            isYouName={myStats.organization}
+            emptyText="Leaderboard unavailable"
+          />
 
-          <Text style={[styles.sectionTitle, { marginTop: 20 }]}>
-            INDIVIDUAL LEADERBOARD
-          </Text>
-          <View style={[card, styles.leaderboardCard]}>
-            {individualLeaderboard.map((person, index) => {
-              const isYou =
-                userInfo?.displayName && person[0] === userInfo.displayName;
-              const progress =
-                maxIndividualScore > 0 ? person[1] / maxIndividualScore : 0;
-              return (
-                <View
-                  key={index}
-                  style={[
-                    styles.leaderboardRow,
-                    index < individualLeaderboard.length - 1 &&
-                      styles.leaderboardRowDivider,
-                  ]}
-                >
-                  <View
-                    style={[
-                      styles.rankBadge,
-                      index < 3 && { backgroundColor: rankBadgeColors[index] },
-                    ]}
-                  >
-                    <Text style={styles.rankBadgeText}>{index + 1}</Text>
-                  </View>
-                  <View style={styles.leaderboardInfo}>
-                    <View style={styles.leaderboardNameRow}>
-                      <Text style={styles.leaderboardName} numberOfLines={1}>
-                        {person[0]}
-                      </Text>
-                      {isYou && (
-                        <View style={styles.youPill}>
-                          <Text style={styles.youPillText}>you</Text>
-                        </View>
-                      )}
-                    </View>
-                    <View style={styles.progressTrack}>
-                      <View
-                        style={[
-                          styles.progressFill,
-                          {
-                            width: `${Math.max(progress * 100, 4)}%`,
-                            backgroundColor: isYou ? colors.orange : colors.navy,
-                          },
-                        ]}
-                      />
-                    </View>
-                  </View>
-                  <Text style={styles.leaderboardPoints}>{person[1]}</Text>
-                </View>
-              );
-            })}
-            {individualLeaderboard.length === 0 && (
-              <Text style={styles.noticeText}>Leaderboard unavailable</Text>
-            )}
-          </View>
+          <LeaderboardSection
+            title="INDIVIDUAL LEADERBOARD"
+            data={individualLeaderboard}
+            maxScore={maxIndividualScore}
+            isYouName={myDisplayName}
+            emptyText="Leaderboard unavailable"
+          />
+
+          {canSeeCaptainLeaderboard && (
+            <LeaderboardSection
+              title="CAPTAIN TEAM LEADERBOARD"
+              data={captainTeamLeaderboard}
+              maxScore={maxCaptainTeamScore}
+              isYouName={captainTeam}
+              emptyText="Leaderboard unavailable"
+            />
+          )}
         </ScrollView>
       </View>
 
@@ -500,21 +493,34 @@ const styles = StyleSheet.create({
   },
   leaderboardCard: {
     padding: 12,
+    backgroundColor: colors.navy,
+    borderWidth: 0,
+  },
+  leaderboardEmptyText: {
+    color: "rgba(255,255,255,0.7)",
+    fontSize: 14,
+    paddingVertical: 12,
+    textAlign: "center",
   },
   leaderboardRow: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 12,
-  },
-  leaderboardRowDivider: {
-    borderBottomWidth: 1,
-    borderBottomColor: colors.cardBorder,
+    paddingVertical: 10,
   },
   rankBadge: {
     width: 26,
     height: 26,
     borderRadius: 13,
     backgroundColor: colors.lightBlue,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 10,
+  },
+  rankBadgeFirst: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: colors.gold,
     alignItems: "center",
     justifyContent: "center",
     marginRight: 10,
@@ -534,27 +540,27 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   leaderboardName: {
-    color: colors.text,
+    color: "white",
     fontSize: 14,
     fontWeight: "600",
     flexShrink: 1,
   },
   youPill: {
-    backgroundColor: colors.lightOrange,
+    backgroundColor: colors.orange,
     borderRadius: 8,
     paddingHorizontal: 6,
     paddingVertical: 1,
     marginLeft: 6,
   },
   youPillText: {
-    color: colors.orange,
+    color: "white",
     fontSize: 10,
     fontWeight: "700",
   },
   progressTrack: {
     height: 6,
     borderRadius: 3,
-    backgroundColor: colors.lightBlue,
+    backgroundColor: "rgba(255,255,255,0.25)",
     overflow: "hidden",
   },
   progressFill: {
@@ -562,7 +568,7 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   leaderboardPoints: {
-    color: colors.orange,
+    color: "white",
     fontSize: 15,
     fontWeight: "800",
   },

@@ -56,12 +56,20 @@ const Login = ({ route }) => {
     setDDModalVisable(false);
   };
 
+  const closeAuthScreen = () => {
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+    } else {
+      navigation.navigate("Home");
+    }
+  };
+
   const handleLoginPress = async () => {
     const loginResult = await handleLogin(email, password);
 
     if (loginResult === "success") {
       setLoginFailed(false);
-      navigation.navigate("Home");
+      closeAuthScreen();
     } else {
       setLoginFailed(true);
     }
@@ -79,7 +87,7 @@ const Login = ({ route }) => {
 
     if (signUpResult === "success") {
       setSignUpField(false);
-      navigation.navigate("Home");
+      closeAuthScreen();
     } else {
       setSignUpField(true);
     }

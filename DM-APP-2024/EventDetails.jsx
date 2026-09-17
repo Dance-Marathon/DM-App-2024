@@ -11,11 +11,13 @@ const EventDetails = ({ route }) => {
     <View style={styles.screen}>
       <ScrollView contentContainerStyle={styles.body}>
         <View style={[card, styles.eventCard]}>
-          {imageSource ? (
-            <Image source={imageSource} style={styles.eventImage} />
-          ) : (
-            <View style={styles.eventPlaceholder} />
-          )}
+          <View style={styles.eventImageBox}>
+            <Image
+              source={imageSource || require("./images/DefaultEventBanner.png")}
+              style={styles.eventImageFill}
+              resizeMode="contain"
+            />
+          </View>
 
           <View style={styles.eventContent}>
             <Text style={styles.eventTitle}>{event.title}</Text>
@@ -57,15 +59,15 @@ const styles = StyleSheet.create({
   eventCard: {
     overflow: "hidden",
   },
-  eventImage: {
+  eventImageBox: {
     width: "100%",
-    aspectRatio: 2 / 1,
-    backgroundColor: colors.lightBlue,
+    aspectRatio: 3.5 / 1,
+    overflow: "hidden",
+    backgroundColor: colors.cardBackground,
   },
-  eventPlaceholder: {
+  eventImageFill: {
     width: "100%",
-    aspectRatio: 2 / 1,
-    backgroundColor: colors.orange,
+    height: "100%",
   },
   eventContent: {
     padding: 20,
