@@ -25,7 +25,8 @@ const EventDetails = ({ route }) => {
             <Text style={styles.dateTime}>
               <Text style={styles.boldText}>When: </Text>
               {event.formattedDate}
-              {event.time ? ` at ${event.time}` : ""}
+              {event.startTime ? ` at ${event.startTime}` : ""}
+              {event.startTime && event.endTime ? ` - ${event.endTime}` : ""}
             </Text>
 
             {!!event.location && (

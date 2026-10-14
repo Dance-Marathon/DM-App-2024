@@ -19,7 +19,8 @@ const AllEvents = ({ route }) => {
       event: {
         title: item.title,
         formattedDate: item.formattedDate,
-        time: item.time,
+        startTime: item.startTime,
+        endTime: item.endTime,
         location: item.location,
         description: item.description,
         imageUrl: imageUrls?.[item.picture],
@@ -57,7 +58,8 @@ const AllEvents = ({ route }) => {
                   </Text>
                   <Text style={styles.eventMeta} numberOfLines={1}>
                     {item.formattedDate ? `${item.formattedDate}` : ""}
-                    {item.time ? ` · ${item.time}` : ""}
+                    {item.startTime ? ` · ${item.startTime}` : ""}
+                    {item.startTime && item.endTime ? ` - ${item.endTime}` : ""}
                     {item.location ? ` · ${item.location}` : ""}
                   </Text>
                 </View>

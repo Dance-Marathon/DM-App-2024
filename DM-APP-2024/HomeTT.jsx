@@ -27,7 +27,7 @@ import { colors, card } from "./theme";
 const LAST_SEEN_NOTIFICATION_KEY = "@last_seen_notification";
 
 const SPREADSHEET_ID = "15kkihl7I0p4A_jyT-a-ozXQA9kvi_as-ry_6J0PfPis";
-const EVENTS_RANGE = "TransformToday!A4:F100";
+const EVENTS_RANGE = "TransformToday!A4:G100";
 
 const formatEventDate = (d) =>
   new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(d);
@@ -104,15 +104,15 @@ const HomeTT = ({ route }) => {
       }
 
       const fetchedItems = rows.map((row) => {
-        const [title, date, time, location, description, pictureName] = row;
+        const [title, date, startTime, location, description, pictureName, endTime] = row;
 
-        if (!date || !time) return null;
+        if (!date || !startTime) return null;
 
         const [year, month, day] = date.split("-").map(Number);
 
         let hours = 0,
           minutes = 0;
-        const timeMatch = time.match(/^(\d+):(\d+)\s?(AM|PM)$/i);
+        const timeMatch = startTime.match(/^(\d+):(\d+)\s?(AM|PM)$/i);
         if (timeMatch) {
           hours = parseInt(timeMatch[1], 10);
           minutes = parseInt(timeMatch[2], 10);
@@ -143,7 +143,8 @@ const HomeTT = ({ route }) => {
         return {
           formattedDate: formatEventDate(eventDate),
           date,
-          time,
+          startTime,
+          endTime,
           title,
           description,
           location,
@@ -242,7 +243,8 @@ const HomeTT = ({ route }) => {
       event: {
         title: item.title,
         formattedDate: item.formattedDate,
-        time: item.time,
+        startTime: item.startTime,
+        endTime: item.endTime,
         location: item.location,
         description: item.description,
         imageUrl: imageUrls[item.picture],
@@ -350,7 +352,8 @@ const HomeTT = ({ route }) => {
                     </Text>
                     <Text style={styles.eventMeta} numberOfLines={1}>
                       {item.formattedDate ? `${item.formattedDate}` : ""}
-                      {item.time ? ` · ${item.time}` : ""}
+                      {item.startTime ? ` · ${item.startTime}` : ""}
+                      {item.startTime && item.endTime ? ` - ${item.endTime}` : ""}
                       {item.location ? ` · ${item.location}` : ""}
                     </Text>
                   </View>
