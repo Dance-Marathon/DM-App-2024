@@ -7,6 +7,15 @@ cred = credentials.Certificate("dm-app-2024-firebase-adminsdk-ld0j9-66a6c87a87.j
 firebase_admin.initialize_app(cred)
 db = firestore.client()
 
+def getRound():
+    try:
+        doc = db.collection("MissionDMGames").document("gameStats").get()
+        # doc = db.collection("MissionDMTestRounds").document("gameStats").get()
+        return doc.to_dict().get("currentRound")
+    except Exception as e:
+        print("Error fetching round:", e)
+        return 0
+
 def count_active_players():
     try:
         query = db.collection("MissionDMPlayers").where("isEliminated", "==", False)
@@ -34,8 +43,12 @@ def eliminate_zero_elims_players():
                 x += 1
 
         print("Eliminated those losers.")
+        with open("roundLogs.txt", "a") as file:
+            file.write("Eliminated those losers.\n")
     except Exception as e:
         print("Error eliminating players with 0 eliminations:", e)
+        with open("roundLogs.txt", "a") as file:
+            file.write(f"Error eliminating players with 0 eliminations:{e}\n")
 
 def fetch_data():
     try:
@@ -50,15 +63,21 @@ def fetch_data():
         return tokens
     except Exception as e:
         print("Error fetching events:", e)
+        with open("roundLogs.txt", "a") as file:
+            file.write(f"Error fetching events:{e}\n")
         return []
 
 def send_batch(batch):
     if not batch:
         print("Skipping empty batch.")
+        with open("roundLogs.txt", "a") as file:
+            file.write("Skipping empty batch.\n")
         return
 
     try:
         print(f"Sending batch of {len(batch)} notifications...")
+        with open("roundLogs.txt", "a") as file:
+            file.write(f"Sending batch of {len(batch)} notifications...\n")
         response = requests.post(
             "https://exp.host/--/api/v2/push/send",
             headers={
@@ -70,23 +89,33 @@ def send_batch(batch):
         )
         json_response = response.json()
         print("Expo response:", json_response)
+        with open("roundLogs.txt", "a") as file:
+            file.write(f"Expo response:{json_response}\n")
 
         if "data" in json_response:
             for index, result in enumerate(json_response["data"]):
                 if result.get("status") == "error":
                     print(f"Error sending to {batch[index].get('to')}: {result.get('message')}")
+                    with open("roundLogs.txt", "a") as file:
+                        file.write(f"Error sending to {batch[index].get('to')}: {result.get('message')}\n")
     except Exception as e:
         print("Error sending notifications:", e)
+        with open("roundLogs.txt", "a") as file:
+            file.write(f"Error sending notifications:{e}\n")
 
 def send_push_notification_to_alive_players(notification):
     expo_push_tokens = fetch_data()
     print("Sending notifications...")
+    with open("roundLogs.txt", "a") as file:
+        file.write("Sending notifications...\n")
 
     batch_size = 50
     messages = []
     for token in expo_push_tokens:
         if not token or token.strip() == "":
             print("Skipping empty or invalid token:", token)
+            with open("roundLogs.txt", "a") as file:
+                file.write(f"Skipping empty or invalid token:{token}\n")
             continue
 
         messages.append({
@@ -97,6 +126,8 @@ def send_push_notification_to_alive_players(notification):
         })
 
         print(f"Added token: {token}")
+        with open("roundLogs.txt", "a") as file:
+            file.write(f"Added token: {token}\n")
 
         if len(messages) >= batch_size:
             send_batch(messages)
@@ -112,8 +143,12 @@ def reset_round_elims():
         for doc in docs:
             players_ref.document(doc.id).update({"roundElims": 0})
         print("Reset round eliminations for all players.")
+        with open("roundLogs.txt", "a") as file:
+            file.write("Reset round eliminations for all players.\n")
     except Exception as e:
         print("Error resetting round eliminations:", e)
+        with open("roundLogs.txt", "a") as file:
+            file.write(f"Error resetting round eliminations:{e}\n")
 
 def shuffle_targets():
     try:
@@ -145,8 +180,12 @@ def shuffle_targets():
                 "targetId": new_target.get("id")
             })
         print("Targets successfully shuffled.")
+        with open("roundLogs.txt", "a") as file:
+            file.write("Targets successfully shuffled.\n")
     except Exception as e:
         print("Error in shuffle_targets function:", e)
+        with open("roundLogs.txt", "a") as file:
+            file.write(f"Error in shuffle_targets function:{e}\n")
         raise Exception("Target shuffle failed.")
 
 def round_over(round_id):
@@ -156,6 +195,7 @@ def round_over(round_id):
     round_doc_id = "round" + str(round_id)
     
     game_stats_ref = db.collection("MissionDMGames").document("gameStats")
+    # game_stats_ref = db.collection("MissionDMTestRounds").document("gameStats")
 
     try:
         # Get game doc
@@ -183,14 +223,13 @@ def round_over(round_id):
         
         # Get round doc if not round 0
         round_doc_ref = db.collection("MissionDMGames").document(round_doc_id)
+        # round_doc_ref = db.collection("MissionDMTestRounds").document(round_doc_id)
 
         round_doc = round_doc_ref.get()
 
         round_data = round_doc.to_dict()
         if round_data.get("roundOverLock") is True:
             raise Exception(f"Round {round_id} is already processed.")
-
-        
 
         if count_active_players() > 1:
             eliminate_zero_elims_players()
@@ -203,10 +242,10 @@ def round_over(round_id):
 
         # Process round
         reset_round_elims()
-        send_push_notification_to_alive_players({
-            "message": f"Round {round_id} is over. {eliminations} players were eliminated and {active_players} remain.",
-            "title": f"MissionDM - Round {round_id} Over"
-        }) 
+        # send_push_notification_to_alive_players({
+        #     "message": f"Round {round_id} is over. {eliminations} players were eliminated and {active_players} remain.",
+        #     "title": f"MissionDM - Round {round_id} Over"
+        # }) 
 
         # If round 4, end game
         if round_id == 4:
@@ -228,12 +267,21 @@ def round_over(round_id):
         round_doc_ref.update({"roundOverLock": True})
 
         print(f"Round {round_id} processed successfully.")
+        with open("roundLogs.txt", "a") as file:
+            file.write(f"Round {round_id} processed successfully.\n")
     except Exception as e:
         print("Error processing round:", e)
+        with open("roundLogs.txt", "a") as file:
+            file.write(f"Error processing round:{e}\n")
 
 if __name__ == "__main__":
     try:
-        round_id = 1
+        round_id = getRound()
+        print("Processing Round #", round_id)
+        with open("roundLogs.txt", "a") as file:
+            file.write(f"Processing Round #{round_id}\n")
         round_over(round_id)
     except Exception as err:
         print("Round processing failed:", err)
+        with open("roundLogs.txt", "a") as file:
+            file.write(f"Round processing failed:{err}\n")

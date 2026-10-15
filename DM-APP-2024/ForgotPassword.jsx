@@ -7,12 +7,12 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  Image,
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
 import { getAuth, sendPasswordResetEmail } from "firebase/auth";
 import { Icon } from "react-native-elements";
+import { colors, card } from "./theme";
 
 const auth = getAuth();
 
@@ -40,11 +40,7 @@ const ForgotPassword = ({ navigation }) => {
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          {/* <Icon name="arrow-back" type="material" color="white" /> */}
-          <Image
-            style={styles.backArrow}
-            source={require("./images/backarrow.png")}
-          />
+          <Icon name="arrow-left" type="font-awesome-5" color={colors.navy} size={20} />
         </TouchableOpacity>
         <Text style={styles.title}>Forgot Password</Text>
         {!resetSent ? (
@@ -53,12 +49,13 @@ const ForgotPassword = ({ navigation }) => {
               Enter your email address and we'll send you instructions to reset
               your password.
             </Text>
-            <View style={styles.box}>
+            <View style={[card, styles.box]}>
               <TextInput
                 style={styles.input}
                 value={email}
                 onChangeText={(text) => setEmail(text)}
                 placeholder="Email Address"
+                placeholderTextColor={colors.textMuted}
                 keyboardType="email-address"
                 autoCapitalize="none"
               />
@@ -96,70 +93,66 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#233563",
+    backgroundColor: colors.pageBackground,
     width: "100%",
   },
   backButton: {
     position: "absolute",
-    top: 40,
-    left: 10,
+    top: 50,
+    left: 16,
     padding: 10,
-    borderRadius: 5,
-  },
-  backArrow: {
-    width: 40,
-    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.lightBlue,
   },
   title: {
-    fontSize: 32,
-    marginBottom: 20,
-    color: "white",
+    fontSize: 26,
+    fontWeight: "700",
+    marginBottom: 16,
+    color: colors.text,
   },
   subtitle: {
-    color: "white",
+    color: colors.textSecondary,
     marginBottom: 20,
     textAlign: "center",
     width: "80%",
   },
   input: {
-    height: 40,
-    borderColor: "white",
+    height: 44,
+    borderColor: colors.cardBorder,
     borderWidth: 1,
-    marginBottom: 20,
-    paddingHorizontal: 10,
-    borderRadius: 5,
-    backgroundColor: "#D9D9D9",
-    color: "black",
+    marginBottom: 16,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    backgroundColor: colors.pageBackground,
+    color: colors.text,
   },
   resetButton: {
-    backgroundColor: "#E2883C",
-    padding: 15,
-    borderRadius: 5,
+    backgroundColor: colors.orange,
+    padding: 14,
+    borderRadius: 10,
     alignSelf: "stretch",
-    marginBottom: 10,
   },
   buttonText: {
     color: "white",
     textAlign: "center",
-    fontWeight: "bold",
+    fontWeight: "700",
+    fontSize: 15,
   },
   successMessage: {
-    color: "white",
+    color: colors.textSecondary,
     marginBottom: 20,
     textAlign: "center",
     maxWidth: "80%",
   },
   loginButton: {
-    backgroundColor: "#E2883C",
-    padding: 15,
-    borderRadius: 5,
+    backgroundColor: colors.orange,
+    padding: 14,
+    borderRadius: 10,
     marginTop: 10,
-    width: 150,
+    width: 170,
   },
   box: {
     width: "80%",
-    backgroundColor: "#F2EFEE",
-    borderRadius: 10,
     padding: 20,
   },
   secondPage: {

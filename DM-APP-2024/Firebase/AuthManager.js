@@ -7,9 +7,12 @@ import {
 } from "firebase/auth";
 import { app } from "./firebase";
 import { getFirestore, setDoc, doc, deleteDoc } from "firebase/firestore";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { getUserInfo } from "../api/index";
 
 const auth = getAuth(app);
 const db = getFirestore(app);
+const USER_DATA_KEY = "@user_data";
 
 const deleteUserAccount = async () => {
   const user = auth.currentUser;
@@ -37,8 +40,10 @@ const handleLogin = async (email, password) => {
   try {
     await signInWithEmailAndPassword(auth, email, password);
     console.log("Logged in successfully!");
+    return "success";
   } catch (error) {
     console.error("Error logging in:", error.message);
+    return error.message || "error";
   }
 };
 
@@ -151,15 +156,28 @@ async function updateDDLink(userId, newLink) {
     const currentUID = auth.currentUser.uid;
     const docRef = doc(db, "Users", currentUID);
 
-    // Update the user's document with the ExpoPushToken
-    await setDoc(
-      docRef,
-      {
-        donorLink: newLink,
-        donorID: extractParticipantID(newLink),
-      },
-      { merge: true }
-    );
+    const updates = {
+      donorLink: newLink,
+      donorID: participantID,
+    };
+
+    // Denormalize the DonorDrive team name onto the user doc here, since
+    // this is the one place a DonorDrive lookup is already happening — the
+    // spirit points leaderboard reads this field directly instead of
+    // calling DonorDrive per-user (slow, and subject to its bot protection).
+    try {
+      const donorInfo = await getUserInfo(participantID);
+      if (donorInfo?.teamName) {
+        updates.organization = donorInfo.teamName;
+      }
+    } catch (donorError) {
+      console.error(
+        "Could not fetch DonorDrive team name for organization field:",
+        donorError
+      );
+    }
+
+    await setDoc(docRef, updates, { merge: true });
 
     console.log(`DonorDrive Link ${newLink} added to user ${userId}`);
   } catch (error) {
@@ -192,38 +210,61 @@ const handleSignUp = async (
   password,
   role,
   donorDriveLink,
-  expopushtoken
+  expopushtoken,
+  captainTeam
 ) => {
   try {
     if (!email || !password || !role || !donorDriveLink) {
       throw new Error("All fields are required");
     }
-    await createUserWithEmailAndPassword(auth, email, password)
-      .then((userCredential) => {
-        // Signed in
-        const user = userCredential.user;
-        console.log("User signed up successfully!");
-        return setDoc(doc(db, "Users", user.uid), {
-          email: email,
-          password: password,
-          role: role,
-          uid: user.uid,
-          donorLink: donorDriveLink,
-          donorID: extractParticipantID(donorDriveLink),
-          notificationToken: expopushtoken,
-        });
-      })
-      .catch((error) => {
-        const errorCode = error.code;
-        const errorMessage = error.message;
-        console.log(errorCode, errorMessage);
-      });
+    const userCredential = await createUserWithEmailAndPassword(
+      auth,
+      email,
+      password
+    );
+    const user = userCredential.user;
+    console.log("User signed up successfully!");
+    await setDoc(doc(db, "Users", user.uid), {
+      email: email,
+      password: password,
+      role: role,
+      isAdmin: false,
+      captainTeam: captainTeam || "",
+      uid: user.uid,
+      donorLink: donorDriveLink,
+      donorID: extractParticipantID(donorDriveLink),
+      notificationToken: expopushtoken,
+    });
+    return "success";
   } catch (error) {
     console.error("Error creating user:", error.message);
+    return error.message || "error";
   }
 };
 
+async function updateCaptainTeam(userId, newTeam) {
+  try {
+    const currentUID = auth.currentUser.uid;
+    const docRef = doc(db, "Users", currentUID);
+    await setDoc(docRef, { captainTeam: newTeam }, { merge: true });
+    console.log(`Captain team ${newTeam} added to user ${userId}`);
+  } catch (error) {
+    console.error("Error updating captain team:", error);
+  }
+}
+
 const handleSignOut = async () => {
+  const currentUID = auth.currentUser?.uid;
+
+  if (currentUID) {
+    try {
+      await AsyncStorage.removeItem(`${USER_DATA_KEY}_${currentUID}`);
+      console.log("Cached user data cleared on sign out");
+    } catch (error) {
+      console.error("Error clearing cached user data on sign out:", error);
+    }
+  }
+
   signOut(auth)
     .then(() => {
       console.log("Signed Out successfully!");
@@ -243,4 +284,5 @@ export {
   addUserExpoPushToken,
   updateDDLink,
   updateRole,
+  updateCaptainTeam,
 };

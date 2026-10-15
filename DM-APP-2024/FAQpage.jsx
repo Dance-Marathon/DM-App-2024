@@ -5,8 +5,8 @@ import {
   StyleSheet,
   Linking,
   ScrollView,
-  TouchableOpacity,
 } from "react-native";
+import { colors, card } from "./theme";
 
 const faqData = [
   {
@@ -15,43 +15,29 @@ const faqData = [
       "Spirit Points are used to keep track of an organization's or individual's participation in events throughout the year. There is a friendly competition between teams to be the most engaged yearlong. The winner is announced at the Closing Ceremonies of The Main Event.\n\nSpirit Points can be earned by engaging in various Dance Marathon activities and attending various events.",
   },
   {
-    question: "When/where is Dance Marathon Tabling?",
-    answer:
-      "Tabling takes place in Turlington Plaza every Wednesday from 10am-2pm.\n\nNote: DM merchandise can be purchased every other week.",
-  },
-  {
     question: "How can I see my DonorDrive info in the app?",
     answer:
-      "Click on the Fundraiser tab in the bottom taskbar to locate your personal Dance Marathon fundraiser, DonorDrive page, DonorDrive URL link, and more.",
+      "Open the DonorDrive tab from the drawer menu to locate your personal Dance Marathon fundraiser, DonorDrive page, DonorDrive URL link, and more.",
   },
   {
     question: "How do I register to be a Miracle Maker?",
     answer: "Click here to register to become a Miracle Maker!",
-    link: "https://events.dancemarathon.com/index.cfm?fuseaction=register.start&eventID=6292",
-  },
-  {
-    question: "How do I register to fundraise?",
-    answer: "Click here to register to fundraise!",
-    link: "https://events.dancemarathon.com/index.cfm?fuseaction=donorDrive.event&eventID=6292",
+    link: "https://events.dancemarathon.com/dmatuf27?REFERRER=meta_ig",
   },
 ];
 
 const FAQ = () => {
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView style={styles.screen} contentContainerStyle={styles.container}>
       {faqData.map((faq, index) => (
-        <View key={index} style={styles.faqItem}>
-          <View style={styles.questionSection}>
-            <Text style={styles.text}>{faq.question}</Text>
-          </View>
-          <View style={styles.answerSection}>
-            <Text
-              style={[styles.text, faq.link && styles.link]}
-              onPress={() => faq.link && Linking.openURL(faq.link)}
-            >
-              {faq.answer}
-            </Text>
-          </View>
+        <View key={index} style={[card, styles.faqItem]}>
+          <Text style={styles.question}>{faq.question}</Text>
+          <Text
+            style={[styles.answer, faq.link && styles.link]}
+            onPress={() => faq.link && Linking.openURL(faq.link)}
+          >
+            {faq.answer}
+          </Text>
         </View>
       ))}
     </ScrollView>
@@ -59,42 +45,32 @@ const FAQ = () => {
 };
 
 const styles = StyleSheet.create({
+  screen: {
+    flex: 1,
+    backgroundColor: colors.pageBackground,
+  },
   container: {
-    flexGrow: 1,
-    justifyContent: "flex-start",
-    alignItems: "center",
-    backgroundColor: "#1F1F1F",
-    paddingVertical: 20,
+    padding: 16,
+    paddingBottom: 40,
   },
   faqItem: {
-    marginBottom: 20,
-    borderRadius: 8,
-    overflow: "hidden",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 5,
-    width: 340,
+    marginBottom: 16,
+    padding: 16,
   },
-  questionSection: {
-    backgroundColor: "#F18221",
-    justifyContent: "center",
-    alignItems: "flex-start",
-    padding: 10,
+  question: {
+    color: colors.navy,
+    fontSize: 15,
+    fontWeight: "700",
+    marginBottom: 8,
   },
-  answerSection: {
-    backgroundColor: "#233D72",
-    justifyContent: "center",
-    alignItems: "flex-start",
-    padding: 10,
-  },
-  text: {
-    color: "white",
-    fontSize: 16,
-    textAlign: "left",
+  answer: {
+    color: colors.textSecondary,
+    fontSize: 14,
+    lineHeight: 20,
   },
   link: {
+    color: colors.orange,
+    fontWeight: "600",
     textDecorationLine: "underline",
   },
 });

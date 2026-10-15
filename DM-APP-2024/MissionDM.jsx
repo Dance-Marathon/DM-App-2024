@@ -94,7 +94,7 @@ const MissionDM = () => {
         console.log("Fetched User Data:", userData);
         setUserIDState(userData.donorID);
         setRole(userData.role);
-        
+
         const docRef = doc(db, "MissionDMPlayers", auth.currentUser.uid);
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
@@ -212,14 +212,22 @@ const MissionDM = () => {
 
     const unsubscribe = onSnapshot(gameDocRef, (docSnapshot) => {
       if (docSnapshot.exists()) {
-        setLoadingBetweenRounds(!docSnapshot.data().roundOverLock);
+        const roundData = docSnapshot.data();
+        if (roundData.start?.seconds && roundData.end?.seconds) {
+          setCurrentRoundStart(roundData.start.seconds * 1000);
+          setCurrentRoundEnd(roundData.end.seconds * 1000);
+          console.log(
+            `Synced round${currentRound} window: ${roundData.start.seconds * 1000} -> ${roundData.end.seconds * 1000}`,
+          );
+        }
+        setLoadingBetweenRounds(!roundData.roundOverLock);
       } else {
         console.error("gameStats document not found in Firestore.");
       }
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [currentRound]);
 
   // function formatToLocalDateTime(date) {
   //   const year = date.getFullYear();
@@ -242,7 +250,7 @@ const MissionDM = () => {
     try {
       const eliminatedQuery = query(
         collection(db, "MissionDMPlayers"),
-        where("code", "==", code)
+        where("code", "==", code),
       );
       const eliminatedSnapshot = await getDocs(eliminatedQuery);
 
@@ -404,7 +412,7 @@ const MissionDM = () => {
       // Convert to local time
       const localFirstRoundStart = new Date(firstStart).toLocaleString(
         "en-US",
-        { timeZone: "America/New_York" }
+        { timeZone: "America/New_York" },
       );
       setFirstRoundStart(firstStart); // Store UTC time for correct comparisons
       setLastRoundEnd(lastEnd);
@@ -412,7 +420,7 @@ const MissionDM = () => {
 
       console.log(
         "First Round Start (UTC):",
-        new Date(firstStart).toISOString()
+        new Date(firstStart).toISOString(),
       );
       console.log("First Round Start (Local Time):", localFirstRoundStart);
     } else {
@@ -430,23 +438,6 @@ const MissionDM = () => {
       const gameData = gameDoc.data();
       console.log("Firestore currentRound:", gameData.currentRound);
       setCurrentRound(gameData.currentRound);
-
-      if (gameData.currentRound === 0) {
-        if (firstRoundStart && rounds[0] && rounds[0].end) {
-          setCurrentRoundStart(firstRoundStart);
-          setCurrentRoundEnd(rounds[0].end);
-        } else {
-          console.error("Missing round 1 start or end time.");
-        }
-      } else {
-        const currentRoundData = rounds.find(
-          (round) => round.round === gameData.currentRound
-        );
-        if (currentRoundData) {
-          setCurrentRoundStart(currentRoundData.start);
-          setCurrentRoundEnd(currentRoundData.end);
-        }
-      }
     } else {
       console.error("gameStats document not found in Firestore.");
     }
@@ -481,7 +472,7 @@ const MissionDM = () => {
           donorID: userIDState,
           ranking: 0,
         },
-        { merge: true }
+        { merge: true },
       );
 
       setInGame(true);
@@ -555,6 +546,11 @@ const MissionDM = () => {
   };
 
   useEffect(() => {
+    roundOverCalledRef.current = false;
+    setInRound(false);
+  }, [currentRound]);
+
+  useEffect(() => {
     if (!currentRoundStart || !currentRoundEnd) {
       console.log("Waiting for current round times to be set...");
       return;
@@ -564,9 +560,15 @@ const MissionDM = () => {
       const now = Date.now();
       console.log("Checking round start time:", now, "vs", currentRoundStart);
       console.log("Current Round:", currentRound);
+      console.log(
+        `Timer window check (round ${currentRound}): ${currentRoundStart} -> ${currentRoundEnd}`,
+      );
 
       const { active, timeLeft } = calculateTimeLeft();
       setInRound(active);
+      if (active) {
+        setLoadingBetweenRounds(false);
+      }
 
       if (timeLeft > 0) {
         setTimeLeft({
@@ -581,19 +583,22 @@ const MissionDM = () => {
 
       if (timeLeft === 0 && !roundOverCalledRef.current) {
         roundOverCalledRef.current = true;
-        console.log("Round should now end! Running roundOver().");
-        await roundOver();
+        setLoadingBetweenRounds(true);
+        console.log(
+          "Round ended locally. Waiting for backend round processing.",
+        );
+        await fetchGameStats();
       }
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [currentRoundStart, currentRoundEnd]);
+  }, [currentRoundStart, currentRoundEnd, currentRound]);
 
   const countActivePlayers = async () => {
     try {
       const q = query(
         collection(db, "MissionDMPlayers"),
-        where("isEliminated", "==", false)
+        where("isEliminated", "==", false),
       );
       const querySnapshot = await getDocs(q);
       return querySnapshot.size;
@@ -647,7 +652,7 @@ const MissionDM = () => {
 
       const q = query(
         collection(db, "Users"),
-        where("inMissionDM", "==", true)
+        where("inMissionDM", "==", true),
       );
       const querySnapshot = await getDocs(q);
 
@@ -689,7 +694,7 @@ const MissionDM = () => {
           if (result.status === "error") {
             console.error(
               `Error sending to ${batch[index].to}:`,
-              result.message
+              result.message,
             );
           }
         });
@@ -701,7 +706,7 @@ const MissionDM = () => {
 
   async function sendPushNotificationToAlivePlayers(
     expoPushTokens,
-    notification
+    notification,
   ) {
     console.log("Sending notifications...");
 
@@ -800,7 +805,7 @@ const MissionDM = () => {
     try {
       const q = query(
         collection(db, "MissionDMPlayers"),
-        where("isEliminated", "==", true)
+        where("isEliminated", "==", true),
       );
       const querySnapshot = await getDocs(q);
       return querySnapshot.size;
@@ -859,7 +864,7 @@ const MissionDM = () => {
         // In purge mode, any valid code eliminates the corresponding player.
         const eliminatedQuery = query(
           collection(db, "MissionDMPlayers"),
-          where("code", "==", enteredCode)
+          where("code", "==", enteredCode),
         );
         const eliminatedSnapshot = await getDocs(eliminatedQuery);
         if (eliminatedSnapshot.empty) {
@@ -1081,7 +1086,7 @@ const MissionDM = () => {
                       style={styles.infoButton}
                       onPress={() =>
                         openWebsite(
-                          "https://docs.google.com/forms/d/e/1FAIpQLScEmi6y731oIUxKmkOLy6dxl_RnSDirW4TdMSDrV-9Br3Rdmw/viewform?usp=header"
+                          "https://docs.google.com/forms/d/e/1FAIpQLScEmi6y731oIUxKmkOLy6dxl_RnSDirW4TdMSDrV-9Br3Rdmw/viewform?usp=header",
                         )
                       }
                     >
@@ -1191,10 +1196,16 @@ const MissionDM = () => {
                   </View>
                   <View style={styles.buttonBox}>
                     <TouchableOpacity
-                      style={[styles.orangeButton, { width: 125 }]}
+                      style={[styles.orangeButton, { width: 140 }]}
                       onPress={() => setIsStatsModalVisible(true)}
                     >
-                      <Text style={styles.orangeButtonText}>Show My Code</Text>
+                      <Text
+                        style={styles.orangeButtonText}
+                        numberOfLines={1}
+                        allowFontScaling={false}
+                      >
+                        Show My Code
+                      </Text>
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -1238,13 +1249,19 @@ const MissionDM = () => {
                 >
                   <View style={styles.modalContainer}>
                     <View style={styles.rulesModalContent}>
-                      <Text style={styles.modalTitle}>MissionDM Rules</Text>
-                      <ScrollView style={{ paddingRight: 7 }}>
-                        <Text style={styles.modalText}>
-                          1. The game will be played March 24th - April 4th.
+                      <View style={styles.rulesHeader}>
+                        <Text style={styles.modalTitle}>MissionDM Rules</Text>
+                      </View>
+                      <ScrollView
+                        style={styles.rulesScroll}
+                        contentContainerStyle={styles.rulesScrollContent}
+                        showsVerticalScrollIndicator={false}
+                      >
+                        <Text style={[styles.modalText, styles.ruleItem]}>
+                          1. The game will be played March 2nd - 27th.
                         </Text>
 
-                        <Text style={styles.modalText}>
+                        <Text style={[styles.modalText, styles.ruleItem]}>
                           2. Any elimination occurring at a safe zone will be
                           discounted and could result in your removal from
                           MissionDM, future Dance Marathon events, or removal
@@ -1252,7 +1269,8 @@ const MissionDM = () => {
                           are considered safe zones:
                         </Text>
 
-                        <View style={styles.bulletList}>
+                        <View style={[styles.bulletList, styles.safeZoneBox]}>
+                          <Text style={styles.safeZoneTitle}>Safe Zones</Text>
                           <Text style={styles.bulletItem}>
                             • UF classrooms and/or inside campus buildings
                           </Text>
@@ -1267,40 +1285,40 @@ const MissionDM = () => {
                           </Text>
                         </View>
 
-                        <Text style={styles.modalText}>
+                        <Text style={[styles.modalText, styles.ruleItem]}>
                           4. Respect people’s privacy, respect those around you,
                           respect property, and treat others as you would like
                           to be treated.
                         </Text>
-                        <Text style={styles.modalText}>
+                        <Text style={[styles.modalText, styles.ruleItem]}>
                           5. You must upload a proper picture of your face and
                           maintain your real name on your DonorDrive profile.
                         </Text>
-                        <Text style={styles.modalText}>
+                        <Text style={[styles.modalText, styles.ruleItem]}>
                           6. Each round will last 3 days with each round
                           starting at 8am and ending at 12am.
                         </Text>
-                        <Text style={styles.modalText}>
+                        <Text style={[styles.modalText, styles.ruleItem]}>
                           7. You must eliminate at least one target in order to
                           move on to the next round. If you do not eliminate
                           your target by the end of the round, you are
                           eliminated.
                         </Text>
-                        <Text style={styles.modalText}>
+                        <Text style={[styles.modalText, styles.ruleItem]}>
                           8. You will receive a new target at the start of each
                           round.
                         </Text>
-                        <Text style={styles.modalText}>
+                        <Text style={[styles.modalText, styles.ruleItem]}>
                           9. When you are eliminated, you must give your code to
                           the agent that eliminated you.
                         </Text>
-                        <Text style={styles.modalText}>
+                        <Text style={[styles.modalText, styles.ruleItem]}>
                           10. Immunity is granted by wearing a party hat on your
                           head. Immunity does not count on the last day of each
                           round, during the entirety of round 4, or during
                           purges.
                         </Text>
-                        <Text style={styles.modalText}>
+                        <Text style={[styles.modalText, styles.ruleItem]}>
                           11. The gamemakers hold the right to announce purges
                           at any time. During a purge, there will be a
                           notification sent and it will display on the screen a
@@ -1309,32 +1327,29 @@ const MissionDM = () => {
                           purge is over once another notification is sent
                           signifying the end of the purge.
                         </Text>
-                        <Text style={styles.modalText}>
+                        <Text style={[styles.modalText, styles.ruleItem]}>
                           12. The gamemakers hold the right to announce times
                           where the immunity party hat does not count. This will
                           be announced through a notification.
                         </Text>
-                        <Text style={styles.modalText}>
+                        <Text style={[styles.modalText, styles.ruleCallout]}>
                           Make sure to take videos of your eliminations and send
-                          them to @dmatufmemes on Instagram!
+                          them to @dmatufspam on Instagram!
                         </Text>
-                        <Text style={styles.modalText}>
+                        <Text style={[styles.modalText, styles.ruleCallout]}>
                           If any agents are being difficult once eliminated,
-                          please contact Sydney Wall at swall@floridadm.org.
+                          please contact Maya Vaidya at mvaidya@floridadm.org.
                         </Text>
-                        <Text style={styles.modalText}>
+                        <Text style={[styles.modalText, styles.ruleCallout]}>
                           If any technical difficulties arise, please contact
-                          technology@floridadm.org.
+                          ehengber@gmail.com.
                         </Text>
                       </ScrollView>
                       <TouchableOpacity
-                        style={[
-                          styles.closeButton,
-                          { marginTop: 10, marginBottom: 0 },
-                        ]}
+                        style={[styles.closeButton, styles.rulesCloseButton]}
                         onPress={() => setIsRulesModalVisible(false)}
                       >
-                        <Text style={styles.closeButtonText}>Close</Text>
+                        <Text style={styles.closeButtonText}>Got It</Text>
                       </TouchableOpacity>
                     </View>
                   </View>
@@ -1374,10 +1389,16 @@ const MissionDM = () => {
                     onPress={() => setIsStatsModalVisible(false)}
                   >
                     <View style={styles.modalContainer}>
-                      <View style={styles.modalContent}>
-                        <Text style={styles.userCodeText}>{userCode}</Text>
+                      <View style={styles.codeModalContent}>
+                        <Text style={styles.modalTitle}>Agent Code</Text>
+                        <Text style={styles.codeModalSubtitle}>
+                          Share only after elimination.
+                        </Text>
+                        <View style={styles.codePill}>
+                          <Text style={styles.userCodeText}>{userCode}</Text>
+                        </View>
                         <TouchableOpacity
-                          style={styles.closeButton}
+                          style={[styles.closeButton, styles.codeCloseButton]}
                           onPress={() => setIsStatsModalVisible(false)}
                         >
                           <Text style={styles.closeButtonText}>Close</Text>
@@ -1452,9 +1473,16 @@ const MissionDM = () => {
               >
                 Thanks for playing!
               </Text>
-              {currentRound <= 2 && Date.now() < currentRoundStart && (
+              {currentRound < 3 && Date.now() < currentRoundStart && (
                 <View style={styles.buttonBox}>
-                  <TouchableOpacity style={styles.orangeButton}>
+                  <TouchableOpacity
+                    style={styles.orangeButton}
+                    onPress={() =>
+                      openWebsite(
+                        "https://dance-marathon-at-uf-510104.square.site/product/2026-mission-dm-buy-back/UFMAKVMHVBRG7VPNQMVTPVAC?cp=true&sa=false&sbp=false&q=true",
+                      )
+                    }
+                  >
                     <Text style={styles.orangeButtonText}>Buy Back In!</Text>
                   </TouchableOpacity>
                 </View>
@@ -2002,21 +2030,26 @@ const styles = StyleSheet.create({
     width: 80,
   },
   inGameTimeBox: {
-    width: 50,
+    width: 56,
     alignItems: "center",
+    justifyContent: "center",
   },
   inGameTimeValue: {
     fontSize: 32,
-    margin: 2,
+    lineHeight: 36,
     fontWeight: 600,
     color: "#FFFFFF",
-    alignText: "center",
+    textAlign: "center",
+    includeFontPadding: false,
+    fontVariant: ["tabular-nums"],
   },
   colon: {
     fontSize: 32,
+    lineHeight: 36,
     fontWeight: 600,
     color: "#FFFFFF",
-    marginBottom: 3,
+    marginBottom: 0,
+    includeFontPadding: false,
   },
   timeLabel: {
     fontSize: 9,
@@ -2139,7 +2172,12 @@ const styles = StyleSheet.create({
   orangeButtonText: {
     color: "white",
     fontSize: 16,
+    lineHeight: 40,
     fontWeight: "bold",
+    textAlign: "center",
+    textAlignVertical: "center",
+    includeFontPadding: false,
+    width: "100%",
   },
   infoButton: {
     position: "absolute",
@@ -2154,13 +2192,14 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0, 0, 0, 0.5)",
   },
   rulesModalContent: {
-    backgroundColor: "#233d72",
-    padding: 20,
-    paddingBottom: 10,
-    borderRadius: 10,
-    width: "90%",
+    backgroundColor: "#16263F",
+    borderColor: "#2D4670",
+    borderWidth: 1,
+    padding: 18,
+    borderRadius: 16,
+    width: "92%",
+    maxHeight: "82%",
     alignItems: "center",
-    height: "80%",
   },
   modalContent: {
     backgroundColor: "#233d72",
@@ -2170,21 +2209,79 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   modalTitle: {
-    fontSize: 20,
+    fontSize: 24,
     color: "white",
     fontWeight: "bold",
-    marginBottom: 10,
+    marginBottom: 4,
   },
   modalText: {
     color: "white",
-    fontSize: 16,
+    fontSize: 15,
+    lineHeight: 22,
+  },
+  rulesHeader: {
+    width: "100%",
+    alignItems: "center",
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#2D4670",
+    marginBottom: 12,
+  },
+  rulesSubtitle: {
+    color: "#B8CAE6",
+    fontSize: 13,
+  },
+  rulesScroll: {
+    width: "100%",
+  },
+  rulesScrollContent: {
+    paddingBottom: 8,
+    paddingRight: 4,
+  },
+  ruleItem: {
+    backgroundColor: "#1E3354",
+    borderRadius: 10,
+    padding: 10,
     marginBottom: 10,
   },
+  ruleCallout: {
+    backgroundColor: "#223C66",
+    borderLeftWidth: 3,
+    borderLeftColor: "#F18221",
+    borderRadius: 10,
+    padding: 10,
+    marginBottom: 10,
+  },
+  codeModalContent: {
+    backgroundColor: "#16263F",
+    borderColor: "#2D4670",
+    borderWidth: 1,
+    padding: 20,
+    borderRadius: 16,
+    width: "86%",
+    alignItems: "center",
+  },
+  codeModalSubtitle: {
+    color: "#B8CAE6",
+    fontSize: 13,
+    marginBottom: 14,
+  },
+  codePill: {
+    width: "100%",
+    backgroundColor: "#1E3354",
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: "#2D4670",
+    marginBottom: 16,
+  },
   userCodeText: {
-    color: "white",
+    color: "#F6C58E",
     fontWeight: "bold",
-    fontSize: 48,
-    marginBottom: 20,
+    fontSize: 42,
+    letterSpacing: 3,
+    textAlign: "center",
   },
   closeButton: {
     backgroundColor: "#f18221",
@@ -2205,13 +2302,35 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   bulletList: {
-    marginLeft: 20,
+    marginLeft: 0,
     marginBottom: 10,
   },
+  safeZoneBox: {
+    backgroundColor: "#1E3354",
+    borderRadius: 10,
+    padding: 10,
+  },
+  safeZoneTitle: {
+    fontSize: 14,
+    color: "#F6C58E",
+    fontWeight: "700",
+    marginBottom: 6,
+  },
   bulletItem: {
-    fontSize: 16,
-    lineHeight: 24,
+    fontSize: 15,
+    lineHeight: 22,
     color: "white",
+    marginBottom: 3,
+  },
+  rulesCloseButton: {
+    marginTop: 12,
+    marginBottom: 0,
+    width: "100%",
+    paddingVertical: 12,
+  },
+  codeCloseButton: {
+    width: "100%",
+    paddingVertical: 12,
   },
   adminButton: {
     padding: 8,

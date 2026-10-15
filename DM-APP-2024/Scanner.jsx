@@ -2,17 +2,81 @@ import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
-  Button,
   StyleSheet,
   Modal,
   TouchableOpacity,
+  ScrollView,
 } from "react-native";
-import CheckBox from "expo-checkbox"; // Updated import
+import { MultiSelect } from "react-native-element-dropdown";
 import { CameraView, Camera } from "expo-camera";
+import {
+  collection,
+  getDocs,
+  query,
+  where,
+  doc,
+  updateDoc,
+  increment,
+  addDoc,
+  serverTimestamp,
+} from "firebase/firestore";
 import axios from "axios";
 import getAccessToken from "./api/googleAuth";
 import { getUserData } from "./Firebase/UserManager";
+import { auth } from "./Firebase/AuthManager";
+import { db } from "./Firebase/firestore";
 import { getUserInfo } from "./api/index";
+import { colors, card } from "./theme";
+
+// The old Google Sheets logging path is being kept as a fallback during the
+// Firestore-based spirit points trial, but disabled so it doesn't actually
+// write on every scan. Flip this back to true to re-enable it if needed.
+const LEGACY_SHEETS_WRITE_ENABLED = false;
+
+const DEFAULT_SCANNER_OPTIONS = [
+  {
+    label: "Attend a Hospitality Night",
+    value: "Attend a Hospitality Night",
+    points: 1,
+    sortOrder: 1,
+  },
+  {
+    label: "Register a Miracle Maker",
+    value: "Register a Miracle Maker",
+    points: 5,
+    sortOrder: 2,
+  },
+  {
+    label: "Attend an organization's fundraiser",
+    value: "Attend an organization's fundraiser",
+    points: 3,
+    sortOrder: 3,
+  },
+  {
+    label: "Support a team fundraiser",
+    value: "Support a team fundraiser",
+    points: 3,
+    sortOrder: 4,
+  },
+  {
+    label: "Wear your DM merch at check-ins",
+    value: "Wear your DM merch at check-ins",
+    points: 1,
+    sortOrder: 5,
+  },
+  {
+    label: "Attend check-ins",
+    value: "Attend check-ins",
+    points: 1,
+    sortOrder: 6,
+  },
+  {
+    label: "Buy DM merch",
+    value: "Buy DM merch",
+    points: 3,
+    sortOrder: 7,
+  },
+];
 
 const Scanner = () => {
   const [hasPermission, setHasPermission] = useState(null);
@@ -31,16 +95,59 @@ const Scanner = () => {
   const [userInfo, setUserInfo] = useState({});
 
   const [requestStatus, setRequestStatus] = useState("");
-
-  const [option1Checked, setOption1Checked] = useState(false);
-  const [option2Checked, setOption2Checked] = useState(false);
-  const [option3Checked, setOption3Checked] = useState(false);
-  const [option4Checked, setOption4Checked] = useState(false);
-  const [option5Checked, setOption5Checked] = useState(false);
-  const [option6Checked, setOption6Checked] = useState(false);
-  const [option7Checked, setOption7Checked] = useState(false);
+  const [selectedReasons, setSelectedReasons] = useState([]);
+  const [isDropdownFocus, setIsDropdownFocus] = useState(false);
+  const [scannerOptions, setScannerOptions] = useState(DEFAULT_SCANNER_OPTIONS);
 
   const scanLock = useRef(false);
+
+  const removeSelectedReason = (reasonToRemove) => {
+    setSelectedReasons((current) =>
+      current.filter((reason) => reason !== reasonToRemove),
+    );
+  };
+
+  useEffect(() => {
+    const fetchScannerOptions = async () => {
+      try {
+        const opportunitiesQuery = query(
+          collection(db, "SpiritPoints"),
+          where("active", "==", true),
+        );
+        const querySnapshot = await getDocs(opportunitiesQuery);
+
+        const fetchedOptions = querySnapshot.docs
+          .map((docSnapshot) => {
+            const data = docSnapshot.data();
+            const label = data.label?.trim();
+
+            if (!label) {
+              return null;
+            }
+
+            return {
+              label,
+              value: data.value?.trim() || label,
+              points: Number(data.points) || 0,
+              sortOrder: Number(data.sortOrder) || 999,
+            };
+          })
+          .filter(Boolean)
+          .sort((a, b) => a.sortOrder - b.sortOrder);
+
+        if (fetchedOptions.length > 0) {
+          setScannerOptions(fetchedOptions);
+        } else {
+          setScannerOptions(DEFAULT_SCANNER_OPTIONS);
+        }
+      } catch (error) {
+        console.error("Error fetching scanner opportunities:", error);
+        setScannerOptions(DEFAULT_SCANNER_OPTIONS);
+      }
+    };
+
+    fetchScannerOptions();
+  }, []);
 
   useEffect(() => {
     const getCameraPermissions = async () => {
@@ -74,7 +181,7 @@ const Scanner = () => {
   const fetchData = async () => {
     try {
       const response = await axios.get(
-        `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${range}?key=${apiKey}`
+        `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${range}?key=${apiKey}`,
       );
       setData(response.data.values);
       return response.data.values;
@@ -86,7 +193,7 @@ const Scanner = () => {
   const fetchIndividualData = async () => {
     try {
       const response = await axios.get(
-        `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${range2}?key=${apiKey}`
+        `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${range2}?key=${apiKey}`,
       );
       setIndividualData(response.data.values);
       return response.data.values;
@@ -108,14 +215,18 @@ const Scanner = () => {
     date,
     time,
     giver,
-    value
+    value,
+    captainTeam,
   ) => {
     const SPREADSHEET_ID = "1VTr6Jq_UbrJ1HEUTxCo0TlLvoLXc5PaPagufrzbAAxY";
 
     try {
       const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/Sheet3:append?valueInputOption=RAW`;
 
-      const rowData = [recipient, team, reason, date, time, giver, value];
+      // captainTeam is always appended as the 8th (last) column, never
+      // inserted mid-row — keeps "Value" and everything before it at their
+      // existing fixed positions for anything else reading Sheet3.
+      const rowData = [recipient, team, reason, date, time, giver, value, captainTeam];
 
       const postData = {
         values: [rowData],
@@ -134,7 +245,7 @@ const Scanner = () => {
     } catch (error) {
       console.error(
         "Error adding row to sheet:",
-        error.response ? error.response.data : error.message
+        error.response ? error.response.data : error.message,
       );
       setRequestStatus("Failed to add row to sheet.");
     }
@@ -167,6 +278,50 @@ const Scanner = () => {
     })();
   }, []);
 
+  // PARALLEL SYSTEM (in testing) — mirrors every scan into Firestore
+  // alongside the existing Google Sheets write, so the two can be compared
+  // before the Sheets/script-based system is retired. A failure here is
+  // logged but never blocks the existing (working) Sheets flow.
+  const awardSpiritPointsInFirestore = async (recipient, selectedOptions) => {
+    if (!recipient.uid) {
+      console.warn(
+        "Skipping Firestore spirit points write: QR code has no uid (stale code from before this feature shipped).",
+      );
+      return;
+    }
+
+    try {
+      const totalPoints = selectedOptions.reduce(
+        (sum, option) => sum + Number(option.points || 0),
+        0,
+      );
+
+      await updateDoc(doc(db, "Users", recipient.uid), {
+        spiritPoints: increment(totalPoints),
+        // Denormalized here so the leaderboard can display a name without
+        // needing a separate (slow, rate-limited) DonorDrive lookup per user.
+        displayName: recipient.name,
+      });
+
+      const awardsRef = collection(db, "SpiritPointAwards");
+      for (const selectedOption of selectedOptions) {
+        await addDoc(awardsRef, {
+          recipientID: recipient.uid,
+          recipientName: recipient.name,
+          team: recipient.team,
+          captainTeam: recipient.captainTeam,
+          reason: selectedOption.label,
+          points: selectedOption.points,
+          giverID: auth.currentUser?.uid || null,
+          giverName: userInfo.displayName || null,
+          createdAt: serverTimestamp(),
+        });
+      }
+    } catch (error) {
+      console.error("Error writing spirit points to Firestore:", error);
+    }
+  };
+
   const handleBarCodeScanned = async ({ type, data }) => {
     if (scanLock.current) return;
     scanLock.current = true;
@@ -174,56 +329,42 @@ const Scanner = () => {
 
     const extractedData = await parseQRCodeData(data);
     if (extractedData || extractedData.name !== "undefined") {
-      const ACCESS_TOKEN = await getAccessToken();
       setUserData(extractedData);
 
-      const options = [
-        { label: "Checked-In", checked: option1Checked, points: 1 },
-        {
-          label: "Wore DM Shirt to Check-In",
-          checked: option2Checked,
-          points: 1,
-        },
-        {
-          label: "Brought A Friend to Check-In",
-          checked: option3Checked,
-          points: 1,
-        },
-        { label: "Attended All-Member", checked: option4Checked, points: 1 },
-        { label: "Attended Spirit Night", checked: option5Checked, points: 2 },
-      ];
-
-      const selectedOptions = options.filter((option) => option.checked);
+      const selectedOptions = scannerOptions.filter((option) =>
+        selectedReasons.includes(option.value),
+      );
 
       if (selectedOptions.length > 0) {
-        for (const option of selectedOptions) {
+        if (LEGACY_SHEETS_WRITE_ENABLED) {
+          const ACCESS_TOKEN = await getAccessToken();
           const date = getCurrentDate();
           const time = getCurrentTime();
           const giver = userInfo.displayName;
-          await postRowToSheet(
-            ACCESS_TOKEN,
-            extractedData.name,
-            extractedData.team,
-            option.label,
-            date,
-            time,
-            giver,
-            option.points
-          );
+
+          for (const selectedOption of selectedOptions) {
+            await postRowToSheet(
+              ACCESS_TOKEN,
+              extractedData.name,
+              extractedData.team,
+              selectedOption.label,
+              date,
+              time,
+              giver,
+              selectedOption.points,
+              extractedData.captainTeam,
+            );
+          }
         }
+
+        await awardSpiritPointsInFirestore(extractedData, selectedOptions);
       }
     } else {
       setUserData({ name: "Invalid QR code", team: "" });
     }
     setModalVisible(false);
     setScanned(false);
-    setOption1Checked(false);
-    setOption2Checked(false);
-    setOption3Checked(false);
-    setOption4Checked(false);
-    setOption5Checked(false);
-    setOption6Checked(false);
-    setOption7Checked(false);
+    setSelectedReasons([]);
 
     scanLock.current = false;
   };
@@ -294,8 +435,20 @@ const Scanner = () => {
       const parts = data.split(", ");
       const namePart = parts[0].split("name: ")[1];
       const teamPart = parts[1].split("team: ")[1];
+      // Older QR codes won't have this segment at all; missing, blank, or
+      // "N/A" all normalize to "N/A" so the org write is never blocked.
+      const captainTeamPart = parts[2]?.split("captainTeam: ")[1];
+      // uid was added later too — QR codes regenerate live each time the
+      // Spirit screen renders, so this is only absent for a brief window
+      // right after this change ships, never for long-lived stale codes.
+      const uidPart = parts[3]?.split("uid: ")[1];
       if (namePart && teamPart) {
-        return { name: namePart, team: teamPart };
+        return {
+          name: namePart,
+          team: teamPart,
+          captainTeam: captainTeamPart || "N/A",
+          uid: uidPart || null,
+        };
       }
       return null;
     } catch (error) {
@@ -304,82 +457,79 @@ const Scanner = () => {
   };
 
   return (
-    <View
-      style={{
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-        backgroundColor: "#1F1F1F",
-      }}
-    >
-      <View style={styles.container}>
-        <Text style={styles.header}>Scan Spirit Points</Text>
-        <View style={styles.checkboxContainer}>
-          <CheckBox
-            value={option1Checked}
-            onValueChange={setOption1Checked}
-            style={styles.checkbox}
+    <View style={styles.screen}>
+      <ScrollView contentContainerStyle={styles.screenContent}>
+        <View style={[card, styles.container]}>
+          <Text style={styles.header}>Scan Spirit Points</Text>
+          <Text style={styles.dropdownLabel}>Select reason(s)</Text>
+          <MultiSelect
+            style={[styles.dropdown, isDropdownFocus && styles.dropdownFocused]}
+            placeholderStyle={styles.dropdownPlaceholder}
+            selectedTextStyle={styles.dropdownSelectedText}
+            containerStyle={styles.dropdownContainer}
+            itemTextStyle={styles.dropdownItemText}
+            activeColor={colors.lightBlue}
+            visibleSelectedItem={false}
+            data={scannerOptions}
+            labelField="label"
+            valueField="value"
+            placeholder="Choose one or more reasons"
+            value={selectedReasons}
+            onFocus={() => setIsDropdownFocus(true)}
+            onBlur={() => setIsDropdownFocus(false)}
+            onChange={(items) => {
+              setSelectedReasons(items);
+            }}
           />
-          <Text style={styles.optionText}> Checked-In</Text>
+          {selectedReasons.length > 0 && (
+            <View style={styles.selectedReasonsContainer}>
+              {selectedReasons.map((reason) => {
+                const selectedOption = scannerOptions.find(
+                  (option) => option.value === reason,
+                );
+
+                return (
+                  <View key={reason} style={styles.selectedReasonPill}>
+                    <Text style={styles.selectedReasonText}>
+                      {selectedOption?.label || reason}
+                    </Text>
+                    <TouchableOpacity
+                      onPress={() => removeSelectedReason(reason)}
+                      style={styles.selectedReasonRemove}
+                    >
+                      <Text style={styles.selectedReasonRemoveText}>x</Text>
+                    </TouchableOpacity>
+                  </View>
+                );
+              })}
+            </View>
+          )}
+
+          <TouchableOpacity
+            onPress={() => setModalVisible(true)}
+            style={styles.scannerOpen}
+          >
+            <Text style={styles.openScannerText}>Open Scanner</Text>
+          </TouchableOpacity>
         </View>
-        <View style={styles.checkboxContainer}>
-          <CheckBox
-            value={option2Checked}
-            onValueChange={setOption2Checked}
-            style={styles.checkbox}
-          />
-          <Text style={styles.optionText}> Wore DM Shirt to Check-In</Text>
-        </View>
-        <View style={styles.checkboxContainer}>
-          <CheckBox
-            value={option3Checked}
-            onValueChange={setOption3Checked}
-            style={styles.checkbox}
-          />
-          <Text style={styles.optionText}> Brought A Friend to Check-In</Text>
-        </View>
-        <View style={styles.checkboxContainer}>
-          <CheckBox
-            value={option4Checked}
-            onValueChange={setOption4Checked}
-            style={styles.checkbox}
-          />
-          <Text style={styles.optionText}>
-            {" "}
-            Attended All-Member / Captain Meeting
+
+        <View style={[card, styles.resultContainer]}>
+          <Text style={styles.header}>Scanned User Data</Text>
+          <Text style={styles.infoText}>
+            <Text style={styles.infoLabel}>User Name: </Text>
+            {userData.name}
           </Text>
+
+          <Text style={styles.infoText}>
+            <Text style={styles.infoLabel}>User Team: </Text>
+            {userData.team}
+          </Text>
+          {requestStatus ? (
+            <Text style={styles.statusText}>{requestStatus}</Text>
+          ) : null}
         </View>
-        <View style={styles.checkboxContainer}>
-          <CheckBox
-            value={option5Checked}
-            onValueChange={setOption5Checked}
-            style={styles.checkbox}
-          />
-          <Text style={styles.optionText}> Attended Spirit Night</Text>
-        </View>
-        <View style={styles.checkboxContainer}>
-          <CheckBox
-            value={option6Checked}
-            onValueChange={setOption6Checked}
-            style={styles.checkbox}
-          />
-          <Text style={styles.optionText}> Purchased Merchandise</Text>
-        </View>
-        <View style={styles.checkboxContainer}>
-          <CheckBox
-            value={option7Checked}
-            onValueChange={setOption7Checked}
-            style={styles.checkbox}
-          />
-          <Text style={styles.optionText}> Attended TT Event</Text>
-        </View>
-        <TouchableOpacity
-          onPress={() => setModalVisible(true)}
-          style={[styles.scannerOpen, { alignSelf: "center" }]}
-        >
-          <Text style={styles.openScannerText}>Open Scanner</Text>
-        </TouchableOpacity>
-      </View>
+      </ScrollView>
+
       <Modal
         animationType="slide"
         transparent={false}
@@ -413,60 +563,50 @@ const Scanner = () => {
           )}
         </View>
       </Modal>
-
-      <View style={styles.resultContainer}>
-        <Text style={[styles.header, { marginTop: 0 }]}>Scanned User Data</Text>
-        <Text style={styles.infoText}>
-          <Text style={{ fontWeight: "bold" }}>User Name: </Text>
-          {userData.name}
-        </Text>
-
-        <Text style={styles.infoText}>
-          <Text style={{ fontWeight: "bold" }}>User Team: </Text>
-          {userData.team}
-        </Text>
-        {requestStatus ? (
-          <Text style={styles.statusText}>{requestStatus}</Text>
-        ) : null}
-      </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  checkboxContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 10,
-    marginLeft: 15,
+  screen: {
+    flex: 1,
+    backgroundColor: colors.pageBackground,
+  },
+  screenContent: {
+    padding: 16,
+    paddingBottom: 40,
   },
   modalContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    backgroundColor: "black",
   },
   infoText: {
-    fontSize: 18,
-    marginVertical: 5,
-    color: "#fff",
+    fontSize: 16,
+    marginVertical: 4,
+    color: colors.text,
+  },
+  infoLabel: {
+    fontWeight: "700",
   },
   closeButton: {
     position: "absolute",
     bottom: 50,
-    backgroundColor: "#ff5c5c",
+    backgroundColor: colors.danger,
     padding: 10,
-    borderRadius: 5,
+    borderRadius: 8,
   },
   closeButtonText: {
     color: "#fff",
     fontSize: 18,
   },
   topText: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "bold",
-    color: "red",
+    color: "white",
     textAlign: "center",
-    backgroundColor: "black",
+    backgroundColor: "rgba(0,0,0,0.6)",
     padding: 10,
   },
   infoContainer: {
@@ -478,9 +618,9 @@ const styles = StyleSheet.create({
   scannedText: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "green",
+    color: "#4CAF50",
     textAlign: "center",
-    backgroundColor: "black",
+    backgroundColor: "rgba(0,0,0,0.6)",
     padding: 10,
   },
   scannedContainer: {
@@ -490,75 +630,107 @@ const styles = StyleSheet.create({
     marginBottom: 100,
   },
   statusText: {
-    marginTop: 20,
-    fontSize: 16,
-    color: "white",
+    marginTop: 12,
+    fontSize: 14,
+    color: colors.textSecondary,
     textAlign: "center",
   },
   container: {
-    padding: 10,
-    borderRadius: 9,
-    backgroundColor: "#233d72",
-    shadowColor: "rgba(0, 0, 0, 0.25)",
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowRadius: 4,
-    elevation: 4,
-    shadowOpacity: 1,
-    width: 340,
-    maxHeight: 290,
-    marginTop: 5,
+    padding: 16,
+    marginBottom: 16,
   },
   header: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#fff",
+    fontSize: 17,
+    fontWeight: "700",
+    color: colors.text,
     textAlign: "center",
-    marginBottom: 15,
+    marginBottom: 12,
+  },
+  dropdownLabel: {
+    color: colors.textSecondary,
+    fontSize: 14,
+    marginBottom: 8,
+  },
+  dropdown: {
+    minHeight: 46,
+    backgroundColor: colors.pageBackground,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: colors.cardBorder,
+    paddingHorizontal: 12,
+  },
+  dropdownFocused: {
+    borderColor: colors.orange,
+  },
+  dropdownPlaceholder: {
+    color: colors.textMuted,
+    fontSize: 15,
+  },
+  dropdownSelectedText: {
+    color: colors.text,
+    fontSize: 15,
+  },
+  dropdownContainer: {
+    backgroundColor: "white",
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: colors.cardBorder,
+  },
+  dropdownItemText: {
+    color: colors.text,
+    fontSize: 15,
+  },
+  selectedReasonsContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
     marginTop: 10,
+    gap: 8,
   },
-  optionText: {
-    color: "#fff",
-    fontSize: 16,
+  selectedReasonPill: {
+    maxWidth: "100%",
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.lightOrange,
+    borderRadius: 18,
+    paddingLeft: 12,
+    paddingRight: 8,
+    paddingVertical: 8,
   },
-  checkbox: {
-    marginRight: 8,
+  selectedReasonText: {
+    color: colors.orange,
+    fontSize: 13,
+    fontWeight: "600",
+    flexShrink: 1,
+    paddingRight: 8,
+  },
+  selectedReasonRemove: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: "rgba(232,119,34,0.25)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  selectedReasonRemoveText: {
+    color: colors.orange,
+    fontSize: 11,
+    fontWeight: "bold",
   },
   scannerOpen: {
-    marginTop: 10,
+    marginTop: 16,
     borderRadius: 10,
-    backgroundColor: "#f18221",
-    width: 140,
-    height: 40,
-    marginBottom: 10,
+    backgroundColor: colors.orange,
+    paddingVertical: 12,
+    alignItems: "center",
   },
   openScannerText: {
     textAlign: "center",
-    fontSize: 16,
-    fontFamily: "Outfit-Bold",
+    fontSize: 15,
     fontWeight: "700",
     color: "#fff",
-    position: "absolute",
-    top: 10,
-    left: 15,
   },
   resultContainer: {
-    marginTop: 20,
-    padding: 20,
-    borderRadius: 9,
-    backgroundColor: "#233d72",
-    shadowColor: "rgba(0, 0, 0, 0.25)",
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowRadius: 4,
-    elevation: 4,
-    shadowOpacity: 1,
-    width: 340,
-    maxHeight: 200,
+    padding: 16,
   },
 });
 

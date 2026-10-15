@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect } from "react";
+import React, { createContext, useState, useEffect, useCallback } from "react";
 import {
   getUserInfo,
   getUserMilestones,
@@ -12,6 +12,8 @@ export const UserContext = createContext();
 export const UserProvider = ({ children }) => {
   const [userID, setUserID] = useState(null);
   const [role, setRole] = useState(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [captainTeam, setCaptainTeam] = useState("");
   const [userInfo, setUserInfo] = useState(null);
   const [milestoneInfo, setMilestoneInfo] = useState(null);
   const [donationInfo, setDonationInfo] = useState(null);
@@ -64,16 +66,27 @@ export const UserProvider = ({ children }) => {
   //     setIsLoadingUserInfo(false);
   //   }
   // };
-  const refetchUserData = async () => {
+  const refetchUserData = useCallback(async (options = {}) => {
     setIsLoadingUserInfo(true);
     setIsLoadingMilestones(true);
     setIsLoadingDonations(true);
 
     try {
-      const userData = await getUserData();
-      // console.log("userData: ", JSON.stringify(userData));
+      const userData = await getUserData(options);
+      if (!userData) {
+        setUserID(null);
+        setRole(null);
+        setUserInfo(null);
+        setMilestoneInfo(null);
+        setDonationInfo(null);
+        setBadgeInfo(null);
+        return;
+      }
+      console.log("userData: ", JSON.stringify(userData));
       setUserID(userData.donorID);
       setRole(userData.role);
+      setIsAdmin(userData.isAdmin === true);
+      setCaptainTeam(userData.captainTeam || "");
 
       const [userInfoData, milestonesData, donationsData, badgesData] =
         await Promise.all([
@@ -94,7 +107,7 @@ export const UserProvider = ({ children }) => {
       setIsLoadingMilestones(false);
       setIsLoadingDonations(false);
     }
-  };
+  }, []);
 
   // 2. Replace the initial useEffect with a call to the new function
   useEffect(() => {
@@ -154,6 +167,8 @@ export const UserProvider = ({ children }) => {
       value={{
         userID,
         role,
+        isAdmin,
+        captainTeam,
         userInfo,
         milestoneInfo,
         donationInfo,
