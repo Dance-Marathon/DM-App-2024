@@ -1,0 +1,94 @@
+diff --git a/node_modules/expo-modules-core/ios/Core/Events/EventDispatcher.swift b/node_modules/expo-modules-core/ios/Core/Events/EventDispatcher.swift
+index 4bbbc98..fc1727d 100644
+--- a/node_modules/expo-modules-core/ios/Core/Events/EventDispatcher.swift
++++ b/node_modules/expo-modules-core/ios/Core/Events/EventDispatcher.swift
+@@ -18,8 +18,38 @@ public final class EventDispatcher {
+   /**
+    A function that is invoked to dispatch the event, no-op by default.
+    Something that manages the events should override it.
++
++   PATCHED (see patches/expo-modules-core+*.patch): there is a real window,
++   on view construction, between native code being able to fire an event and
++   `installEventDispatcher` assigning this handler. An event dispatched in
++   that window used to hit `handler?(...)` while `handler` was still nil and
++   get silently dropped — no error, no retry, the JS side simply never finds
++   out. For CameraView's onCameraReady this meant the native camera session
++   was genuinely running (confirmed by iOS's camera-in-use indicator) while
++   JS never learned it was ready, so the preview never showed anything
++   despite the camera actually working. See
++   https://github.com/expo/expo/issues/49760. The `didSet` below flushes any
++   payload that arrived before a handler existed, the moment one is assigned,
++   instead of losing it.
++   */
++  internal var handler: Handler? {
++    didSet {
++      guard let handler else { return }
++      let buffered = pendingPayloads
++      pendingPayloads.removeAll()
++      buffered.forEach { handler($0) }
++    }
++  }
++
++  /**
++   Payloads dispatched before `handler` was assigned, waiting to be flushed.
++   Capped so an EventDispatcher that's intentionally never given a handler —
++   some are "no-op by default" by design — can't grow unbounded over a long
++   view lifetime; this only needs to bridge the brief real startup race, not
++   buffer an indefinite stream.
+    */
+-  internal var handler: Handler?
++  private var pendingPayloads: [[String: Any]] = []
++  private let maxPendingPayloads = 32
+ 
+   public var onEventSent: (([String: Any]) -> Void)?
+ 
+@@ -31,30 +61,43 @@ public final class EventDispatcher {
+     self.customName = customName
+   }
+ 
++  /**
++   Delivers the payload immediately if a handler is already installed, otherwise buffers it to be
++   flushed once one is. See the note on `handler` above.
++   */
++  private func deliverOrBuffer(_ payload: [String: Any]) {
++    if let handler {
++      handler(payload)
++    } else {
++      pendingPayloads.append(payload)
++      if pendingPayloads.count > maxPendingPayloads {
++        pendingPayloads.removeFirst(pendingPayloads.count - maxPendingPayloads)
++      }
++    }
++    onEventSent?(payload)
++  }
++
+   // MARK: - Calling as function
+ 
+   /**
+    Dispatches the event with the given dictionary as a payload.
+    */
+   public func callAsFunction(_ payload: [String: Any]) {
+-    handler?(payload)
+-    onEventSent?(payload)
++    deliverOrBuffer(payload)
+   }
+ 
+   /**
+    Dispatches the event with the given record as a payload.
+    */
+   public func callAsFunction(_ payload: Record) {
+-    handler?(payload.toDictionary())
+-    onEventSent?(payload.toDictionary())
++    deliverOrBuffer(payload.toDictionary())
+   }
+ 
+   /**
+    Dispatches the event with an empty payload.
+    */
+   public func callAsFunction() {
+-    handler?([:])
+-    onEventSent?([:])
++    deliverOrBuffer([:])
+   }
+ }
+ 

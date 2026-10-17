@@ -5,7 +5,8 @@
     "start": "expo start --dev-client",
     "android": "expo run:android",
     "ios": "expo run:ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "postinstall": "patch-package"
   },
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "^6.7.2",
@@ -75,7 +76,8 @@
     "stream": "^0.0.2"
   },
   "devDependencies": {
-    "@babel/core": "^7.24.0"
+    "@babel/core": "^7.24.0",
+    "patch-package": "^8.0.1"
   },
   "overrides": {
     "@react-native-async-storage/async-storage": "2.2.0",

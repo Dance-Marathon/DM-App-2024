@@ -22,15 +22,18 @@ import { faX } from "@fortawesome/free-solid-svg-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { UserContext } from "./api/calls";
+import { invalidateDonorDriveCache } from "./api";
+import { getRateLimitNotice } from "./RefreshBar";
 
 import { updateDDLink } from "./Firebase/AuthManager";
 import { updateUserData } from "./Firebase/UserManager";
 import { auth } from "./Firebase/AuthManager";
 import TopBar from "./TopBar";
 import { colors, card } from "./theme";
-import { MANAGER_TEAM_GROUPS, TEAM_TAB_SINGLE_ROLES } from "./constants";
+import { getTeamOptionsFor, displayRole } from "./constants";
 import FundraiserTeam from "./FundraiserTeam";
 import TeamFundraiserView from "./TeamFundraiserView";
+import { useColorTeams } from "./ColorTeamsContext";
 
 const currency = (n) =>
   `$${(n || 0).toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
@@ -59,11 +62,15 @@ const Fundraiser = () => {
 
   const [linkError, setLinkError] = useState("");
   const [activeTab, setActiveTab] = useState("Personal");
+  // Once the Team tab has been opened, keep FundraiserTeam mounted (just
+  // hidden) so switching tabs doesn't trigger a full DonorDrive refetch.
+  const [teamTabOpened, setTeamTabOpened] = useState(false);
 
   const {
     userID,
     role,
     captainTeam,
+    organization,
     userInfo,
     milestoneInfo,
     donationInfo,
@@ -71,8 +78,11 @@ const Fundraiser = () => {
     isLoadingUserInfo,
     isLoadingMilestones,
     isLoadingDonations,
+    dataIsStale,
     refetchUserData,
   } = useContext(UserContext);
+  const { colorTeamsEnabled, getTeamForOrg } = useColorTeams();
+  const myTeam = colorTeamsEnabled ? getTeamForOrg(organization) : null;
 
   const toastConfig = {
     success: (props) => (
@@ -90,9 +100,7 @@ const Fundraiser = () => {
     ),
   };
 
-  const isMultiTeamManager = Boolean(MANAGER_TEAM_GROUPS[role]);
-  const isSingleTeamRole = TEAM_TAB_SINGLE_ROLES.includes(role);
-  const showTeamTab = isMultiTeamManager || isSingleTeamRole;
+  const showTeamTab = getTeamOptionsFor(role, captainTeam).length > 0;
 
   const toggleAccountModel = () => {
     setLinkError("");
@@ -124,6 +132,10 @@ const Fundraiser = () => {
   useEffect(() => {
     refetchUserData();
   }, []);
+
+  useEffect(() => {
+    if (activeTab === "Team") setTeamTabOpened(true);
+  }, [activeTab]);
 
   useEffect(() => {
     if (userID && userInfo?.numMilestones) {
@@ -213,6 +225,8 @@ const Fundraiser = () => {
 
     try {
       setIsRefreshing(true);
+      // Skip the short-lived cache so this actually fetches fresh numbers.
+      invalidateDonorDriveCache();
       await refetchUserData();
     } finally {
       setIsRefreshing(false);
@@ -315,11 +329,27 @@ const Fundraiser = () => {
           <TouchableWithoutFeedback onPress={() => setModalVisible(false)}>
             <View style={styles.modalBackground}>
               <TouchableWithoutFeedback>
-                <View style={styles.modalView}>
+                <View
+                  style={[
+                    styles.modalView,
+                    myTeam && { backgroundColor: myTeam.color },
+                  ]}
+                >
                   <View style={styles.modalHeader}>
-                    <Text style={styles.milestonesTitle}>Milestones</Text>
+                    <Text
+                      style={[
+                        styles.milestonesTitle,
+                        myTeam && { color: myTeam.textColor },
+                      ]}
+                    >
+                      Milestones
+                    </Text>
                     <TouchableOpacity onPress={() => setModalVisible(false)}>
-                      <FontAwesomeIcon icon={faX} size={18} color={colors.text} />
+                      <FontAwesomeIcon
+                        icon={faX}
+                        size={18}
+                        color={myTeam ? myTeam.textColor : colors.text}
+                      />
                     </TouchableOpacity>
                   </View>
                   <View style={styles.modalMilestonesContainer}>
@@ -335,19 +365,34 @@ const Fundraiser = () => {
                             }
                             type="font-awesome-5"
                             size={20}
-                            color={colors.navy}
+                            color={myTeam ? myTeam.textColor : colors.navy}
                             style={{ marginRight: 10 }}
                           />
-                          <Text style={styles.milestoneAmount}>
+                          <Text
+                            style={[
+                              styles.milestoneAmount,
+                              myTeam && { color: myTeam.textColor },
+                            ]}
+                          >
                             ${milestone.fundraisingGoal}
                           </Text>
-                          <Text style={styles.milestoneDescription}>
+                          <Text
+                            style={[
+                              styles.milestoneDescription,
+                              myTeam && { color: myTeam.textColor, opacity: 0.85 },
+                            ]}
+                          >
                             {milestone.description}
                           </Text>
                         </View>
                       ))
                     ) : (
-                      <Text style={styles.noMilestonesText}>
+                      <Text
+                        style={[
+                          styles.noMilestonesText,
+                          myTeam && { color: myTeam.textColor, opacity: 0.85 },
+                        ]}
+                      >
                         No milestones to display
                       </Text>
                     )}
@@ -375,7 +420,7 @@ const Fundraiser = () => {
             <Text style={styles.displayName} numberOfLines={1}>
               {userInfo.displayName}
             </Text>
-            <Text style={styles.roleText}>{role}</Text>
+            <Text style={styles.roleText}>{displayRole(role)}</Text>
             <View style={styles.tagsRow}>
               {captainTeam && captainTeam !== "N/A" && (
                 <View style={styles.tagPill}>
@@ -387,12 +432,26 @@ const Fundraiser = () => {
                   <Text style={styles.tagPillText}>{userInfo.teamName}</Text>
                 </View>
               ) : null}
+              {myTeam && (
+                <View style={[styles.tagPill, { backgroundColor: myTeam.color }]}>
+                  <Text style={[styles.tagPillText, { color: myTeam.textColor }]}>
+                    {myTeam.id} Team
+                  </Text>
+                </View>
+              )}
             </View>
           </View>
         </View>
 
-        <View style={styles.heroCard}>
-          <Text style={styles.heroRaised}>
+        <View
+          style={[
+            styles.heroCard,
+            myTeam && { backgroundColor: myTeam.color },
+          ]}
+        >
+          <Text
+            style={[styles.heroRaised, myTeam && { color: myTeam.textColor }]}
+          >
             {currency(userInfo.sumDonations)} raised
           </Text>
           <View style={{ position: "relative" }}>
@@ -406,11 +465,21 @@ const Fundraiser = () => {
               style={styles.progressBar}
             />
           </View>
-          <Text style={styles.heroSubtext}>
+          <Text
+            style={[
+              styles.heroSubtext,
+              myTeam && { color: myTeam.textColor, opacity: 0.75 },
+            ]}
+          >
             {allDonations?.length || 0} donors · goal {currency(userInfo.fundraisingGoal)}
           </Text>
           <View style={styles.milestoneFooter}>
-            <Text style={styles.milestoneFooterText}>
+            <Text
+              style={[
+                styles.milestoneFooterText,
+                myTeam && { color: myTeam.textColor, opacity: 0.9 },
+              ]}
+            >
               {allMilestones?.[milestoneIndex + 1]?.fundraisingGoal
                 ? `Next milestone: $${allMilestones[milestoneIndex + 1].fundraisingGoal}`
                 : "All milestones complete!"}
@@ -444,17 +513,36 @@ const Fundraiser = () => {
             <TouchableWithoutFeedback onPress={closeBadgeModal}>
               <View style={styles.modalBackground}>
                 <TouchableWithoutFeedback>
-                  <View style={styles.badgeView}>
+                  <View
+                    style={[
+                      styles.badgeView,
+                      myTeam && { backgroundColor: myTeam.color },
+                    ]}
+                  >
                     <TouchableOpacity
                       style={styles.badgeModalClose}
                       onPress={closeBadgeModal}
                     >
-                      <FontAwesomeIcon icon={faX} size={18} color={colors.text} />
+                      <FontAwesomeIcon
+                        icon={faX}
+                        size={18}
+                        color={myTeam ? myTeam.textColor : colors.text}
+                      />
                     </TouchableOpacity>
-                    <Text style={styles.badgeModalTitle}>
+                    <Text
+                      style={[
+                        styles.badgeModalTitle,
+                        myTeam && { color: myTeam.textColor },
+                      ]}
+                    >
                       {selectedBadge.title}
                     </Text>
-                    <Text style={styles.badgeModalDescription}>
+                    <Text
+                      style={[
+                        styles.badgeModalDescription,
+                        myTeam && { color: myTeam.textColor, opacity: 0.85 },
+                      ]}
+                    >
                       {selectedBadge.description}
                     </Text>
                     <Image
@@ -562,12 +650,27 @@ const Fundraiser = () => {
         )}
       </View>
 
+      {activeTab === "Personal" && dataIsStale && (
+        <View style={styles.staleNotice}>
+          <Text style={styles.staleNoticeText}>
+            {getRateLimitNotice() ||
+              "Showing numbers from your last successful update — couldn't reach DonorDrive."}
+          </Text>
+        </View>
+      )}
+
       {activeTab === "Personal" && renderPersonalTab()}
       {activeTab === "Organization" && (
         <TeamFundraiserView teamId={userInfo?.teamID} />
       )}
-      {activeTab === "Team" && showTeamTab && (
-        <FundraiserTeam role={role} captainTeam={captainTeam} />
+      {showTeamTab && teamTabOpened && (
+        <View
+          style={
+            activeTab === "Team" ? styles.teamPane : styles.teamPaneHidden
+          }
+        >
+          <FundraiserTeam role={role} captainTeam={captainTeam} />
+        </View>
       )}
 
       <Toast config={toastConfig} />
@@ -579,6 +682,24 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: colors.pageBackground,
+  },
+  staleNotice: {
+    ...card,
+    backgroundColor: colors.lightOrange,
+    borderColor: colors.orange,
+    padding: 10,
+    marginHorizontal: 16,
+    marginBottom: 8,
+  },
+  staleNoticeText: {
+    color: colors.text,
+    fontSize: 12,
+  },
+  teamPane: {
+    flex: 1,
+  },
+  teamPaneHidden: {
+    display: "none",
   },
   tabBar: {
     flexDirection: "row",

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -7,6 +7,8 @@ import {
   TouchableOpacity,
   TouchableWithoutFeedback,
   Modal,
+  Linking,
+  Alert,
 } from "react-native";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 import { faX } from "@fortawesome/free-solid-svg-icons";
@@ -14,7 +16,7 @@ import { Icon } from "react-native-elements";
 import { colors, card } from "./theme";
 
 const AllNotifications = ({ route }) => {
-  const { notifications } = route.params;
+  const { notifications, openNotificationId } = route.params;
 
   const [selectedNotification, setSelectedNotification] = useState("");
   const [notificationModalVisible, setNotificationModalVisible] =
@@ -23,6 +25,29 @@ const AllNotifications = ({ route }) => {
   const handleNotificationClick = (notification) => {
     setSelectedNotification(notification);
     setNotificationModalVisible(true);
+  };
+
+  // Arriving here from a tapped push (App.jsx's openNotificationFromPush)
+  // passes which notification it was for — open straight to it instead of
+  // just the list.
+  useEffect(() => {
+    if (!openNotificationId) return;
+    const target = notifications.find((n) => n.id === openNotificationId);
+    if (target) handleNotificationClick(target);
+  }, [openNotificationId]);
+
+  const openLink = async (url) => {
+    try {
+      const canOpen = await Linking.canOpenURL(url);
+      if (!canOpen) {
+        Alert.alert("Can't open link", "This link doesn't look valid.");
+        return;
+      }
+      await Linking.openURL(url);
+    } catch (error) {
+      console.error("Error opening notification link:", error);
+      Alert.alert("Can't open link", "Something went wrong opening this link.");
+    }
   };
 
   return (
@@ -82,6 +107,15 @@ const AllNotifications = ({ route }) => {
                     <Text style={styles.description}>
                       {selectedNotification.message}
                     </Text>
+                    {selectedNotification.link ? (
+                      <TouchableOpacity
+                        onPress={() => openLink(selectedNotification.link)}
+                      >
+                        <Text style={styles.link} numberOfLines={1}>
+                          {selectedNotification.link}
+                        </Text>
+                      </TouchableOpacity>
+                    ) : null}
                   </>
                 )}
               </View>
@@ -169,6 +203,12 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontSize: 14,
     lineHeight: 20,
+  },
+  link: {
+    color: colors.navy,
+    fontSize: 14,
+    marginTop: 10,
+    textDecorationLine: "underline",
   },
 });
 

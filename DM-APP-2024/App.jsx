@@ -2,7 +2,10 @@ import React, { useState, useEffect, useRef } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
-import { NavigationContainer } from "@react-navigation/native";
+import {
+  NavigationContainer,
+  createNavigationContainerRef,
+} from "@react-navigation/native";
 import { createDrawerNavigator } from "@react-navigation/drawer";
 import { createStackNavigator } from "@react-navigation/stack";
 import { onAuthStateChanged } from "firebase/auth";
@@ -11,6 +14,8 @@ import {
   doc,
   getDoc,
   onSnapshot,
+  collection,
+  getDocs,
 } from "firebase/firestore";
 import { getDownloadURL, ref, getStorage } from "firebase/storage";
 import { Text, View, Platform } from "react-native";
@@ -47,6 +52,7 @@ import { addUserExpoPushToken } from "./Firebase/AuthManager";
 import { getUserInfo, getUserActivity } from "./api/index";
 
 import { UserProvider } from "./api/calls";
+import { ColorTeamsProvider } from "./ColorTeamsContext";
 
 const Drawer = createDrawerNavigator();
 
@@ -92,6 +98,50 @@ async function registerForPushNotificationsAsync() {
 
   return token.data;
 }
+
+// Lets code outside the component tree (the push-notification tap handler
+// below) navigate once the NavigationContainer exists.
+export const navigationRef = createNavigationContainerRef();
+
+// Mirrors Home.jsx's fetchAllNotifications() id scheme
+// (`${dateDocId}_${event.time}`) so a tapped push can be matched back to the
+// exact notification it came from, then opens AllNotifications on it.
+const openNotificationFromPush = async (notificationId, attempt = 0) => {
+  if (!notificationId) return;
+  try {
+    const notificationsRef = collection(db, "Notifications");
+    const querySnapshot = await getDocs(notificationsRef);
+    const fetchedNotifs = [];
+    querySnapshot.forEach((docSnapshot) => {
+      const eventsArray = docSnapshot.data().events;
+      if (Array.isArray(eventsArray)) {
+        eventsArray.forEach((event) => {
+          fetchedNotifs.push({
+            ...event,
+            id: `${docSnapshot.id}_${event.time}`,
+          });
+        });
+      }
+    });
+
+    if (navigationRef.isReady()) {
+      navigationRef.navigate("Home", {
+        screen: "AllNotifications",
+        params: {
+          notifications: fetchedNotifs.reverse(),
+          openNotificationId: notificationId,
+        },
+      });
+    } else if (attempt < 10) {
+      // Cold start: the container may not be mounted yet (the app was fully
+      // closed and this tap is what's launching it). Retry briefly rather
+      // than silently dropping the tap.
+      setTimeout(() => openNotificationFromPush(notificationId, attempt + 1), 300);
+    }
+  } catch (error) {
+    console.error("Error opening notification from push tap:", error);
+  }
+};
 
 const stackHeaderOptions = {
   headerStyle: {
@@ -225,6 +275,9 @@ const App = () => {
   }, [user]);
 
   useEffect(() => {
+    // userIDState is empty until the user's Firestore doc loads; calling
+    // DonorDrive with no ID just wastes a request against its rate limit.
+    if (!userIDState) return;
     getUserInfo(userIDState)
       .then((data) => {
         setUserInfo(data);
@@ -261,10 +314,22 @@ const App = () => {
         setNotification(notification);
       });
 
+    // Tapping a push while the app is running or backgrounded.
     responseListener.current =
       Notifications.addNotificationResponseReceivedListener((response) => {
-        console.log(response);
+        const notificationId =
+          response?.notification?.request?.content?.data?.notificationId;
+        openNotificationFromPush(notificationId);
       });
+
+    // Cold start: the app was fully closed and this tap is what launched
+    // it — addNotificationResponseReceivedListener above never fires for
+    // this case, so it's checked separately, once, here.
+    Notifications.getLastNotificationResponseAsync().then((response) => {
+      const notificationId =
+        response?.notification?.request?.content?.data?.notificationId;
+      if (notificationId) openNotificationFromPush(notificationId);
+    });
 
     return () => {
       notificationListener.current?.remove?.();
@@ -450,8 +515,9 @@ const App = () => {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
       <StatusBar style="light" translucent={false} backgroundColor="#1B4F8C" />
+      <ColorTeamsProvider>
       <UserProvider>
-        <NavigationContainer>
+        <NavigationContainer ref={navigationRef}>
           <Drawer.Navigator
             screenOptions={{
               headerShown: false,
@@ -485,6 +551,7 @@ const App = () => {
           </Drawer.Navigator>
         </NavigationContainer>
       </UserProvider>
+      </ColorTeamsProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );

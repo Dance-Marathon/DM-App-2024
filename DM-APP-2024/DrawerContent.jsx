@@ -6,7 +6,7 @@ import Svg, { Path } from "react-native-svg";
 import { auth } from "./Firebase/AuthManager";
 import { UserContext } from "./api/calls";
 import { colors } from "./theme";
-import { SOCIAL_LINKS, TECH_SUPPORT_EMAIL_URL } from "./constants";
+import { SOCIAL_LINKS, TECH_SUPPORT_EMAIL_URL, displayRole } from "./constants";
 
 const MissionDMIcon = ({ color, size = 20 }) => (
   <Svg width={size} height={size * (28 / 24)} viewBox="0 0 24 28" fill="none">
@@ -98,7 +98,7 @@ const DrawerContent = (props) => {
           <Text style={styles.footerName} numberOfLines={1}>
             {displayName}
           </Text>
-          <Text style={styles.footerRole}>{role}</Text>
+          <Text style={styles.footerRole}>{displayRole(role)}</Text>
         </View>
       )}
     </DrawerContentScrollView>

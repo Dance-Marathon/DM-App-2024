@@ -27,7 +27,7 @@ import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import TopBar from "./TopBar";
 import { colors, card } from "./theme";
-import { SELF_SERVICE_ROLES, CAPTAIN_TEAMS } from "./constants";
+import { SELF_SERVICE_ROLES, CAPTAIN_TEAMS, displayRole } from "./constants";
 
 const SettingsScreen = () => {
   const [response, setResponse] = useState(false);
@@ -38,8 +38,16 @@ const SettingsScreen = () => {
   const [isFocus, setIsFocus] = useState(false);
   const [isCaptainTeamFocus, setIsCaptainTeamFocus] = useState(false);
   const [linkError, setLinkError] = useState("");
-  const { role, isAdmin, captainTeam, userInfo, refetchUserData } =
-    useContext(UserContext);
+  const [savingLink, setSavingLink] = useState(false);
+  const {
+    role,
+    isAdmin,
+    captainTeam,
+    userID,
+    organization,
+    userInfo,
+    refetchUserData,
+  } = useContext(UserContext);
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
   const isGuest = !auth.currentUser;
@@ -77,22 +85,37 @@ const SettingsScreen = () => {
   };
 
   const changeLink = async () => {
+    if (savingLink) return;
     setLinkError("");
     if (!newLink) {
       setLinkError("Please enter a DonorDrive link.");
       return;
     }
+    setSavingLink(true);
     try {
       const currentUID = auth.currentUser.uid;
-      await updateDDLink(currentUID, newLink);
+      const { organizationLookupFailed } = await updateDDLink(
+        currentUID,
+        newLink
+      );
       await updateUserData();
       await refetchUserData();
       setNewLink("");
       setLinkError("");
       toggleAccountModel();
+      // Without this the modal just closes and it's unclear anything happened
+      // (especially when DonorDrive can't be reached and nothing else updates).
+      Alert.alert(
+        "DonorDrive link saved",
+        organizationLookupFailed
+          ? "Your link was saved. DonorDrive couldn't be reached right now, so your fundraising numbers and organization will appear once it's available again."
+          : "Your DonorDrive link has been updated."
+      );
     } catch (error) {
       console.error("Link update failed:", error.message);
       setLinkError(error.message);
+    } finally {
+      setSavingLink(false);
     }
   };
 
@@ -165,12 +188,19 @@ const SettingsScreen = () => {
           <View style={styles.infoDivider} />
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>Role</Text>
-            <Text style={styles.infoValue}>{role || "—"}</Text>
+            <Text style={styles.infoValue}>{displayRole(role) || "—"}</Text>
           </View>
           <View style={styles.infoDivider} />
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>Organization</Text>
-            <Text style={styles.infoValue}>{userInfo?.teamName || "—"}</Text>
+            <Text style={styles.infoValue}>
+              {userInfo?.teamName || organization || "—"}
+            </Text>
+          </View>
+          <View style={styles.infoDivider} />
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>DonorDrive ID</Text>
+            <Text style={styles.infoValue}>{userID || "—"}</Text>
           </View>
           <View style={styles.infoDivider} />
           <View style={styles.infoRow}>
@@ -227,10 +257,13 @@ const SettingsScreen = () => {
                   onChangeText={(text) => setNewLink(text)}
                 />
                 <TouchableOpacity
-                  style={styles.updateButton}
+                  style={[styles.updateButton, savingLink && { opacity: 0.6 }]}
                   onPress={changeLink}
+                  disabled={savingLink}
                 >
-                  <Text style={styles.modalButtonText}>Update Link</Text>
+                  <Text style={styles.modalButtonText}>
+                    {savingLink ? "Saving..." : "Update Link"}
+                  </Text>
                 </TouchableOpacity>
 
                 <Dropdown

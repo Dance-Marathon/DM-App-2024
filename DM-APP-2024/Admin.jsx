@@ -33,8 +33,8 @@ import { faChildCombatant } from "@fortawesome/free-solid-svg-icons";
 import { useNavigation } from "@react-navigation/native";
 
 import axios from "axios";
-import { addUserExpoPushToken } from "./Firebase/AuthManager";
-import { getUserInfo } from "./api/index";
+import { addUserExpoPushToken, extractParticipantID } from "./Firebase/AuthManager";
+import { getUserInfo, getDonorDriveBlockedUntil } from "./api/index";
 import getAccessToken from "./api/googleAuth";
 import TopBar from "./TopBar";
 import { colors, card } from "./theme";
@@ -55,39 +55,203 @@ const mapWithThrottle = async (items, mapper, batchSize = 3, delayMs = 400) => {
 };
 
 // Refreshes every linked user's organization/displayName from DonorDrive,
-// and gives anyone who's never been scanned a spiritPoints field to start
-// from. Safe to run repeatedly — an existing spiritPoints value (meaning
-// someone has real earned points) is never overwritten.
+// backfills a couple of fields for older accounts, and gives anyone who's
+// never been scanned a spiritPoints field to start from. Safe to run
+// repeatedly and never overwrites a field someone already has:
+//   - donorID: only filled in when missing, by re-deriving it from the
+//     user's saved donorLink. A donorID that's already set is left alone.
+//   - captainTeam: only added (as "") when the field doesn't exist at all —
+//     even an existing captainTeam of "" counts as "already has one".
+//   - spiritPoints: only added (as 0) when the field doesn't exist, same as
+//     before.
 const refreshOrganizationsForAllUsers = async () => {
   const snapshot = await getDocs(collection(db, "Users"));
-  const usersWithDonorID = snapshot.docs.filter((docSnap) => docSnap.data().donorID);
 
   let updated = 0;
   let skipped = 0;
+  let donorIDsFilled = 0;
+  let captainTeamsAdded = 0;
+  let donorDriveSkippedCount = 0;
+  // Logged once, the first time the loop notices DonorDrive is blocked —
+  // without this, a 1300+ user run that trips the rate limit early used to
+  // log one "Error refreshing DonorDrive info" line for every single
+  // remaining user (reported as "1900 errors"), even though the circuit
+  // breaker in api/index.js was already correctly skipping the network call
+  // for every one of them.
+  let loggedRateLimitSkip = false;
 
-  await mapWithThrottle(usersWithDonorID, async (docSnap) => {
+  await mapWithThrottle(snapshot.docs, async (docSnap) => {
     const data = docSnap.data();
-    try {
-      const donorInfo = await getUserInfo(data.donorID);
-      const updates = {};
+    const updates = {};
 
-      if (donorInfo?.teamName) updates.organization = donorInfo.teamName;
-      if (donorInfo?.displayName) updates.displayName = donorInfo.displayName;
-      if (data.spiritPoints === undefined) updates.spiritPoints = 0;
+    // Backfill donorID from donorLink for older accounts that only ever got
+    // the link saved. Never touches a donorID that's already set.
+    let donorID = data.donorID;
+    if (!donorID && data.donorLink) {
+      const derivedID = extractParticipantID(data.donorLink);
+      if (derivedID) {
+        updates.donorID = derivedID;
+        donorID = derivedID;
+        donorIDsFilled += 1;
+      }
+    }
 
-      if (Object.keys(updates).length > 0) {
+    if (!("captainTeam" in data)) {
+      updates.captainTeam = "";
+      captainTeamsAdded += 1;
+    }
+
+    if (data.spiritPoints === undefined) updates.spiritPoints = 0;
+
+    if (donorID) {
+      if (getDonorDriveBlockedUntil()) {
+        // Don't even attempt it — these local-field backfills above still
+        // get saved below, just without the DonorDrive-sourced fields.
+        donorDriveSkippedCount += 1;
+        if (!loggedRateLimitSkip) {
+          loggedRateLimitSkip = true;
+          console.log(
+            "DonorDrive is rate-limited — skipping its lookup for the rest of this run (local field backfills still proceed)."
+          );
+        }
+      } else {
+        try {
+          const donorInfo = await getUserInfo(donorID);
+          if (donorInfo?.teamName) updates.organization = donorInfo.teamName;
+          if (donorInfo?.displayName) updates.displayName = donorInfo.displayName;
+          // Same field the Team/Organization tabs now read instead of
+          // calling DonorDrive live per member — this is also how existing
+          // users get it backfilled immediately rather than waiting on
+          // their next Personal tab visit.
+          updates.sumDonations = donorInfo?.sumDonations || 0;
+        } catch (error) {
+          donorDriveSkippedCount += 1;
+          console.error(`Error refreshing DonorDrive info for user ${docSnap.id}:`, error);
+        }
+      }
+    }
+
+    if (Object.keys(updates).length > 0) {
+      try {
         await updateDoc(doc(db, "Users", docSnap.id), updates);
         updated += 1;
-      } else {
+      } catch (error) {
+        console.error(`Error saving updates for user ${docSnap.id}:`, error);
         skipped += 1;
       }
-    } catch (error) {
-      console.error(`Error refreshing organization for user ${docSnap.id}:`, error);
+    } else {
       skipped += 1;
     }
   });
 
-  return { updated, skipped, total: usersWithDonorID.length };
+  return {
+    updated,
+    skipped,
+    total: snapshot.docs.length,
+    donorIDsFilled,
+    captainTeamsAdded,
+    donorDriveSkippedCount,
+  };
+};
+
+// Seed source only — the app's own runtime team-lookup (once built) reads
+// from the colorTeams Firestore collection this writes to, never from this
+// constant directly, so the mapping stays changeable without an app update.
+// Comparison against orgs is case-insensitive and trimmed.
+const COLOR_TEAM_SEED_DATA = [
+  {
+    id: "Red",
+    color: "#E06666",
+    textColor: "white",
+    orgs: [
+      "Pi Kappa Phi", "Kappa Alpha Order", "Pi Beta Phi", "Kappa Phi Epsilon",
+      "AMSA", "Florida Eta Phi Delta Epsilon", "Chi Phi", "Gamma Phi Beta", "Kappa Delta",
+      "Alpha Phi", "Zeta Beta Tau", "Kappa Kappa Gamma",
+    ],
+  },
+  {
+    id: "Yellow",
+    color: "#F5E08A",
+    textColor: "white",
+    orgs: [
+      "Pi Lambda Phi", "Delta Chi", "Alpha Delta Pi", "Theta Chi",
+      "Delta Zeta", "Phi Mu", "Delta Tau Delta", "Delta Sigma Phi",
+      "Chi Omega", "Gamma Eta", "Alpha Omicron Pi",
+    ],
+  },
+  {
+    id: "Blue",
+    color: "#6FA8DC",
+    textColor: "white",
+    orgs: [
+      "Tau Epsilon Phi", "Hispanic-Latine Student Association", "Team Hope", "Delta Delta Delta",
+      "Alpha Epsilon Phi", "Pi Kappa Alpha", "Phi Kappa Tau", "Alpha Chi Omega",
+    ],
+  },
+  {
+    id: "Purple",
+    color: "#8E7CC3",
+    textColor: "white",
+    orgs: [
+      "Delta Nu Zeta", "Beta Theta Pi", "Alpha Tau Omega", "Phi Gamma Delta",
+      "Sigma Kappa", "Sigma Phi Epsilon", "Kappa Alpha Theta", "UF Club Baseball",
+      "Zeta Tau Alpha", "Alpha Epsilon Pi", "Delta Gamma", "Delta Phi Epsilon",
+    ],
+  },
+];
+
+const normalizeOrgName = (name) => (name || "").trim().toLowerCase();
+
+// Read-only — makes no Firestore writes. Pulls every distinct, non-empty
+// `organization` value actually in use (from the signed-in admin's own
+// session, same as every other admin read in this file) and compares it
+// against COLOR_TEAM_SEED_DATA's org lists, case-insensitive and trimmed.
+const checkColorTeamOrgMatches = async () => {
+  const snapshot = await getDocs(collection(db, "Users"));
+  const liveOrgsByNormalized = new Map(); // normalized -> original casing seen
+  snapshot.forEach((docSnap) => {
+    const org = docSnap.data().organization;
+    if (org && org.trim()) {
+      liveOrgsByNormalized.set(normalizeOrgName(org), org.trim());
+    }
+  });
+
+  const seedNormalizedToOriginal = new Map();
+  COLOR_TEAM_SEED_DATA.forEach((team) => {
+    team.orgs.forEach((org) => {
+      seedNormalizedToOriginal.set(normalizeOrgName(org), org);
+    });
+  });
+
+  // Seed names with no live user currently on that org — not necessarily
+  // wrong (could just mean nobody from that org has linked DonorDrive yet),
+  // but worth a human glance for typos.
+  const seedWithNoLiveMatch = [...seedNormalizedToOriginal.entries()]
+    .filter(([norm]) => !liveOrgsByNormalized.has(norm))
+    .map(([, original]) => original);
+
+  // Live org values that don't match ANY seed list — these users would
+  // default to Blue Team. Worth reviewing for near-miss spelling especially.
+  const liveWithNoSeedMatch = [...liveOrgsByNormalized.entries()]
+    .filter(([norm]) => !seedNormalizedToOriginal.has(norm))
+    .map(([, original]) => original)
+    .sort();
+
+  return { seedWithNoLiveMatch, liveWithNoSeedMatch };
+};
+
+// Overwrites all four colorTeams docs completely (setDoc, not merge) — safe
+// to re-run any time the seed lists above change; never touches
+// Permissions/tempData.colorTeamsEnabled, so re-running this can't
+// accidentally turn the feature on.
+const seedColorTeamsData = async () => {
+  for (const team of COLOR_TEAM_SEED_DATA) {
+    await setDoc(doc(db, "colorTeams", team.id), {
+      color: team.color,
+      textColor: team.textColor,
+      orgs: team.orgs,
+    });
+  }
 };
 
 const SPIRIT_TRACKER_SPREADSHEET_ID = "1VTr6Jq_UbrJ1HEUTxCo0TlLvoLXc5PaPagufrzbAAxY";
@@ -173,15 +337,20 @@ const exportSpiritPointsToSheets = async () => {
       .map(([name, points], index) => [index + 1, name, points]),
   ];
 
-  await clearAndWriteSheet(token, "Sheet2", individualRows);
+  // Tab names match the actual tabs in the Spirit Point Tracker sheet. These
+  // used to be the spreadsheet's default "Sheet1"/"Sheet2"/"Sheet3" names;
+  // the tabs were renamed at some point and this fell out of sync, so every
+  // export was failing with "Unable to parse range: Sheet2!A1:Z2000" (the
+  // write code was never wrong, just pointed at tabs that no longer exist).
+  await clearAndWriteSheet(token, "Individual", individualRows);
   await clearAndWriteSheet(
     token,
-    "Sheet1",
+    "Organization",
     buildGroupBreakdownRows("Organization", orgTotals, orgMembers)
   );
   await clearAndWriteSheet(
     token,
-    "Sheet3",
+    "Captain Team",
     buildGroupBreakdownRows("Captain Team", captainTotals, captainMembers)
   );
 };
@@ -252,6 +421,9 @@ async function sendPushNotificationsToAll(expoPushTokens, notification) {
       sound: "default",
       title: notification.title,
       body: notification.message,
+      // Not shown in the push bubble — just lets a tap find its way back to
+      // this exact notification. See openNotificationFromPush in App.jsx.
+      data: { notificationId: notification.id },
     });
 
     console.log(`Added token: ${token}`);
@@ -342,6 +514,12 @@ function getCurrentTime() {
 const Admin = ({ route }) => {
   const [title, setTitle] = useState("");
   const [message, setMessage] = useState("");
+  const [link, setLink] = useState("");
+  const [isSending, setIsSending] = useState(false);
+  const [colorTeamsEnabled, setColorTeamsEnabledState] = useState(null); // null = not loaded yet
+  const [isCheckingOrgMatches, setIsCheckingOrgMatches] = useState(false);
+  const [isSeedingColorTeams, setIsSeedingColorTeams] = useState(false);
+  const [isTogglingColorTeams, setIsTogglingColorTeams] = useState(false);
   const [allowedRoles, setAllowedRoles] = useState([]);
   const [teamBasedPermissions, setTeamBasedPermissions] = useState({});
   const [newRole, setNewRole] = useState("");
@@ -371,10 +549,21 @@ const Admin = ({ route }) => {
   const handleRefreshOrganizations = async () => {
     setIsRefreshingOrgs(true);
     try {
-      const { updated, skipped, total } = await refreshOrganizationsForAllUsers();
+      const {
+        updated,
+        skipped,
+        total,
+        donorIDsFilled,
+        captainTeamsAdded,
+        donorDriveSkippedCount,
+      } = await refreshOrganizationsForAllUsers();
+      const rateLimitNote =
+        donorDriveSkippedCount > 0
+          ? `\n\nDonorDrive's rate limit was hit partway through — ${donorDriveSkippedCount} user${donorDriveSkippedCount === 1 ? "" : "s"} didn't get fresh organization/name/total data this run (local fields like captain team were still backfilled for everyone). Run this again later to pick up the rest.`
+          : "";
       Alert.alert(
         "Spirit Points Refresh Complete",
-        `Checked ${total} linked users.\nUpdated: ${updated}\nSkipped/unchanged: ${skipped}`
+        `Checked ${total} users.\nUpdated: ${updated}\nSkipped/unchanged: ${skipped}\nDonorDrive IDs filled in: ${donorIDsFilled}\nCaptain team fields added: ${captainTeamsAdded}${rateLimitNote}`
       );
     } catch (error) {
       console.error("Error refreshing organizations:", error);
@@ -399,6 +588,79 @@ const Admin = ({ route }) => {
     };
     fetchPermissions();
   }, []);
+
+  // Same Permissions/tempData document missionDmEnabled/transformtoday/
+  // mainevent/kill already live on — just reading its current value here to
+  // display and toggle it, not a live subscription (App.jsx already has the
+  // real one that actually gates app behavior).
+  useEffect(() => {
+    const fetchColorTeamsFlag = async () => {
+      const docSnap = await getDoc(doc(db, "Permissions", "tempData"));
+      setColorTeamsEnabledState(!!docSnap.data()?.colorTeamsEnabled);
+    };
+    fetchColorTeamsFlag();
+  }, []);
+
+  const handleCheckOrgMatches = async () => {
+    setIsCheckingOrgMatches(true);
+    try {
+      const { seedWithNoLiveMatch, liveWithNoSeedMatch } =
+        await checkColorTeamOrgMatches();
+      console.log("Color team org check — seed names with no live match:", seedWithNoLiveMatch);
+      console.log("Color team org check — live orgs matching no team (default to Blue):", liveWithNoSeedMatch);
+
+      const lines = [];
+      lines.push(
+        seedWithNoLiveMatch.length === 0
+          ? "Every org in your four lists matches at least one real user."
+          : `${seedWithNoLiveMatch.length} org name${seedWithNoLiveMatch.length === 1 ? "" : "s"} in your lists have no matching user yet:\n${seedWithNoLiveMatch.join(", ")}`
+      );
+      lines.push("");
+      lines.push(
+        liveWithNoSeedMatch.length === 0
+          ? "No real org names fall outside your four lists."
+          : `${liveWithNoSeedMatch.length} real org${liveWithNoSeedMatch.length === 1 ? "" : "s"} match none of your four lists (will default to Blue Team):\n${liveWithNoSeedMatch.join(", ")}`
+      );
+      Alert.alert("Color Team Org Check", lines.join("\n"));
+    } catch (error) {
+      console.error("Error checking color team org matches:", error);
+      Alert.alert("Error", "Failed to check org matches. Check console logs.");
+    } finally {
+      setIsCheckingOrgMatches(false);
+    }
+  };
+
+  const handleSeedColorTeams = async () => {
+    setIsSeedingColorTeams(true);
+    try {
+      await seedColorTeamsData();
+      Alert.alert(
+        "Saved",
+        "Red, Yellow, Blue, and Purple team data has been written to Firestore's colorTeams collection."
+      );
+    } catch (error) {
+      console.error("Error seeding color teams:", error);
+      Alert.alert("Error", "Failed to save color team data. Check console logs.");
+    } finally {
+      setIsSeedingColorTeams(false);
+    }
+  };
+
+  const handleToggleColorTeams = async () => {
+    setIsTogglingColorTeams(true);
+    try {
+      const next = !colorTeamsEnabled;
+      await updateDoc(doc(db, "Permissions", "tempData"), {
+        colorTeamsEnabled: next,
+      });
+      setColorTeamsEnabledState(next);
+    } catch (error) {
+      console.error("Error toggling colorTeamsEnabled:", error);
+      Alert.alert("Error", "Failed to update the toggle. Check console logs.");
+    } finally {
+      setIsTogglingColorTeams(false);
+    }
+  };
 
   useEffect(() => {
     const fetchEnrolled = async () => {
@@ -524,45 +786,95 @@ const Admin = ({ route }) => {
   //   setMessage("");
   // };
 
-  let handleClick = async () => {
+  let handleClick = async ({ testOnly = false } = {}) => {
+    // Checked before React has even re-rendered the disabled buttons below,
+    // so a rapid double-tap on either Send button can't start a second send
+    // while the first is still in flight.
+    if (isSending) return;
+    setIsSending(true);
     try {
-      const tokens = await fetchData();
+      let tokens;
+      if (testOnly) {
+        // Only the admin's own token — never touches anyone else's device,
+        // and (below) never writes to the shared Notifications collection
+        // either, so it can't show up in anyone else's in-app list.
+        const currentUID = auth.currentUser?.uid;
+        const docSnap = currentUID
+          ? await getDoc(doc(db, "Users", currentUID))
+          : null;
+        const myToken = docSnap?.data()?.notificationToken;
+        tokens = myToken ? [myToken] : [];
+        if (tokens.length === 0) {
+          Alert.alert(
+            "No token found",
+            "Couldn't find a push token on your own account to test with."
+          );
+          return;
+        }
+      } else {
+        tokens = await fetchData();
+      }
 
       if (!tokens || tokens.length === 0) {
         Alert.alert("Error", "No valid tokens found!");
         return;
       }
 
-      console.log(`📬 Sending to ${tokens.length} users...`);
+      console.log(`📬 Sending to ${tokens.length} user(s)${testOnly ? " (test)" : ""}...`);
 
-      await sendPushNotificationsToAll(tokens, {
-        date: getCurrentDate(),
-        message: message,
-        time: getCurrentTime(),
-        title: title,
-      });
+      const trimmedLink = link.trim();
+      // Light normalization only — if someone pastes "example.com" instead
+      // of "https://example.com", Linking.openURL would otherwise treat it
+      // as a relative path and fail. Doesn't attempt real URL validation.
+      const normalizedLink = trimmedLink
+        ? /^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//.test(trimmedLink)
+          ? trimmedLink
+          : `https://${trimmedLink}`
+        : "";
 
-      // sendPushNotification("ExponentPushToken[nVKGsGBm_XBGtyK2UEZ30w]", {
-      //   date: getCurrentDate(),
-      //   message: message,
-      //   time: getCurrentTime(),
-      //   title: title,
-      // });
+      const date = getCurrentDate();
+      const time = getCurrentTime();
+      // Same id shape Home.jsx already derives for existing notifications
+      // (`${dateDocId}_${time}`) — built here too so the push payload can
+      // carry it and a tap can find this exact notification later.
+      const notification = {
+        date,
+        message,
+        time,
+        title,
+        id: `${date}_${time}`,
+        // Omitted entirely (not stored as "") when empty, so older/linkless
+        // notifications and this one render identically.
+        ...(normalizedLink ? { link: normalizedLink } : {}),
+      };
 
-      await addNotification({
-        date: getCurrentDate(),
-        message: message,
-        time: getCurrentTime(),
-        title: title,
-      });
+      await sendPushNotificationsToAll(tokens, notification);
+      // Test sends skip the shared Notifications write on purpose — that
+      // collection isn't per-user, so writing to it would put "test" in
+      // everyone's in-app notification list, not just yours. The trade-off:
+      // tapping a test push won't find a matching notification to open
+      // (tap-to-open only works for a real send), everything else is real.
+      if (!testOnly) {
+        await addNotification(notification);
+      }
 
-      console.log("✅ All notifications sent!");
-      setTitle("");
-      setMessage("");
-      Alert.alert("Success", "Notification sent successfully!");
+      console.log(testOnly ? "✅ Test notification sent!" : "✅ All notifications sent!");
+      if (!testOnly) {
+        setTitle("");
+        setMessage("");
+        setLink("");
+      }
+      Alert.alert(
+        "Success",
+        testOnly
+          ? "Test notification sent to your own device."
+          : "Notification sent successfully!"
+      );
     } catch (error) {
       console.error("Error sending notifications:", error);
       Alert.alert("Error", "Failed to send notification. Check console logs.");
+    } finally {
+      setIsSending(false);
     }
   };
 
@@ -635,21 +947,46 @@ const Admin = ({ route }) => {
             <Text style={styles.charCount}>
               {message.length}/160
             </Text>
+            <Text style={styles.sectionTitle}>Link (optional)</Text>
+            <TextInput
+              style={styles.input}
+              onChangeText={(text) => setLink(text)}
+              placeholder="Enter a link here"
+              autoCapitalize="none"
+              autoCorrect={false}
+              keyboardType="url"
+              value={link}
+              placeholderTextColor={colors.textMuted}
+            />
           </View>
-          <TouchableOpacity
-            style={[
-              styles.sendButton,
-              {
-                alignSelf: "flex-end",
-                marginRight: 10,
-                marginTop: 5,
-                marginBottom: 10,
-              },
-            ]}
-            onPress={confirmSend}
-          >
-            <Text style={styles.sendMessage}>Send</Text>
-          </TouchableOpacity>
+          <View style={styles.sendButtonRow}>
+            <TouchableOpacity
+              style={[styles.testSendButton, isSending && { opacity: 0.6 }]}
+              onPress={() => handleClick({ testOnly: true })}
+              disabled={isSending || (!title && !message)}
+            >
+              <Text style={styles.testSendMessage}>
+                {isSending ? "Sending..." : "Send Test (to me)"}
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.sendButton,
+                {
+                  marginRight: 10,
+                  marginTop: 5,
+                  marginBottom: 10,
+                },
+                isSending && { opacity: 0.6 },
+              ]}
+              onPress={confirmSend}
+              disabled={isSending}
+            >
+              <Text style={styles.sendMessage}>
+                {isSending ? "Sending..." : "Send"}
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         <View style={[card, styles.spiritPointsBox]}>
@@ -659,8 +996,11 @@ const Admin = ({ route }) => {
           </View>
           <Text style={styles.spiritPointsDescription}>
             Refreshes every linked user's organization and name from
-            DonorDrive, and starts anyone new at 0 points. Safe to run
-            anytime — existing point totals are never reset.
+            DonorDrive, backfills a missing DonorDrive ID from their saved
+            link, gives anyone without a captain team an empty one, and
+            starts anyone new at 0 points. Safe to run anytime — existing
+            point totals, DonorDrive IDs, and captain teams are never
+            overwritten.
           </Text>
           <TouchableOpacity
             style={[
@@ -700,6 +1040,81 @@ const Admin = ({ route }) => {
               {isExportingSheets ? "Exporting..." : "Export to Sheets"}
             </Text>
           </TouchableOpacity>
+        </View>
+
+        <View style={[card, styles.spiritPointsBox]}>
+          <View style={styles.header}>
+            <View style={styles.smallCircle} />
+            <Text style={styles.headerText}>COLOR TEAMS</Text>
+          </View>
+          <Text style={styles.spiritPointsDescription}>
+            Step 1 — check your four org lists against real org names
+            currently in use. This only reads data, it changes nothing.
+          </Text>
+          <TouchableOpacity
+            style={[
+              styles.accessButton,
+              { alignSelf: "flex-end", width: 220, opacity: isCheckingOrgMatches ? 0.6 : 1 },
+            ]}
+            onPress={handleCheckOrgMatches}
+            disabled={isCheckingOrgMatches}
+          >
+            <Text style={styles.accessMessage}>
+              {isCheckingOrgMatches ? "Checking..." : "Check Org Matches"}
+            </Text>
+          </TouchableOpacity>
+
+          <Text style={[styles.spiritPointsDescription, { marginTop: 12 }]}>
+            Step 2 — once the names look right, save the four teams (and
+            their org lists/colors) to Firestore. Safe to re-run any time you
+            change the lists in code — each run fully replaces all four.
+          </Text>
+          <TouchableOpacity
+            style={[
+              styles.accessButton,
+              { alignSelf: "flex-end", width: 220, opacity: isSeedingColorTeams ? 0.6 : 1 },
+            ]}
+            onPress={handleSeedColorTeams}
+            disabled={isSeedingColorTeams}
+          >
+            <Text style={styles.accessMessage}>
+              {isSeedingColorTeams ? "Saving..." : "Save Color Teams Data"}
+            </Text>
+          </TouchableOpacity>
+
+          <Text style={[styles.spiritPointsDescription, { marginTop: 12 }]}>
+            Step 3 — turn the feature itself on or off. Leave this off until
+            steps 1 and 2 are done and double-checked.
+          </Text>
+          <View style={styles.colorTeamsToggleRow}>
+            <Text style={styles.colorTeamsStatusText}>
+              {colorTeamsEnabled === null
+                ? "Loading current status..."
+                : colorTeamsEnabled
+                ? "Currently ON — color teams are visible in the app."
+                : "Currently OFF — app looks exactly as usual."}
+            </Text>
+            <TouchableOpacity
+              style={[
+                styles.accessButton,
+                {
+                  width: 110,
+                  backgroundColor: colorTeamsEnabled ? colors.danger : colors.navy,
+                  opacity: isTogglingColorTeams || colorTeamsEnabled === null ? 0.6 : 1,
+                },
+              ]}
+              onPress={handleToggleColorTeams}
+              disabled={isTogglingColorTeams || colorTeamsEnabled === null}
+            >
+              <Text style={styles.accessMessage}>
+                {isTogglingColorTeams
+                  ? "..."
+                  : colorTeamsEnabled
+                  ? "Turn Off"
+                  : "Turn On"}
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         <View style={[card, styles.permsBox]}>
@@ -953,6 +1368,12 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     left: 10,
   },
+  sendButtonRow: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    alignItems: "center",
+    gap: 10,
+  },
   sendButton: {
     borderRadius: 10,
     backgroundColor: colors.orange,
@@ -960,6 +1381,24 @@ const styles = StyleSheet.create({
     height: 40,
     justifyContent: "center",
     alignItems: "center",
+  },
+  testSendButton: {
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: colors.navy,
+    backgroundColor: colors.cardBackground,
+    paddingHorizontal: 14,
+    height: 40,
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 5,
+    marginBottom: 10,
+  },
+  testSendMessage: {
+    color: colors.navy,
+    textAlign: "center",
+    fontSize: 13,
+    fontWeight: "700",
   },
   sendMessage: {
     textAlign: "center",
@@ -976,6 +1415,17 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     fontSize: 13,
     marginBottom: 12,
+  },
+  colorTeamsToggleRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: 10,
+  },
+  colorTeamsStatusText: {
+    flex: 1,
+    color: colors.textSecondary,
+    fontSize: 13,
   },
   permsBox: {
     width: 340,

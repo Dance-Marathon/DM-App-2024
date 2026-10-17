@@ -21,6 +21,7 @@ import { faX } from "@fortawesome/free-solid-svg-icons";
 import TopBar from "./TopBar";
 import { colors, card } from "./theme";
 import { CAPTAIN_LEADERBOARD_ROLES } from "./constants";
+import { useColorTeams } from "./ColorTeamsContext";
 
 const RankBadge = ({ rank }) => {
   if (rank === 0) {
@@ -40,18 +41,32 @@ const RankBadge = ({ rank }) => {
   );
 };
 
-const LeaderboardSection = ({ title, data, maxScore, isYouName, emptyText }) => (
+// getOrgForEntry is optional — pass it to show a small color-team dot next
+// to each row. Omit it where a row doesn't correspond to one org (e.g. the
+// captain team leaderboard, which aggregates across many different orgs).
+const LeaderboardSection = ({ title, data, maxScore, isYouName, emptyText, getOrgForEntry }) => {
+  const { colorTeamsEnabled, getTeamForOrg } = useColorTeams();
+  return (
   <>
     <Text style={[styles.sectionTitle, { marginTop: 20 }]}>{title}</Text>
     <View style={[card, styles.leaderboardCard]}>
       {data.map((entry, index) => {
         const isYou = Boolean(isYouName) && entry[0] === isYouName;
         const progress = maxScore > 0 ? entry[1] / maxScore : 0;
+        const team =
+          colorTeamsEnabled && getOrgForEntry
+            ? getTeamForOrg(getOrgForEntry(entry))
+            : null;
         return (
           <View key={index} style={styles.leaderboardRow}>
             <RankBadge rank={index} />
             <View style={styles.leaderboardInfo}>
               <View style={styles.leaderboardNameRow}>
+                {team && (
+                  <View
+                    style={[styles.leaderboardColorDot, { backgroundColor: team.color }]}
+                  />
+                )}
                 <Text style={styles.leaderboardName} numberOfLines={1}>
                   {entry[0]}
                 </Text>
@@ -82,7 +97,8 @@ const LeaderboardSection = ({ title, data, maxScore, isYouName, emptyText }) => 
       )}
     </View>
   </>
-);
+  );
+};
 
 const GenerateQRCode = () => {
   const [qrVisible, setQrVisible] = useState(false);
@@ -147,7 +163,7 @@ const GenerateQRCode = () => {
         }
 
         if (data.displayName) {
-          individualTotals.push([data.displayName, points]);
+          individualTotals.push([data.displayName, points, data.organization || ""]);
         }
 
         if (data.organization) {
@@ -339,6 +355,7 @@ const GenerateQRCode = () => {
             maxScore={maxOrgScore}
             isYouName={myStats.organization}
             emptyText="Leaderboard unavailable"
+            getOrgForEntry={(entry) => entry[0]}
           />
 
           <LeaderboardSection
@@ -347,6 +364,7 @@ const GenerateQRCode = () => {
             maxScore={maxIndividualScore}
             isYouName={myDisplayName}
             emptyText="Leaderboard unavailable"
+            getOrgForEntry={(entry) => entry[2]}
           />
 
           {canSeeCaptainLeaderboard && (
@@ -538,6 +556,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 6,
+  },
+  leaderboardColorDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 6,
   },
   leaderboardName: {
     color: "white",

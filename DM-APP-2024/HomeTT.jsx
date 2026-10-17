@@ -23,11 +23,13 @@ import { UserContext } from "./api/calls";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import TopBar from "./TopBar";
 import { colors, card } from "./theme";
+import { displayRole } from "./constants";
+import { useColorTeams } from "./ColorTeamsContext";
 
 const LAST_SEEN_NOTIFICATION_KEY = "@last_seen_notification";
 
 const SPREADSHEET_ID = "15kkihl7I0p4A_jyT-a-ozXQA9kvi_as-ry_6J0PfPis";
-const EVENTS_RANGE = "TransformToday!A4:F100";
+const EVENTS_RANGE = "TransformToday!A4:G100";
 
 const formatEventDate = (d) =>
   new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(d);
@@ -47,7 +49,9 @@ const HomeTT = ({ route }) => {
   const [hasUnread, setHasUnread] = useState(false);
 
   const { expoPushToken } = route.params;
-  const { userInfo } = useContext(UserContext);
+  const { userInfo, organization } = useContext(UserContext);
+  const { colorTeamsEnabled, getTeamForOrg } = useColorTeams();
+  const myTeam = colorTeamsEnabled ? getTeamForOrg(organization) : null;
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
   const isGuest = !auth.currentUser;
@@ -104,15 +108,15 @@ const HomeTT = ({ route }) => {
       }
 
       const fetchedItems = rows.map((row) => {
-        const [title, date, time, location, description, pictureName] = row;
+        const [title, date, startTime, location, description, pictureName, endTime] = row;
 
-        if (!date || !time) return null;
+        if (!date || !startTime) return null;
 
         const [year, month, day] = date.split("-").map(Number);
 
         let hours = 0,
           minutes = 0;
-        const timeMatch = time.match(/^(\d+):(\d+)\s?(AM|PM)$/i);
+        const timeMatch = startTime.match(/^(\d+):(\d+)\s?(AM|PM)$/i);
         if (timeMatch) {
           hours = parseInt(timeMatch[1], 10);
           minutes = parseInt(timeMatch[2], 10);
@@ -143,7 +147,8 @@ const HomeTT = ({ route }) => {
         return {
           formattedDate: formatEventDate(eventDate),
           date,
-          time,
+          startTime,
+          endTime,
           title,
           description,
           location,
@@ -242,7 +247,8 @@ const HomeTT = ({ route }) => {
       event: {
         title: item.title,
         formattedDate: item.formattedDate,
-        time: item.time,
+        startTime: item.startTime,
+        endTime: item.endTime,
         location: item.location,
         description: item.description,
         imageUrl: imageUrls[item.picture],
@@ -297,13 +303,38 @@ const HomeTT = ({ route }) => {
             </View>
           </View>
         ) : (
-          <View style={styles.heroCard}>
-            <Text style={styles.heroName} numberOfLines={1}>
+          <View
+            style={[
+              styles.heroCard,
+              myTeam && { backgroundColor: myTeam.color },
+            ]}
+          >
+            {myTeam && (
+              <View style={styles.colorTeamTag}>
+                <Text style={[styles.colorTeamTagText, { color: myTeam.textColor }]}>
+                  {myTeam.id} Team
+                </Text>
+              </View>
+            )}
+            <Text
+              style={[styles.heroName, myTeam && { color: myTeam.textColor }]}
+              numberOfLines={1}
+            >
               {userInfo?.displayName || "Welcome"}
             </Text>
-            {!!role && <Text style={styles.heroRole}>{role}</Text>}
+            {!!role && (
+              <Text
+                style={[styles.heroRole, myTeam && { color: myTeam.textColor }]}
+              >
+                {displayRole(role)}
+              </Text>
+            )}
 
-            <Text style={styles.heroRaised}>{currency(raised)}</Text>
+            <Text
+              style={[styles.heroRaised, myTeam && { color: myTeam.textColor }]}
+            >
+              {currency(raised)}
+            </Text>
 
             <Progress.Bar
               progress={progress}
@@ -350,7 +381,8 @@ const HomeTT = ({ route }) => {
                     </Text>
                     <Text style={styles.eventMeta} numberOfLines={1}>
                       {item.formattedDate ? `${item.formattedDate}` : ""}
-                      {item.time ? ` · ${item.time}` : ""}
+                      {item.startTime ? ` · ${item.startTime}` : ""}
+                      {item.startTime && item.endTime ? ` - ${item.endTime}` : ""}
                       {item.location ? ` · ${item.location}` : ""}
                     </Text>
                   </View>
@@ -422,6 +454,20 @@ const styles = StyleSheet.create({
     color: "rgba(255,255,255,0.7)",
     fontSize: 13,
     marginTop: 2,
+  },
+  colorTeamTag: {
+    alignSelf: "flex-start",
+    backgroundColor: "rgba(0,0,0,0.18)",
+    borderRadius: 100,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    marginBottom: 8,
+  },
+  colorTeamTagText: {
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 0.4,
+    textTransform: "uppercase",
   },
   heroRaised: {
     color: "white",
