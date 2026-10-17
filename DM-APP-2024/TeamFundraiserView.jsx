@@ -12,9 +12,17 @@ import {
 import FontAwesome from "react-native-vector-icons/FontAwesome";
 import * as Progress from "react-native-progress";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { getTeamDonations, getTeamRoster, getUserInfo } from "./api";
+import {
+  fetchDonorDriveJson,
+  getTeamDonations,
+  getTeamRoster,
+  getDonorDriveStaleCount,
+  invalidateDonorDriveCache,
+} from "./api";
+import RefreshBar, { useCooldown, getRateLimitNotice } from "./RefreshBar";
 import { apiPaths } from "./api/api-paths";
 import { colors, card } from "./theme";
+import { useColorTeams } from "./ColorTeamsContext";
 
 const DOMAIN_STUB = "https://events.dancemarathon.com";
 
@@ -116,12 +124,16 @@ const cleanDonationName = (value, fallback = "Anonymous") => {
 
 const TeamFundraiserView = ({ teamId }) => {
   const insets = useSafeAreaInsets();
+  const { colorTeamsEnabled, getTeamForOrg } = useColorTeams();
   const [teamInfo, setTeamInfo] = useState(null);
   const [teamMembers, setTeamMembers] = useState([]);
   const [teamDonations, setTeamDonations] = useState([]);
   const [progress, setProgress] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [notice, setNotice] = useState(null);
+  const [lastUpdated, setLastUpdated] = useState(null);
+  const [cooldown, startCooldown] = useCooldown();
   const [imageErrors, setImageErrors] = useState({});
   const [teamAvatarIndex, setTeamAvatarIndex] = useState(0);
 
@@ -167,9 +179,14 @@ const TeamFundraiserView = ({ teamId }) => {
       setIsLoading(true);
     }
 
+    const staleBefore = getDonorDriveStaleCount();
+
     try {
-      const teamProfileResponse = await fetch(apiPaths.teamProfileUrl(teamId));
-      const teamProfile = await teamProfileResponse.json();
+      // Goes through the shared DonorDrive fetcher (queue, cache, and 429
+      // handling) instead of a bare fetch.
+      const { json: teamProfile } = await fetchDonorDriveJson(
+        apiPaths.teamProfileUrl(teamId),
+      );
       const firstRosterPage = await getTeamRoster(teamId, 1);
       const firstDonationPage = await getTeamDonations(teamId, 100, 1);
       const totalPages = firstRosterPage?.countPages || 1;
@@ -204,28 +221,19 @@ const TeamFundraiserView = ({ teamId }) => {
 
       const eligibleMembers = members.filter((member) => member?.participantID);
 
-      const memberProfiles = await Promise.all(
-        eligibleMembers.map((member) =>
-          getUserInfo(member.participantID).catch(() => null),
-        ),
-      );
-
+      // The roster already carries each member's displayName, sumDonations,
+      // fundraisingGoal and avatarImageURL. This used to also call
+      // getUserInfo() for every member (100+ simultaneous requests for a big
+      // team) just to re-read those same fields — that burst is what kept
+      // tripping DonorDrive's hourly rate limit.
       const normalizedMembers = eligibleMembers
-        .map((member, index) => {
-          const profile = memberProfiles[index];
-
-          return {
-            ...member,
-            avatarImageURL: normalizeAvatarUrl(
-              profile?.avatarImageURL || member.avatarImageURL,
-            ),
-            displayName:
-              profile?.displayName || member.displayName || "Anonymous",
-            fundraisingGoal:
-              profile?.fundraisingGoal || member.fundraisingGoal || 0,
-            sumDonations: profile?.sumDonations || member.sumDonations || 0,
-          };
-        })
+        .map((member) => ({
+          ...member,
+          avatarImageURL: normalizeAvatarUrl(member.avatarImageURL),
+          displayName: member.displayName || "Anonymous",
+          fundraisingGoal: member.fundraisingGoal || 0,
+          sumDonations: member.sumDonations || 0,
+        }))
         .sort((a, b) => b.sumDonations - a.sumDonations);
 
       const normalizedDonations = donations
@@ -253,11 +261,33 @@ const TeamFundraiserView = ({ teamId }) => {
       setTeamDonations(normalizedDonations);
       setTeamAvatarIndex(0);
       setImageErrors({});
+      // Numbers saved on the phone from an earlier update (used when
+      // DonorDrive can't be reached) load without an error, so check for them
+      // rather than presenting them as current.
+      if (getDonorDriveStaleCount() > staleBefore) {
+        setNotice(
+          getRateLimitNotice() ||
+            "Showing numbers from your last successful update — couldn't reach DonorDrive."
+        );
+      } else {
+        setNotice(null);
+        setLastUpdated(new Date());
+      }
     } catch (error) {
       console.error("Error fetching team fundraiser data:", error);
-      setTeamInfo(null);
-      setTeamMembers([]);
-      setTeamDonations([]);
+      if (isRefresh) {
+        // Keep the numbers already on screen; a failed refresh shouldn't wipe
+        // the page (previously it dropped to "Unable to load").
+        setNotice(
+          getRateLimitNotice() ||
+            "Couldn't refresh right now. Showing the last loaded numbers."
+        );
+      } else {
+        setTeamInfo(null);
+        setTeamMembers([]);
+        setTeamDonations([]);
+        setNotice(getRateLimitNotice());
+      }
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
@@ -267,6 +297,29 @@ const TeamFundraiserView = ({ teamId }) => {
   useEffect(() => {
     loadTeamData();
   }, [teamId]);
+
+  const handleRefresh = () => {
+    // While DonorDrive is blocking us there's nothing to fetch; say so instead
+    // of firing requests that would just fail.
+    const blockedNotice = getRateLimitNotice();
+    if (blockedNotice) {
+      setNotice(blockedNotice);
+      return;
+    }
+    invalidateDonorDriveCache();
+    startCooldown();
+    loadTeamData({ isRefresh: true });
+  };
+
+  const refreshBar = (
+    <RefreshBar
+      onPress={handleRefresh}
+      refreshing={isRefreshing}
+      disabled={cooldown}
+      lastUpdated={lastUpdated}
+      notice={notice}
+    />
+  );
 
   const targetProgress = useMemo(() => {
     if (!teamInfo?.fundraisingGoal) {
@@ -319,9 +372,15 @@ const TeamFundraiserView = ({ teamId }) => {
     return (
       <View style={styles.loadingContainer}>
         <Text style={styles.emptyText}>Unable to load team fundraiser.</Text>
+        <View style={styles.retryBar}>{refreshBar}</View>
       </View>
     );
   }
+
+  // Everyone on this roster shares the same DonorDrive org, so a per-member
+  // pill next to each name (like the captain-team pages have) would just
+  // repeat the same color for every row — shown once at the top instead.
+  const myTeam = colorTeamsEnabled ? getTeamForOrg(teamInfo?.name) : null;
 
   return (
     <ScrollView
@@ -331,6 +390,18 @@ const TeamFundraiserView = ({ teamId }) => {
         { paddingBottom: 40 + insets.bottom },
       ]}
     >
+      {refreshBar}
+
+      {myTeam && (
+        <View style={styles.myTeamRow}>
+          <View style={[styles.colorPill, { backgroundColor: myTeam.color }]}>
+            <Text style={[styles.colorPillText, { color: myTeam.textColor }]}>
+              {myTeam.id} Team
+            </Text>
+          </View>
+        </View>
+      )}
+
       <View style={styles.profileContainer}>
         {currentTeamAvatar && !imageErrors[`team-${teamId}`] ? (
           <Image
@@ -421,16 +492,6 @@ const TeamFundraiserView = ({ teamId }) => {
 
       <View style={styles.donationsHeaderRow}>
         <Text style={styles.sectionTitle}>TEAM DONATIONS</Text>
-        <TouchableOpacity
-          onPress={() => loadTeamData({ isRefresh: true })}
-          disabled={isRefreshing}
-        >
-          <FontAwesome
-            name="refresh"
-            size={16}
-            color={isRefreshing ? colors.textMuted : colors.navy}
-          />
-        </TouchableOpacity>
       </View>
       <View style={[card, styles.rectangleView]}>
         <ScrollView
@@ -491,6 +552,25 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     backgroundColor: colors.pageBackground,
     padding: 24,
+  },
+  retryBar: {
+    alignSelf: "stretch",
+    marginTop: 16,
+  },
+  myTeamRow: {
+    flexDirection: "row",
+    marginBottom: 10,
+  },
+  colorPill: {
+    borderRadius: 100,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  colorPillText: {
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 0.4,
+    textTransform: "uppercase",
   },
   profileContainer: {
     flexDirection: "row",

@@ -6,8 +6,10 @@ import {
   Modal,
   TouchableOpacity,
   ScrollView,
+  ActivityIndicator,
 } from "react-native";
 import { MultiSelect } from "react-native-element-dropdown";
+import { useIsFocused } from "@react-navigation/native";
 import { CameraView, Camera } from "expo-camera";
 import {
   collection,
@@ -83,13 +85,53 @@ const Scanner = () => {
   const [scanned, setScanned] = useState(false);
   const [userData, setUserData] = useState({ name: "", team: "" });
   const [modalVisible, setModalVisible] = useState(false);
-  const apiKey = "AIzaSyDvksLIbk2gll7Me9846sFHG46ZcKZjAX8";
-  const range = `Sheet1!A$1:B100`;
-  const range2 = `Sheet2!A$1:B500`;
-  const SPREADSHEET_ID = "1VTr6Jq_UbrJ1HEUTxCo0TlLvoLXc5PaPagufrzbAAxY";
+  // React Native's <Modal> doesn't unmount its contents when closed — it just
+  // hides the native window, so the same CameraView instance (and its
+  // internal camera session) persists across opens. If that session doesn't
+  // fully reset, a later reopen in the same app session can come up with no
+  // picture even though the very first open worked. Bumping this on every
+  // open and using it as CameraView's key forces React to throw away the old
+  // instance and mount a genuinely fresh one each time.
+  const [cameraInstanceKey, setCameraInstanceKey] = useState(0);
+  // Known expo-camera/expo-modules-core bug (expo/expo#49760): the native
+  // camera session can fire its "ready" event before the JS side has
+  // finished wiring up to receive it, and that event is silently dropped —
+  // the camera genuinely starts (hence still seeing the "camera in use"
+  // indicator) but JS never learns about it, so the preview never shows a
+  // picture. This is a race, not a hard failure, so it doesn't happen every
+  // time. Delaying the actual CameraView mount a beat after the modal opens
+  // gives React/Fabric time to finish wiring handlers first, making it much
+  // more likely the ready event has somewhere to land when it fires.
+  const [shouldMountCamera, setShouldMountCamera] = useState(false);
+  const cameraMountTimer = useRef(null);
+  // Scanner is a stack screen inside a tab navigator — switching tabs (or
+  // navigating elsewhere) doesn't unmount it, and React Native's <Modal>
+  // doesn't unmount its contents when hidden either. Without this, opening
+  // the camera and then switching tabs left the camera session running in
+  // the background indefinitely, with nothing managing or resetting it —
+  // a real, separate contributor to inconsistent camera behavior on top of
+  // the race condition above.
+  const isFocused = useIsFocused();
 
-  const [data, setData] = useState([]);
-  const [individualData, setIndividualData] = useState([]);
+  useEffect(() => {
+    if (!isFocused && modalVisible) {
+      setModalVisible(false);
+    }
+  }, [isFocused, modalVisible]);
+
+  useEffect(() => {
+    clearTimeout(cameraMountTimer.current);
+    if (modalVisible && isFocused) {
+      setShouldMountCamera(false);
+      cameraMountTimer.current = setTimeout(
+        () => setShouldMountCamera(true),
+        300
+      );
+    } else {
+      setShouldMountCamera(false);
+    }
+    return () => clearTimeout(cameraMountTimer.current);
+  }, [modalVisible, cameraInstanceKey, isFocused]);
 
   const [userIDState, setUserIDState] = useState("");
   const [userInfo, setUserInfo] = useState({});
@@ -169,6 +211,10 @@ const Scanner = () => {
   }, []);
 
   useEffect(() => {
+    // userIDState is "" until getUserData() above resolves; calling
+    // DonorDrive with no ID just logs "Missing DonorDrive participant ID"
+    // for nothing.
+    if (!userIDState) return;
     getUserInfo(userIDState)
       .then((data) => {
         setUserInfo(data);
@@ -177,35 +223,6 @@ const Scanner = () => {
         console.error(err);
       });
   }, [userIDState]);
-
-  const fetchData = async () => {
-    try {
-      const response = await axios.get(
-        `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${range}?key=${apiKey}`,
-      );
-      setData(response.data.values);
-      return response.data.values;
-    } catch (error) {
-      console.error("Error fetching data from Google Sheets", error);
-    }
-  };
-
-  const fetchIndividualData = async () => {
-    try {
-      const response = await axios.get(
-        `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${range2}?key=${apiKey}`,
-      );
-      setIndividualData(response.data.values);
-      return response.data.values;
-    } catch (error) {
-      console.error("Error fetching data from Google Sheets", error);
-    }
-  };
-
-  useEffect(() => {
-    fetchData();
-    fetchIndividualData();
-  }, []);
 
   const postRowToSheet = async (
     token,
@@ -271,13 +288,6 @@ const Scanner = () => {
     return `${hours}:${minutes}:${seconds}`;
   };
 
-  useEffect(() => {
-    (async () => {
-      const { status } = await BarCodeScanner.requestPermissionsAsync();
-      setHasPermission(status === "granted");
-    })();
-  }, []);
-
   // PARALLEL SYSTEM (in testing) — mirrors every scan into Firestore
   // alongside the existing Google Sheets write, so the two can be compared
   // before the Sheets/script-based system is retired. A failure here is
@@ -327,46 +337,57 @@ const Scanner = () => {
     scanLock.current = true;
     setScanned(true);
 
-    const extractedData = await parseQRCodeData(data);
-    if (extractedData || extractedData.name !== "undefined") {
-      setUserData(extractedData);
+    // Everything that can fail (parsing, network, Firestore writes) is
+    // wrapped here, with the modal/lock reset moved into `finally`. Before
+    // this, an unexpected error anywhere in here — including scanning
+    // something that isn't a DM QR code at all, like Expo's own connection
+    // QR — threw partway through and skipped the cleanup code entirely,
+    // leaving the camera stuck open on "Scanned!" forever.
+    try {
+      const extractedData = await parseQRCodeData(data);
+      if (extractedData) {
+        setUserData(extractedData);
 
-      const selectedOptions = scannerOptions.filter((option) =>
-        selectedReasons.includes(option.value),
-      );
+        const selectedOptions = scannerOptions.filter((option) =>
+          selectedReasons.includes(option.value),
+        );
 
-      if (selectedOptions.length > 0) {
-        if (LEGACY_SHEETS_WRITE_ENABLED) {
-          const ACCESS_TOKEN = await getAccessToken();
-          const date = getCurrentDate();
-          const time = getCurrentTime();
-          const giver = userInfo.displayName;
+        if (selectedOptions.length > 0) {
+          if (LEGACY_SHEETS_WRITE_ENABLED) {
+            const ACCESS_TOKEN = await getAccessToken();
+            const date = getCurrentDate();
+            const time = getCurrentTime();
+            const giver = userInfo.displayName;
 
-          for (const selectedOption of selectedOptions) {
-            await postRowToSheet(
-              ACCESS_TOKEN,
-              extractedData.name,
-              extractedData.team,
-              selectedOption.label,
-              date,
-              time,
-              giver,
-              selectedOption.points,
-              extractedData.captainTeam,
-            );
+            for (const selectedOption of selectedOptions) {
+              await postRowToSheet(
+                ACCESS_TOKEN,
+                extractedData.name,
+                extractedData.team,
+                selectedOption.label,
+                date,
+                time,
+                giver,
+                selectedOption.points,
+                extractedData.captainTeam,
+              );
+            }
           }
+
+          await awardSpiritPointsInFirestore(extractedData, selectedOptions);
         }
-
-        await awardSpiritPointsInFirestore(extractedData, selectedOptions);
+      } else {
+        setUserData({ name: "Invalid QR code", team: "" });
       }
-    } else {
-      setUserData({ name: "Invalid QR code", team: "" });
+    } catch (error) {
+      console.error("Error handling scanned code:", error);
+      setUserData({ name: "Error processing scan", team: "" });
+    } finally {
+      setModalVisible(false);
+      setScanned(false);
+      setSelectedReasons([]);
+      scanLock.current = false;
     }
-    setModalVisible(false);
-    setScanned(false);
-    setSelectedReasons([]);
-
-    scanLock.current = false;
   };
 
   // const handleBarCodeScanned = async ({ type, data }) => {
@@ -506,7 +527,10 @@ const Scanner = () => {
           )}
 
           <TouchableOpacity
-            onPress={() => setModalVisible(true)}
+            onPress={() => {
+              setCameraInstanceKey((current) => current + 1);
+              setModalVisible(true);
+            }}
             style={styles.scannerOpen}
           >
             <Text style={styles.openScannerText}>Open Scanner</Text>
@@ -537,29 +561,66 @@ const Scanner = () => {
         onRequestClose={() => setModalVisible(false)}
       >
         <View style={styles.modalContainer}>
-          <CameraView
-            onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
-            barcodeScannerSettings={{
-              barcodeTypes: ["qr", "pdf417"],
-            }}
-            style={StyleSheet.absoluteFillObject}
-          />
-          <View style={styles.infoContainer}>
-            <Text style={styles.topText}>
-              THE PROCESS FINISHES WHEN THE CAMERA CLOSES AUTOMATICALLY
-            </Text>
-          </View>
-          {scanned ? (
-            <View style={styles.scannedContainer}>
-              <Text style={styles.scannedText}>Scanned!</Text>
+          {hasPermission === false ? (
+            // hasPermission was being tracked but never actually checked
+            // here before — a denied/revoked camera permission just showed
+            // this same black box with no explanation. CameraView itself
+            // can't show anything useful without permission, so check for
+            // that case explicitly instead of rendering it regardless.
+            <View style={styles.permissionDeniedContainer}>
+              <Text style={styles.permissionDeniedText}>
+                Camera access is turned off for this app, so the scanner
+                can't show a picture.{"\n\n"}Go to your phone's Settings app →
+                DM at UF → Camera, and turn it on. Then come back and try
+                again.
+              </Text>
+              <TouchableOpacity
+                style={styles.closeButton}
+                onPress={() => setModalVisible(false)}
+              >
+                <Text style={styles.closeButtonText}>Close</Text>
+              </TouchableOpacity>
             </View>
+          ) : !shouldMountCamera ? (
+            // Deliberately not mounting CameraView yet — see the
+            // shouldMountCamera effect above for why.
+            <ActivityIndicator color="white" size="large" />
           ) : (
-            <TouchableOpacity
-              style={styles.closeButton}
-              onPress={() => setModalVisible(false)}
-            >
-              <Text style={styles.closeButtonText}>Close Camera</Text>
-            </TouchableOpacity>
+            <>
+              <CameraView
+                key={cameraInstanceKey}
+                facing="back"
+                onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
+                barcodeScannerSettings={{
+                  barcodeTypes: ["qr", "pdf417"],
+                }}
+                style={StyleSheet.absoluteFillObject}
+              />
+              <View style={styles.infoContainer}>
+                <Text style={styles.topText}>
+                  THE PROCESS FINISHES WHEN THE CAMERA CLOSES AUTOMATICALLY
+                </Text>
+                {/* On some phones a camera-app bug keeps this screen black
+                    even though scanning itself works fine — confirmed by
+                    testing. This explains that instead of looking broken. */}
+                <Text style={styles.topSubText}>
+                  If you don't see a picture, that's okay — just aim at the
+                  QR code and hold steady. It still scans.
+                </Text>
+              </View>
+              {scanned ? (
+                <View style={styles.scannedContainer}>
+                  <Text style={styles.scannedText}>Scanned!</Text>
+                </View>
+              ) : (
+                <TouchableOpacity
+                  style={styles.closeButton}
+                  onPress={() => setModalVisible(false)}
+                >
+                  <Text style={styles.closeButtonText}>Close Camera</Text>
+                </TouchableOpacity>
+              )}
+            </>
           )}
         </View>
       </Modal>
@@ -581,6 +642,17 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "black",
+  },
+  permissionDeniedContainer: {
+    padding: 24,
+    alignItems: "center",
+  },
+  permissionDeniedText: {
+    color: "white",
+    fontSize: 15,
+    lineHeight: 22,
+    textAlign: "center",
+    marginBottom: 20,
   },
   infoText: {
     fontSize: 16,
@@ -608,6 +680,14 @@ const styles = StyleSheet.create({
     textAlign: "center",
     backgroundColor: "rgba(0,0,0,0.6)",
     padding: 10,
+  },
+  topSubText: {
+    fontSize: 13,
+    color: "rgba(255,255,255,0.85)",
+    textAlign: "center",
+    backgroundColor: "rgba(0,0,0,0.6)",
+    paddingHorizontal: 14,
+    paddingBottom: 10,
   },
   infoContainer: {
     flex: 1,

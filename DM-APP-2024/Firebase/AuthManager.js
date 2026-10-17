@@ -165,12 +165,17 @@ async function updateDDLink(userId, newLink) {
     // this is the one place a DonorDrive lookup is already happening — the
     // spirit points leaderboard reads this field directly instead of
     // calling DonorDrive per-user (slow, and subject to its bot protection).
+    // If DonorDrive can't be reached (e.g. its rate limit), the link is still
+    // saved — only the organization label is skipped — and the caller is told
+    // so it can say that to the user.
+    let organizationLookupFailed = false;
     try {
       const donorInfo = await getUserInfo(participantID);
       if (donorInfo?.teamName) {
         updates.organization = donorInfo.teamName;
       }
     } catch (donorError) {
+      organizationLookupFailed = true;
       console.error(
         "Could not fetch DonorDrive team name for organization field:",
         donorError
@@ -180,8 +185,12 @@ async function updateDDLink(userId, newLink) {
     await setDoc(docRef, updates, { merge: true });
 
     console.log(`DonorDrive Link ${newLink} added to user ${userId}`);
+    return { organizationLookupFailed };
   } catch (error) {
     console.error("Error adding Link to Firestore:", error);
+    // Don't swallow this: callers close their "update link" modal on success,
+    // so a failed save has to surface as an error, not look like it worked.
+    throw error;
   }
 }
 
@@ -285,4 +294,5 @@ export {
   updateDDLink,
   updateRole,
   updateCaptainTeam,
+  extractParticipantID,
 };
