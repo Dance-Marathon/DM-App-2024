@@ -287,7 +287,11 @@ const Home = ({ route }) => {
             <View style={styles.guestButtonRow}>
               <TouchableOpacity
                 style={styles.guestButton}
-                onPress={() => navigation.navigate("Account", { screen: "Login" })}
+                onPress={() => navigation.navigate("Account", { 
+                  screen: "Login",
+                  params: { signUpMode: false },
+                 })
+                }
               >
                 <Text style={styles.guestButtonText}>Sign In</Text>
               </TouchableOpacity>

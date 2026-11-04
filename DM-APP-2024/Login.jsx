@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useCallback, useState } from "react";
 import {
   View,
   Text,
@@ -14,7 +14,7 @@ import {
   ScrollView,
 } from "react-native";
 import { handleLogin, handleSignUp } from "./Firebase/AuthManager.js";
-import { useNavigation } from "@react-navigation/native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Dropdown } from "react-native-element-dropdown";
 import { Icon } from "react-native-elements";
@@ -39,6 +39,12 @@ const Login = ({ route }) => {
   const [isCaptainTeamFocus, setIsCaptainTeamFocus] = useState(false);
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [ddModalVisable, setDDModalVisable] = useState(false);
+
+  useFocusEffect(
+    useCallback(() => {
+      setCreate(!signUpMode);
+    }, [signUpMode])
+  );
 
   const dismissKeyboard = () => {
     Keyboard.dismiss();
